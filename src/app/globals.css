@@ -362,6 +362,10 @@ main {
   letter-spacing: .06em;
 }
 
+.entity-node.is-connected { border-color: rgba(240,201,139,.22); box-shadow: inset 0 1px rgba(255,255,255,.025), 0 0 0 1px rgba(240,201,139,.025); }
+.entity-node.is-connected .node-led { background: #f0c98b; box-shadow: 0 0 8px rgba(240,201,139,.42); }
+.entity-node.is-connected em { color: #c9ab7f; }
+
 .node-led {
   position: absolute;
   top: 11px;

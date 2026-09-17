@@ -54,7 +54,9 @@ function lastfmUrl(method: string) {
   url.searchParams.set('api_key', process.env.LASTFM_API_KEY ?? '')
   url.searchParams.set('format', 'json')
   return url
-}async function getJson<T>(url: URL): Promise<T | null> {
+}
+
+async function getJson<T>(url: URL): Promise<T | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 4000)
   try {
@@ -77,6 +79,16 @@ function tagsFrom(payload: LastfmTopTags | null, source: MusicTagSource) {
   })
 }
 
+function fallbackTags(title: string) {
+  const tags: Array<{ name:string; weight:number; source:MusicTagSource }> = []
+  const classicalForm = /\b(concerto|sonata|symphony|prelude|fugue|requiem|overture|serenade|etude|nocturne|adagio|allegro|andante)\b/i
+  const catalogNumber = /\b(rv|bwv|kv?|op)\.?\s*\d+/i
+  if (classicalForm.test(title) || catalogNumber.test(title)) tags.push({ name:'classical', weight:0.86, source:'heuristic' })
+  if (/\bconcerto\b/i.test(title)) tags.push({ name:'concerto', weight:0.82, source:'heuristic' })
+  if (/\bsonata\b/i.test(title)) tags.push({ name:'sonata', weight:0.82, source:'heuristic' })
+  return tags
+}
+
 async function loadTags(artist: string, title: string) {
   const trackUrl = lastfmUrl('track.getTopTags')
   trackUrl.searchParams.set('artist', artist)
@@ -86,8 +98,11 @@ async function loadTags(artist: string, title: string) {
   const [track, artistTags] = await Promise.all([
     getJson<LastfmTopTags>(trackUrl), getJson<LastfmTopTags>(artistUrl),
   ])
-  return [...tagsFrom(track, 'lastfm-track'), ...tagsFrom(artistTags, 'lastfm-artist')]
-}export async function GET() {
+  const tags = [...tagsFrom(track, 'lastfm-track'), ...tagsFrom(artistTags, 'lastfm-artist')]
+  return tags.length ? tags : fallbackTags(title)
+}
+
+export async function GET() {
   const apiKey = process.env.LASTFM_API_KEY
   const username = process.env.LASTFM_USERNAME
   if (!apiKey || !username) return noStore(resting(false))

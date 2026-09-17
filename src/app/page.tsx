@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ActivityRail } from '@/components/living/activity-rail'
 import { EntityConsole } from '@/components/living/entity-console'
 import { LivingCanvas } from '@/components/living/living-canvas'
@@ -45,12 +46,16 @@ export default async function Home() {
         <section className="surface-section" id="projects">
           <div className="section-heading"><p className="eyebrow">{t.surfacesEyebrow}</p><h2>{t.surfacesTitle}</h2></div>
           <div className="surface-grid">
-            {t.surfaces.map((surface) => (
-              <article className="surface-card" key={surface.kicker}>
-                <span>{surface.kicker}</span><h3>{surface.title}</h3><p>{surface.copy}</p>
-                <div className="surface-signal" aria-hidden="true"><i /><i /><i /></div>
-              </article>
-            ))}
+            {t.surfaces.map((surface, index) => {
+              const href = ['/projects', '/log', '/stack'][index]
+              return (
+                <Link className="surface-card" href={href} key={surface.kicker}>
+                  <span>{surface.kicker}</span><h3>{surface.title}</h3><p>{surface.copy}</p>
+                  <div className="surface-signal" aria-hidden="true"><i /><i /><i /></div>
+                  <em className="surface-enter" aria-hidden="true">↗</em>
+                </Link>
+              )
+            })}
           </div>
         </section>
 

@@ -54,6 +54,28 @@ export const messages = {
       layers: { bass: 'bass', lowMid: 'low-mid', mid: 'mid', vocal: 'vocal', presence: 'presence', air: 'air' },
       indicator: { resting: 'resting', listening: 'listening', humming: 'humming', notConnected: 'sensor not connected', hummingTitle: 'Sentinel is humming…', title: 'Sentinel Music Sensor' },
     },
+    projectSurface: {
+      aria: 'Project systems surface', sourceOff: 'STATE SOURCE · OFFLINE', runtime: 'PUBLIC RUNTIME', notConnected: 'NOT CONNECTED',
+      items: [
+        { id: 'lightbi', name: 'LightBI', role: 'Local-first BI / governed analytics', summary: 'Turns raw operational data into trusted analysis while keeping data understanding, governance and presentation separate.', plane: 'DATA / SEMANTIC', mode: 'PRODUCT SYSTEM' },
+        { id: 'light-remote', name: 'Light Remote', role: 'Remote control plane', summary: 'A permission-aware bridge from AI clients to authorized machines, with policy, approvals and device-local execution boundaries.', plane: 'REMOTE / CONTROL', mode: 'INFRA SYSTEM' },
+        { id: 'sentinel', name: 'Sentinel', role: 'Autonomous security sense', summary: 'Learns from network and system signals, watches for anomalies, and turns infrastructure noise into understandable observations.', plane: 'SECURITY / SENSE', mode: 'LEARNING SYSTEM' },
+        { id: 'n8n2erpnext', name: 'n8n2erpnext', role: 'Workflow circulation', summary: 'The automation backbone connecting operational systems, scheduled work and service-to-service movement across the ecosystem.', plane: 'AUTOMATION / FLOW', mode: 'WORKFLOW SYSTEM' },
+      ],
+    },
+    stackSurface: {
+      aria: 'Sanitized infrastructure topology', notConnected: 'STATE NOT CONNECTED',
+      nodes: [
+        { id: 'surface', label: 'PUBLIC SURFACE', role: 'thaiduy.digital' },
+        { id: 'mesh', label: 'PRIVATE MESH', role: 'network connective tissue' },
+        { id: 'arm', label: 'ARM MAIN', role: 'primary services' },
+        { id: 'amd', label: 'AMD NODE', role: 'compute / service node' },
+        { id: 'desktop', label: 'DESKTOP NODE', role: 'interactive edge' },
+        { id: 'data', label: 'DATA PLANE', role: 'CMS / database / memory' },
+      ],
+      legend: { public: 'PUBLIC EDGE', private: 'PRIVATE RELATION', safe: 'SANITIZED VIEW' },
+      note: 'This is a safe public projection. Private addresses, credentials, control paths and sensitive topology remain outside the website.',
+    },
     section: {
       source: 'CONTENT SOURCE', notConnected: 'NOT CONNECTED', empty: 'This surface is intentionally empty until its real content/state source is connected.', back: 'Return to living field',
     },
@@ -117,6 +139,28 @@ export const messages = {
       note: 'Hợp đồng renderer đã sẵn sàng. Genre, style, độ nổi của vocal và phổ tần thời gian thực sẽ đến từ Music Cortex — không còn đoán bằng tiêu đề bài hát.',
       layers: { bass: 'trầm', lowMid: 'trầm-trung', mid: 'trung', vocal: 'giọng hát', presence: 'độ hiện diện', air: 'dải cao' },
       indicator: { resting: 'đang nghỉ', listening: 'đang nghe', humming: 'đang ngân nga', notConnected: 'cảm biến chưa kết nối', hummingTitle: 'Sentinel đang ngân nga…', title: 'Sentinel Music Sensor' },
+    },
+    projectSurface: {
+      aria: 'Bề mặt hệ thống dự án', sourceOff: 'NGUỒN TRẠNG THÁI · OFFLINE', runtime: 'RUNTIME CÔNG KHAI', notConnected: 'CHƯA KẾT NỐI',
+      items: [
+        { id: 'lightbi', name: 'LightBI', role: 'BI local-first / phân tích có quản trị', summary: 'Biến dữ liệu vận hành thô thành phân tích đáng tin cậy, đồng thời tách rõ hiểu dữ liệu, quản trị và trình bày.', plane: 'DỮ LIỆU / NGỮ NGHĨA', mode: 'HỆ SẢN PHẨM' },
+        { id: 'light-remote', name: 'Light Remote', role: 'Mặt phẳng điều khiển từ xa', summary: 'Cầu nối có nhận thức quyền hạn từ AI client đến máy đã được cấp phép, với policy, approval và ranh giới thực thi tại thiết bị.', plane: 'REMOTE / ĐIỀU KHIỂN', mode: 'HỆ HẠ TẦNG' },
+        { id: 'sentinel', name: 'Sentinel', role: 'Giác quan an ninh tự chủ', summary: 'Học từ tín hiệu mạng và hệ thống, quan sát bất thường và biến nhiễu hạ tầng thành những quan sát có thể hiểu được.', plane: 'AN NINH / GIÁC QUAN', mode: 'HỆ HỌC' },
+        { id: 'n8n2erpnext', name: 'n8n2erpnext', role: 'Tuần hoàn workflow', summary: 'Xương sống tự động hóa kết nối hệ vận hành, công việc theo lịch và luồng dịch vụ xuyên suốt hệ sinh thái.', plane: 'TỰ ĐỘNG HÓA / LUỒNG', mode: 'HỆ WORKFLOW' },
+      ],
+    },
+    stackSurface: {
+      aria: 'Topology hạ tầng đã được làm sạch', notConnected: 'TRẠNG THÁI CHƯA KẾT NỐI',
+      nodes: [
+        { id: 'surface', label: 'BỀ MẶT CÔNG KHAI', role: 'thaiduy.digital' },
+        { id: 'mesh', label: 'LƯỚI RIÊNG', role: 'mô liên kết mạng' },
+        { id: 'arm', label: 'ARM MAIN', role: 'dịch vụ chính' },
+        { id: 'amd', label: 'AMD NODE', role: 'node compute / dịch vụ' },
+        { id: 'desktop', label: 'DESKTOP NODE', role: 'edge tương tác' },
+        { id: 'data', label: 'MẶT PHẲNG DỮ LIỆU', role: 'CMS / database / bộ nhớ' },
+      ],
+      legend: { public: 'BIÊN CÔNG KHAI', private: 'LIÊN KẾT RIÊNG', safe: 'GÓC NHÌN ĐÃ LÀM SẠCH' },
+      note: 'Đây là hình chiếu công khai an toàn. Địa chỉ riêng, credential, đường điều khiển và topology nhạy cảm không bao giờ được đưa lên website.',
     },
     section: {
       source: 'NGUỒN NỘI DUNG', notConnected: 'CHƯA KẾT NỐI', empty: 'Bề mặt này được cố ý để trống cho đến khi nguồn nội dung/trạng thái thật được kết nối.', back: 'Trở về trường sống',

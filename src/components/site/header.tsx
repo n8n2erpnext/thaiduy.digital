@@ -1,6 +1,13 @@
 import Link from 'next/link'
+import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
 
-const links = ['Projects', 'Log', 'Writing', 'Stack', 'About']
+const links = [
+  { href: '/projects', label: 'Projects' },
+  { href: '/log', label: 'Log' },
+  { href: '/writing', label: 'Writing' },
+  { href: '/stack', label: 'Stack' },
+  { href: '/about', label: 'About' },
+]
 
 export function SiteHeader() {
   return (
@@ -14,16 +21,19 @@ export function SiteHeader() {
       </Link>
 
       <nav aria-label="Primary navigation">
-        {links.map((label) => (
-          <a key={label} href={`#${label.toLowerCase()}`}>
-            {label}
-          </a>
+        {links.map((link) => (
+          <Link key={link.href} href={link.href}>
+            {link.label}
+          </Link>
         ))}
       </nav>
 
-      <div className="header-state" aria-label="Entity state">
-        <span className="status-dot" />
-        <span>BOOTSTRAP</span>
+      <div className="header-actions">
+        <MusicWaveIndicator />
+        <div className="header-state" aria-label="Entity state">
+          <span className="status-dot" />
+          <span>BOOTSTRAP</span>
+        </div>
       </div>
     </header>
   )

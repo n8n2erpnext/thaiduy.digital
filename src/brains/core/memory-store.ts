@@ -18,6 +18,15 @@ export async function recallBrainMemory<T>(brainKey: string, hemisphere: string,
   return { value: row.value as T, confidence: row.confidence, learnedAt: row.learnedAt }
 }
 
+export async function listBrainMemory(brainKey: string, hemisphere: string) {
+  const rows = await db.select().from(brainMemory).where(and(
+    eq(brainMemory.brainKey, brainKey),
+    eq(brainMemory.hemisphere, hemisphere),
+  ))
+  const now = Date.now()
+  return rows.filter(row => !row.expiresAt || row.expiresAt.getTime() >= now)
+}
+
 export async function rememberBrainMemory(input: {
   brainKey: string
   hemisphere: string

@@ -765,9 +765,16 @@ main {
 }
 .header-wave:hover, .header-wave:focus-visible { border-color: var(--line); background: rgba(255,255,255,.02); outline: none; }
 .header-wave svg { width: 104px; height: 22px; overflow: visible; }
-.header-wave-base, .header-wave-ghost { fill: none; stroke-linecap: round; }
-.header-wave-base { stroke: rgba(142,232,178,.34); stroke-width: 1.2; }
-.header-wave-ghost { stroke: rgba(142,232,178,.16); stroke-width: .7; }
+.header-wave-base, .header-wave-layer { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.header-wave-base { stroke: rgba(142,232,178,.18); stroke-width: .8; }
+.header-wave-layer { opacity: .42; stroke-width: .78; transition: opacity 180ms ease, stroke-width 180ms ease; }
+.header-wave-layer.is-dominant { opacity: .92; stroke-width: 1.45; filter: drop-shadow(0 0 3px rgba(220,255,235,.18)); }
+.header-wave-layer-bass { stroke: #4fd1b5; }
+.header-wave-layer-lowMid { stroke: #79c7b1; }
+.header-wave-layer-mid { stroke: #dfe8e2; }
+.header-wave-layer-vocal { stroke: #f0c98b; }
+.header-wave-layer-presence { stroke: #8fb8ff; }
+.header-wave-layer-air { stroke: #c9a6ff; }
 .header-wave-tooltip {
   position: absolute;
   z-index: 30;

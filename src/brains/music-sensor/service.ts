@@ -5,10 +5,16 @@ import type { MusicSensorInput, SemanticEarState } from './types'
 
 const BRAIN_KEY = 'sentinel-music'
 
-function trackMemoryKey(input: MusicSensorInput) {
+export function musicTrackMemoryKey(input: MusicSensorInput) {
+  const cleanId = (value: string) => value.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 170)
+  if (input.identity?.fingerprintId) return `recording:fingerprint:${cleanId(input.identity.fingerprintId)}`
+  if (input.identity?.recordingMbid) return `recording:mbid:${cleanId(input.identity.recordingMbid)}`
+  if (input.identity?.isrc) return `recording:isrc:${cleanId(input.identity.isrc)}`
   if (!input.artist || !input.title) return null
   const clean = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ')
-  return `track:${clean(input.artist)}::${clean(input.title)}`
+  const duration = input.identity?.durationMs ? `:${Math.round(input.identity.durationMs / 1000)}s` : ''
+  const version = input.identity?.versionLabel ? `:${cleanId(input.identity.versionLabel)}` : ''
+  return `track:${clean(input.artist)}::${clean(input.title)}${duration}${version}`.slice(0, 220)
 }
 
 function memoryCap(config: Record<string, unknown>, key: string, fallback: number) {
@@ -18,11 +24,15 @@ function memoryCap(config: Record<string, unknown>, key: string, fallback: numbe
 
 async function enrichFromSemanticMemory(input: MusicSensorInput) {
   if (input.tags?.length) return input
-  const key = trackMemoryKey(input)
+  const key = musicTrackMemoryKey(input)
   if (!key) return input
   const prior = await recallBrainMemory<SemanticEarState>(BRAIN_KEY, 'left', key)
   if (!prior) return input
-  const tags = Object.entries(prior.value.genreVotes).map(([name, weight]) => ({ name, weight: weight * 0.9 }))
+  const combined = new Map<string, number>()
+  for (const votes of [prior.value.genreVotes, prior.value.styleVotes, prior.value.moodVotes, prior.value.textureVotes, prior.value.arrangementVotes]) {
+    for (const [name, weight] of Object.entries(votes)) combined.set(name, Math.max(combined.get(name) ?? 0, weight))
+  }
+  const tags = [...combined].map(([name, weight]) => ({ name, weight, source:'memory' as const }))
   return { ...input, tags }
 }
 
@@ -32,7 +42,7 @@ export async function runMusicSensorLearningCycle(rawInput: MusicSensorInput) {
 
   const input = await enrichFromSemanticMemory(rawInput)
   const cycle = await runLunaCycle(musicSensorKernel, input)
-  const key = trackMemoryKey(input)
+  const key = musicTrackMemoryKey(input)
   const memoryConfig = profile.memoryConfig as Record<string, unknown>
 
   if (key && cycle.left.evidence[0]) {
@@ -45,7 +55,7 @@ export async function runMusicSensorLearningCycle(rawInput: MusicSensorInput) {
     })
   }
 
-  if (cycle.right.evidence[0]) {
+  if (input.audio && cycle.right.evidence[0] && cycle.right.evidence[0].confidence > 0) {
     await rememberBrainMemory({
       brainKey: BRAIN_KEY,
       hemisphere: 'right',

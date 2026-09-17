@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 
@@ -11,6 +12,7 @@ export function ActivityRail({ locale }: Props) {
   const [events, setEvents] = useState<SurfaceEvent[]>([])
   const [connected, setConnected] = useState(false)
   const t = messages[locale].activity
+  const music = useMusicState()
 
   useEffect(() => {
     const stream = new EventSource('/api/entity/stream')
@@ -38,7 +40,12 @@ export function ActivityRail({ locale }: Props) {
             <time>{new Date(item.at).toLocaleTimeString(locale === 'vi' ? 'vi-VN' : 'en-GB', { hour12: false })}</time><span className="activity-dot" /><strong>{item.source}</strong><span>{label} · {stateLabel}</span>
           </div>
         })}
-        {t.waiting.map(([source, state]) => <div className="activity-row" key={source}><time>--:--:--</time><span className="activity-dot" /><strong>{source}</strong><span>{state}</span></div>)}
+        {music.connected && <div className="activity-row activity-row-live">
+          <time>{music.updatedAt ? new Date(music.updatedAt).toLocaleTimeString(locale === 'vi' ? 'vi-VN' : 'en-GB', { hour12:false }) : '--:--:--'}</time>
+          <span className="activity-dot" /><strong>MUSIC SENSOR</strong>
+          <span>{music.mode === 'listening' && music.track ? `${music.track.title} · ${music.style ?? music.genre ?? 'semantic'}` : music.mode}</span>
+        </div>}
+        {t.waiting.filter(([source]) => !(music.connected && source === 'MUSIC SENSOR')).map(([source, state]) => <div className="activity-row" key={source}><time>--:--:--</time><span className="activity-dot" /><strong>{source}</strong><span>{state}</span></div>)}
       </div>
     </section>
   )

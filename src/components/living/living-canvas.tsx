@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
+import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 
@@ -19,6 +20,7 @@ type Props = { locale: Locale }
 export function LivingCanvas({ locale }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
   const t = messages[locale].entity
+  const music = useMusicState()
 
   useEffect(() => {
     const canvas = ref.current
@@ -48,8 +50,9 @@ export function LivingCanvas({ locale }: Props) {
         ctx.beginPath(); ctx.moveTo(x1,y1); ctx.bezierCurveTo((x1+x2)/2,y1,(x1+x2)/2,y2,x2,y2); ctx.stroke()
       }
       for (const node of nodes) {
-        const x=node.x*width, y=node.y*height, isCore=node.id==='core', pulse=isCore ? 1 + Math.sin(time/900)*0.08 : 1
-        ctx.beginPath(); ctx.arc(x,y,(isCore?8:5)*pulse,0,Math.PI*2); ctx.fillStyle=isCore?'rgba(142,232,178,.75)':'rgba(136,146,140,.5)'; ctx.fill()
+        const x=node.x*width, y=node.y*height, isCore=node.id==='core', isMusic=node.id==='music' && music.connected
+        const pulse=isCore ? 1 + Math.sin(time/900)*0.08 : isMusic ? 1 + Math.sin(time/520)*0.12 : 1
+        ctx.beginPath(); ctx.arc(x,y,(isCore?8:5)*pulse,0,Math.PI*2); ctx.fillStyle=isCore?'rgba(142,232,178,.75)':isMusic?'rgba(240,201,139,.82)':'rgba(136,146,140,.5)'; ctx.fill()
         if (isCore) { ctx.beginPath(); ctx.arc(x,y,18+Math.sin(time/900)*3,0,Math.PI*2); ctx.strokeStyle='rgba(142,232,178,.12)'; ctx.stroke() }
         ctx.fillStyle=isCore?'rgba(232,239,234,.9)':'rgba(182,191,185,.72)'; ctx.font=`${isCore?10:9}px 'Cascadia Mono', 'Cascadia Code', Consolas, monospace`; ctx.fillText(node.label,x+12,y-2)
         ctx.fillStyle='rgba(113,124,117,.72)'; ctx.font="8px 'Cascadia Mono', 'Cascadia Code', Consolas, monospace"; ctx.fillText(roles[node.id],x+12,y+11)
@@ -58,7 +61,7 @@ export function LivingCanvas({ locale }: Props) {
     }
     resize(); const observer=new ResizeObserver(resize); observer.observe(canvas); raf=requestAnimationFrame(draw)
     return () => { observer.disconnect(); cancelAnimationFrame(raf) }
-  }, [t.canvasRoles])
+  }, [t.canvasRoles, music.connected])
 
   return <canvas ref={ref} className="living-canvas" aria-label={t.canvasAria} />
 }

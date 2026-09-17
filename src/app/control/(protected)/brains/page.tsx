@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getBrainMemoryStats, getBrainProfiles } from '@/control/queries'
 import { saveBrainAction } from './actions'
 
@@ -5,7 +6,7 @@ export default async function BrainsPage() {
   const [profiles, memory] = await Promise.all([getBrainProfiles(), getBrainMemoryStats()])
   return (
     <section className="control-page">
-      <header className="control-page-head"><p>CONTROL / BRAINS</p><h1>Luna brain profiles</h1><span>Two independent hemispheres observe in parallel; the cortex fuses their evidence and owns the public decision state.</span></header>
+      <header className="control-page-head"><p>CONTROL / BRAINS</p><h1>Luna brain profiles</h1><span>Two independent hemispheres observe in parallel; the cortex fuses their evidence and owns the public decision state.</span><Link href="/control/brains/knowledge">OPEN KNOWLEDGE MANAGER</Link></header>
       <div className="brain-profile-list">
         {profiles.map(profile => {
           const stats = (memory as Record<string, unknown>[]).filter(row => row.brain_key === profile.brainKey)

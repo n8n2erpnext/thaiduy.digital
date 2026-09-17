@@ -804,3 +804,27 @@ main {
 .section-source strong { color: #a5afa9; font-weight: 500; }
 .section-page-body { display: grid; min-height: 270px; place-items: center; margin: 72px 0 28px; border-block: 1px solid var(--line); color: var(--muted-2); font-size: 12px; text-align: center; }
 .section-page-body p { max-width: 420px; }
+
+.language-switch {
+  display: inline-flex;
+  min-width: 34px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.018);
+  color: var(--muted);
+  font: 9px/1 var(--font-geist-mono), monospace;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: border-color .18s ease, color .18s ease, background .18s ease;
+}
+
+.language-switch:hover,
+.language-switch:focus-visible {
+  border-color: var(--line-strong);
+  background: rgba(142,232,178,.055);
+  color: var(--text);
+  outline: none;
+}

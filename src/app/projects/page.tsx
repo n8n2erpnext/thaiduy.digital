@@ -1,5 +1,9 @@
 import { SectionPage } from '@/components/site/section-page'
+import { resolveLocale } from '@/i18n/locale'
+import { messages } from '@/i18n/messages'
 
-export default function Page() {
-  return <SectionPage eyebrow='PROJECTS / SYSTEMS' title='Systems with a pulse' copy='Projects will combine durable context with their sanitized public runtime state.' />
+export default async function Page() {
+  const locale = await resolveLocale()
+  const t = messages[locale].sections.projects
+  return <SectionPage locale={locale} eyebrow={t.eyebrow} title={t.title} copy={t.copy} />
 }

@@ -1,23 +1,16 @@
-'use client'
+"use client"
 
 import { useEffect, useState } from 'react'
+import type { Locale } from '@/i18n/config'
+import { messages } from '@/i18n/messages'
 
-type SurfaceEvent = {
-  at: string
-  source: string
-  state: string
-  type: string
-}
+type SurfaceEvent = { at: string; source: string; state: string; type: string }
+type Props = { locale: Locale }
 
-const waiting = [
-  ['MB', 'semantic feed not connected'],
-  ['SENTINEL', 'security feed not connected'],
-  ['MUSIC SENSOR', 'acoustic feed not connected'],
-] as const
-
-export function ActivityRail() {
+export function ActivityRail({ locale }: Props) {
   const [events, setEvents] = useState<SurfaceEvent[]>([])
   const [connected, setConnected] = useState(false)
+  const t = messages[locale].activity
 
   useEffect(() => {
     const stream = new EventSource('/api/entity/stream')
@@ -35,25 +28,17 @@ export function ActivityRail() {
   }, [])
 
   return (
-    <section className="activity-rail" aria-label="Live activity rail">
-      <div className="activity-head">
-        <span className="mini-kicker">ACTIVITY / LIVE TRANSPORT</span>
-        <strong data-live={connected}>{connected ? 'SSE · CONNECTED' : 'SSE · CONNECTING'}</strong>
-      </div>
+    <section className="activity-rail" aria-label={t.aria}>
+      <div className="activity-head"><span className="mini-kicker">{t.kicker}</span><strong data-live={connected}>{connected ? t.connected : t.connecting}</strong></div>
       <div className="activity-list">
-        {events.map((item, index) => (
-          <div className="activity-row activity-row-live" key={`${item.at}-${item.type}-${index}`}>
-            <time>{new Date(item.at).toLocaleTimeString('en-GB', { hour12: false })}</time>
-            <span className="activity-dot" />
-            <strong>{item.source}</strong>
-            <span>{item.type} · {item.state}</span>
+        {events.map((item, index) => {
+          const label = t.eventLabels[item.type as keyof typeof t.eventLabels] ?? item.type
+          const stateLabel = t.stateLabels[item.state as keyof typeof t.stateLabels] ?? item.state
+          return <div className="activity-row activity-row-live" key={`${item.at}-${item.type}-${index}`}>
+            <time>{new Date(item.at).toLocaleTimeString(locale === 'vi' ? 'vi-VN' : 'en-GB', { hour12: false })}</time><span className="activity-dot" /><strong>{item.source}</strong><span>{label} · {stateLabel}</span>
           </div>
-        ))}
-        {waiting.map(([source, state]) => (
-          <div className="activity-row" key={source}>
-            <time>--:--:--</time><span className="activity-dot" /><strong>{source}</strong><span>{state}</span>
-          </div>
-        ))}
+        })}
+        {t.waiting.map(([source, state]) => <div className="activity-row" key={source}><time>--:--:--</time><span className="activity-dot" /><strong>{source}</strong><span>{state}</span></div>)}
       </div>
     </section>
   )

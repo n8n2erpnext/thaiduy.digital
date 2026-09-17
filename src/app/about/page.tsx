@@ -1,5 +1,9 @@
 import { SectionPage } from '@/components/site/section-page'
+import { resolveLocale } from '@/i18n/locale'
+import { messages } from '@/i18n/messages'
 
-export default function Page() {
-  return <SectionPage eyebrow='ABOUT / CV' title='The human behind the systems' copy='Experience, background and CV will stay readable while the rest of the site remains alive around it.' />
+export default async function Page() {
+  const locale = await resolveLocale()
+  const t = messages[locale].sections.about
+  return <SectionPage locale={locale} eyebrow={t.eyebrow} title={t.title} copy={t.copy} />
 }

@@ -1,5 +1,9 @@
 import { SectionPage } from '@/components/site/section-page'
+import { resolveLocale } from '@/i18n/locale'
+import { messages } from '@/i18n/messages'
 
-export default function Page() {
-  return <SectionPage eyebrow='STACK / TOPOLOGY' title='Infrastructure as a place' copy='A safe public projection of nodes, services and relationships — never the private control plane.' />
+export default async function Page() {
+  const locale = await resolveLocale()
+  const t = messages[locale].sections.stack
+  return <SectionPage locale={locale} eyebrow={t.eyebrow} title={t.title} copy={t.copy} />
 }

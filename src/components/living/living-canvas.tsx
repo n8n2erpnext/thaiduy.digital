@@ -51,8 +51,8 @@ export function LivingCanvas({ locale }: Props) {
         const x=node.x*width, y=node.y*height, isCore=node.id==='core', pulse=isCore ? 1 + Math.sin(time/900)*0.08 : 1
         ctx.beginPath(); ctx.arc(x,y,(isCore?8:5)*pulse,0,Math.PI*2); ctx.fillStyle=isCore?'rgba(142,232,178,.75)':'rgba(136,146,140,.5)'; ctx.fill()
         if (isCore) { ctx.beginPath(); ctx.arc(x,y,18+Math.sin(time/900)*3,0,Math.PI*2); ctx.strokeStyle='rgba(142,232,178,.12)'; ctx.stroke() }
-        ctx.fillStyle=isCore?'rgba(232,239,234,.9)':'rgba(182,191,185,.72)'; ctx.font=`${isCore?10:9}px ui-monospace, SFMono-Regular, Menlo, monospace`; ctx.fillText(node.label,x+12,y-2)
-        ctx.fillStyle='rgba(113,124,117,.72)'; ctx.font='8px ui-monospace, SFMono-Regular, Menlo, monospace'; ctx.fillText(roles[node.id],x+12,y+11)
+        ctx.fillStyle=isCore?'rgba(232,239,234,.9)':'rgba(182,191,185,.72)'; ctx.font=`${isCore?10:9}px 'Cascadia Mono', 'Cascadia Code', Consolas, monospace`; ctx.fillText(node.label,x+12,y-2)
+        ctx.fillStyle='rgba(113,124,117,.72)'; ctx.font="8px 'Cascadia Mono', 'Cascadia Code', Consolas, monospace"; ctx.fillText(roles[node.id],x+12,y+11)
       }
       raf=requestAnimationFrame(draw)
     }

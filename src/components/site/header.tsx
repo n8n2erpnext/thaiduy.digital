@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
 import { LanguageSwitch } from '@/components/site/language-switch'
@@ -19,7 +20,7 @@ export function SiteHeader({ locale }: Props) {
   return (
     <header className="site-header">
       <Link className="brand" href="/" aria-label={t.homeLabel}>
-        <span className="brand-mark">TD</span>
+        <span className="brand-mark"><Image src="/brand-mark.svg" alt="" width={22} height={22} priority /></span>
         <span className="brand-copy"><strong>Thái Duy</strong><small>{t.lab}</small></span>
       </Link>
       <nav aria-label={t.primaryNav}>

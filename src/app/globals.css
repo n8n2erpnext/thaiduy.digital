@@ -12,13 +12,14 @@
   --signal: #8ee8b2;
   --signal-soft: rgba(142, 232, 178, 0.16);
   --amber: #f4c56c;
+  --font-terminal: "Cascadia Mono", "Cascadia Code", Consolas, var(--font-google-sans-code), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-google-sans);
+  --font-mono: var(--font-terminal);
 }
 
 * {
@@ -37,7 +38,7 @@ body {
     radial-gradient(circle at 18% 0%, rgba(83, 104, 94, 0.08), transparent 30rem),
     var(--bg);
   color: var(--text);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-google-sans), system-ui, sans-serif;
 }
 
 body::before {
@@ -99,10 +100,13 @@ a {
   place-items: center;
   border: 1px solid var(--line-strong);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.035);
-  color: var(--signal);
-  font: 700 11px/1 var(--font-geist-mono), monospace;
-  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.brand-mark img {
+  display: block;
+  width: 22px;
+  height: 22px;
 }
 
 .brand-copy {
@@ -121,7 +125,7 @@ a {
 .console-label,
 .surface-card > span,
 .site-footer {
-  font-family: var(--font-geist-mono), monospace;
+  font-family: var(--font-terminal), monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -249,7 +253,7 @@ main {
   gap: 14px 20px;
   margin-top: 28px;
   color: var(--muted-2);
-  font: 10px/1.4 var(--font-geist-mono), monospace;
+  font: 10px/1.4 var(--font-terminal), monospace;
 }
 
 .entity-console {
@@ -268,7 +272,7 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  font: 9px/1.4 var(--font-geist-mono), monospace;
+  font: 9px/1.4 var(--font-terminal), monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -350,7 +354,7 @@ main {
 .entity-node small,
 .entity-node em {
   color: var(--muted-2);
-  font: 9px/1.35 var(--font-geist-mono), monospace;
+  font: 9px/1.35 var(--font-terminal), monospace;
   font-style: normal;
 }
 
@@ -516,7 +520,7 @@ main {
   gap: 10px 24px;
   margin-top: 34px;
   color: var(--muted-2);
-  font: 10px/1.5 var(--font-geist-mono), monospace;
+  font: 10px/1.5 var(--font-terminal), monospace;
 }
 
 .site-footer {
@@ -595,7 +599,7 @@ main {
   justify-content: space-between;
   gap: 12px;
   color: var(--muted-2);
-  font: 8px/1.4 var(--font-geist-mono), monospace;
+  font: 8px/1.4 var(--font-terminal), monospace;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -644,14 +648,14 @@ main {
 
 .mini-kicker {
   color: var(--muted-2);
-  font: 8px/1.4 var(--font-geist-mono), monospace;
+  font: 8px/1.4 var(--font-terminal), monospace;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .activity-head strong {
   color: #69736d;
-  font: 8px/1.4 var(--font-geist-mono), monospace;
+  font: 8px/1.4 var(--font-terminal), monospace;
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -667,7 +671,7 @@ main {
   padding: 0 14px;
   border-bottom: 1px solid rgba(255,255,255,.045);
   color: var(--muted-2);
-  font: 9px/1.4 var(--font-geist-mono), monospace;
+  font: 9px/1.4 var(--font-terminal), monospace;
 }
 
 .activity-row:last-child { border-bottom: 0; }
@@ -690,7 +694,7 @@ main {
 
 .music-organ-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .music-organ-head h3 { margin: 8px 0 0; font-size: 22px; font-weight: 500; letter-spacing: -.03em; }
-.sensor-state { color: #717c75; font: 8px/1.4 var(--font-geist-mono), monospace; letter-spacing: .05em; }
+.sensor-state { color: #717c75; font: 8px/1.4 var(--font-terminal), monospace; letter-spacing: .05em; }
 
 .music-wave-shell {
   position: relative;
@@ -723,7 +727,7 @@ main {
 .music-layer-air { stroke: rgba(191,151,255,.35); }
 
 .music-legend { display: flex; flex-wrap: wrap; gap: 9px 14px; padding-top: 14px; }
-.music-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-2); font: 8px/1.4 var(--font-geist-mono), monospace; }
+.music-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; }
 .music-legend i { width: 14px; height: 1px; background: currentColor; opacity: .55; }
 .music-note { margin: 14px 0 0; color: var(--muted-2); font-size: 11px; line-height: 1.6; }
 
@@ -787,7 +791,7 @@ main {
 }
 .header-wave-tooltip[data-open='true'] { opacity: 1; transform: translateY(0); }
 .header-wave-tooltip strong { color: #d8e0db; font-size: 10px; font-weight: 500; }
-.header-wave-tooltip span { color: var(--muted-2); font: 8px/1.4 var(--font-geist-mono), monospace; text-transform: uppercase; }
+.header-wave-tooltip span { color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; text-transform: uppercase; }
 
 @media (max-width: 760px) {
   .header-wave-wrap { display: none; }
@@ -800,7 +804,7 @@ main {
 .section-page-copy { max-width: 930px; }
 .section-page-copy h1 { margin: 14px 0 22px; font-size: clamp(3.5rem, 8vw, 8rem); font-weight: 500; line-height: .91; letter-spacing: -.06em; }
 .section-page-copy > p:not(.eyebrow) { max-width: 700px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
-.section-source { display: flex; align-items: center; gap: 10px; margin-top: 32px; color: var(--muted-2); font: 8px/1.4 var(--font-geist-mono), monospace; }
+.section-source { display: flex; align-items: center; gap: 10px; margin-top: 32px; color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; }
 .section-source strong { color: #a5afa9; font-weight: 500; }
 .section-page-body { display: grid; min-height: 270px; place-items: center; margin: 72px 0 28px; border-block: 1px solid var(--line); color: var(--muted-2); font-size: 12px; text-align: center; }
 .section-page-body p { max-width: 420px; }
@@ -815,7 +819,7 @@ main {
   border-radius: 999px;
   background: rgba(255,255,255,.018);
   color: var(--muted);
-  font: 9px/1 var(--font-geist-mono), monospace;
+  font: 9px/1 var(--font-terminal), monospace;
   letter-spacing: .08em;
   cursor: pointer;
   transition: border-color .18s ease, color .18s ease, background .18s ease;

@@ -1,0 +1,21 @@
+import type { ManagedRegistryItem } from './types'
+
+export const fallbackRegistry: ManagedRegistryItem[] = [
+  { id:'nav-projects', key:'projects', kind:'nav', enabled:true, status:'published', sort:10, label:{en:'Projects',vi:'Dự án'}, meta:{href:'/projects'} },
+  { id:'nav-log', key:'log', kind:'nav', enabled:true, status:'published', sort:20, label:{en:'Log',vi:'Nhật ký'}, meta:{href:'/log'} },
+  { id:'nav-writing', key:'writing', kind:'nav', enabled:true, status:'published', sort:30, label:{en:'Writing',vi:'Bài viết'}, meta:{href:'/writing'} },
+  { id:'nav-stack', key:'stack', kind:'nav', enabled:true, status:'published', sort:40, label:{en:'Stack',vi:'Hạ tầng'}, meta:{href:'/stack'} },
+  { id:'nav-about', key:'about', kind:'nav', enabled:true, status:'published', sort:50, label:{en:'About',vi:'Giới thiệu'}, meta:{href:'/about'} },
+
+  { id:'project-lightbi', key:'lightbi', kind:'project', enabled:true, status:'published', sort:10, label:{en:'LightBI',vi:'LightBI'}, title:{en:'Local-first BI / governed analytics',vi:'BI local-first / phân tích có quản trị'}, summary:{en:'Turns raw operational data into explainable, trusted analysis while keeping the core workflow local-first.',vi:'Biến dữ liệu vận hành thô thành phân tích có thể giải thích và đáng tin cậy, giữ luồng cốt lõi theo hướng local-first.'}, runtimeKey:'lightbi', meta:{plane:'DATA / COGNITION',mode:'PRODUCT'} },
+  { id:'project-remote', key:'light-remote', kind:'project', enabled:true, status:'published', sort:20, label:{en:'Light Remote',vi:'Light Remote'}, title:{en:'Remote control plane',vi:'Mặt phẳng điều khiển từ xa'}, summary:{en:'A permission-aware bridge that lets authorized AI workflows reach real nodes without turning the public web into a control surface.',vi:'Cầu nối có nhận thức quyền hạn cho phép workflow AI đã được cấp phép chạm tới node thật mà không biến web công khai thành mặt điều khiển.'}, runtimeKey:'light-remote', meta:{plane:'REMOTE / NERVE',mode:'PLATFORM'} },
+  { id:'project-sentinel', key:'sentinel', kind:'project', enabled:true, status:'published', sort:30, label:{en:'Sentinel',vi:'Sentinel'}, title:{en:'Autonomous security sense',vi:'Giác quan an ninh tự chủ'}, summary:{en:'Learns from network and service signals, then turns observations into bounded security conclusions.',vi:'Học từ tín hiệu mạng và dịch vụ rồi chuyển quan sát thành kết luận an ninh có giới hạn.'}, runtimeKey:'sentinel', meta:{plane:'SENSE / SECURITY',mode:'AGENT'} },
+  { id:'project-n8n', key:'n8n2erpnext', kind:'project', enabled:true, status:'published', sort:40, label:{en:'n8n2erpnext',vi:'n8n2erpnext'}, title:{en:'Workflow circulation',vi:'Tuần hoàn workflow'}, summary:{en:'The automation backbone connecting operational systems, agents and repeatable workflows.',vi:'Xương sống tự động hóa kết nối hệ vận hành, agent và các workflow lặp lại.'}, runtimeKey:'n8n2erpnext', meta:{plane:'WORKFLOW / CIRCULATION',mode:'ECOSYSTEM'} },
+
+  { id:'stack-surface', key:'surface', kind:'stack-node', enabled:true, status:'published', sort:10, label:{en:'PUBLIC SURFACE',vi:'BỀ MẶT CÔNG KHAI'}, title:{en:'thaiduy.digital',vi:'thaiduy.digital'}, meta:{x:'50%',y:'12%',role_en:'public presentation',role_vi:'bề mặt trình bày'} },
+  { id:'stack-mesh', key:'mesh', kind:'stack-node', enabled:true, status:'published', sort:20, label:{en:'PRIVATE MESH',vi:'LƯỚI RIÊNG'}, title:{en:'network connective tissue',vi:'mô liên kết mạng'}, meta:{x:'50%',y:'38%'} },
+  { id:'stack-arm', key:'arm', kind:'stack-node', enabled:true, status:'published', sort:30, label:{en:'ARM MAIN',vi:'ARM MAIN'}, title:{en:'primary services',vi:'dịch vụ chính'}, meta:{x:'18%',y:'70%'} },
+  { id:'stack-amd', key:'amd', kind:'stack-node', enabled:true, status:'published', sort:40, label:{en:'AMD NODE',vi:'AMD NODE'}, title:{en:'compute / service node',vi:'node compute / dịch vụ'}, meta:{x:'50%',y:'76%'} },
+  { id:'stack-desktop', key:'desktop', kind:'stack-node', enabled:true, status:'published', sort:50, label:{en:'DESKTOP NODE',vi:'DESKTOP NODE'}, title:{en:'interactive edge',vi:'edge tương tác'}, meta:{x:'82%',y:'70%'} },
+  { id:'stack-data', key:'data', kind:'stack-node', enabled:true, status:'published', sort:60, label:{en:'DATA PLANE',vi:'MẶT PHẲNG DỮ LIỆU'}, title:{en:'CMS / database / memory',vi:'CMS / database / bộ nhớ'}, meta:{x:'50%',y:'96%'} },
+]

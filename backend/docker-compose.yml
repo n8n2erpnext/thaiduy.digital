@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: thaiduy-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    networks: [thaiduy_web]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  redis:
+    image: redis:8-alpine
+    container_name: thaiduy-redis
+    restart: unless-stopped
+    env_file: .env
+    command: ["sh","-c","exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "127.0.0.1:56380:6379"
+    volumes:
+      - ./redis:/data
+    networks: [thaiduy_web]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+networks:
+  thaiduy_web:
+    name: thaiduy_web
+    driver: bridge

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import { TrafficBeacon } from '@/components/site/traffic-beacon'
+import { WebVitalsReporter } from '@/components/site/web-vitals-reporter'
 import { resolveLocale } from '@/i18n/locale'
 import { messages } from '@/i18n/messages'
 import './globals.css'
@@ -32,7 +34,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const locale = await resolveLocale()
   return (
     <html lang={locale} data-scroll-behavior="smooth" className={`${googleSans.variable} ${googleSansCode.variable} antialiased`}>
-      <body>{children}</body>
+      <body>{children}<TrafficBeacon /><WebVitalsReporter /></body>
     </html>
   )
 }

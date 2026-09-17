@@ -2,29 +2,24 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
 import { LanguageSwitch } from '@/components/site/language-switch'
+import { getRegistry } from '@/content/repository'
+import { textFor } from '@/content/types'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 
 type Props = { locale: Locale }
 
-export function SiteHeader({ locale }: Props) {
+export async function SiteHeader({ locale }: Props) {
   const t = messages[locale].header
-  const links = [
-    { href: '/projects', label: t.nav.projects },
-    { href: '/log', label: t.nav.log },
-    { href: '/writing', label: t.nav.writing },
-    { href: '/stack', label: t.nav.stack },
-    { href: '/about', label: t.nav.about },
-  ]
-
+  const nav = await getRegistry('nav')
   return (
     <header className="site-header">
       <Link className="brand" href="/" aria-label={t.homeLabel}>
-        <span className="brand-mark"><Image src="/brand-mark.svg" alt="" width={22} height={22} priority /></span>
+        <span className="brand-mark"><Image src="/brand-mark.svg" width={22} height={22} alt="" priority /></span>
         <span className="brand-copy"><strong>Thái Duy</strong><small>{t.lab}</small></span>
       </Link>
       <nav aria-label={t.primaryNav}>
-        {links.map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
+        {nav.map((item) => <Link key={item.id} href={String(item.meta?.href ?? '/')}>{textFor(item.label, locale)}</Link>)}
       </nav>
       <div className="header-actions">
         <MusicWaveIndicator locale={locale} />

@@ -14,17 +14,17 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:parseReleaseLocalResources
 > Task :app:processReleaseMainManifest
 > Task :app:processReleaseManifest
-> Task :app:processReleaseManifestForPackage
 > Task :app:javaPreCompileRelease
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseJniLibFolders
 > Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:processReleaseManifestForPackage
 > Task :app:stripReleaseDebugSymbols NO-SOURCE
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:desugarReleaseFileDependencies
-> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseStartupProfile
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
@@ -34,9 +34,9 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:processReleaseResources
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:collectReleaseDependencies
-> Task :app:optimizeReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
+> Task :app:optimizeReleaseResources
 > Task :app:writeReleaseSigningConfigVersions
 > Task :app:mergeExtDexRelease
 
@@ -60,8 +60,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789698410726.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789698542101.json
 
-BUILD SUCCESSFUL in 44s
+BUILD SUCCESSFUL in 36s
 44 actionable tasks: 44 executed
-/home/runner/work/_temp/a933ec7d-94c4-467f-8062-213473d930c3.sh: line 8: zipalign: command not found

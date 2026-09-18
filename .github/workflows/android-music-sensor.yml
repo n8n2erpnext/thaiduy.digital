@@ -1,5 +1,8 @@
 name: Android Music Sensor
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -30,11 +33,33 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+      - name: Build debug APK and persist diagnostics
+        id: apk
+        shell: bash
+        run: |
+          set +e
+          mkdir -p ../../../artifacts/android
+          gradle :app:assembleDebug --stacktrace > ../../../artifacts/android/build.log 2>&1
+          rc=$?
+          echo "$rc" > ../../../artifacts/android/build.status
+          if [ "$rc" -eq 0 ]; then
+            cp app/build/outputs/apk/debug/app-debug.apk ../../../artifacts/android/sentinel-music-sensor-debug.apk
+          else
+            rm -f ../../../artifacts/android/sentinel-music-sensor-debug.apk
+          fi
+          exit 0
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: sentinel-music-sensor-android
-          path: sensors/music/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Commit build result back to CI branch
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/android
+          git diff --cached --quiet || git commit -m "ci: persist Android sensor build result [skip ci]"
+          git push origin HEAD:$GITHUB_REF_NAME
+
+      - name: Fail workflow when APK compilation failed
+        shell: bash
+        run: |
+          test "$(cat ../../../artifacts/android/build.status)" = "0"

@@ -24,7 +24,7 @@ export async function getBrainProfiles() {
   return db.select().from(brainProfiles).orderBy(brainProfiles.brainKey)
 }
 export async function getTrafficOverview(hours = 24) {
-  const since = new Date(Date.now() - hours * 60 * 60 * 1000)
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
   const totals = await db.execute(sql`
     select
       count(*) filter (where type = 'pageview')::int as views,
@@ -46,7 +46,7 @@ export async function getTrafficOverview(hours = 24) {
   return { totals: totals[0] ?? { views: 0, events: 0, visitors: 0, visits: 0 }, topPages, referrers }
 }
 export async function getTrafficDimensions(hours = 24) {
-  const since = new Date(Date.now() - hours * 60 * 60 * 1000)
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
   const countries = await db.execute(sql`
     select coalesce(country, 'unknown') label, count(*)::int total from traffic_events
     where created_at >= ${since} and type = 'pageview'

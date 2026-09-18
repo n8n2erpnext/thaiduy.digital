@@ -40,8 +40,14 @@ jobs:
           rc=$?
           if [ "$rc" -eq 0 ]; then
             unsigned="app/build/outputs/apk/release/app-release-unsigned.apk"
-            zipalign -f -p 4 "$unsigned" ../../../artifacts/android/thaiduy-hub-release-unsigned.apk >> ../../../artifacts/android/build.log 2>&1
-            rc=$?
+            zipalign_bin="$(find "$ANDROID_HOME/build-tools" -type f -name zipalign | sort -V | tail -1)"
+            if [ -z "$zipalign_bin" ]; then
+              echo "zipalign not found under $ANDROID_HOME/build-tools" >> ../../../artifacts/android/build.log
+              rc=127
+            else
+              "$zipalign_bin" -f -p 4 "$unsigned" ../../../artifacts/android/thaiduy-hub-release-unsigned.apk >> ../../../artifacts/android/build.log 2>&1
+              rc=$?
+            fi
           fi
           echo "$rc" > ../../../artifacts/android/build.status
           if [ "$rc" -ne 0 ]; then

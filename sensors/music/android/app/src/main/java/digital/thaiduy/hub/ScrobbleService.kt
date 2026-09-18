@@ -8,19 +8,33 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class ScrobbleService : NotificationListenerService() {
+    private data class Snapshot(
+        val packageName: String,
+        val artist: String,
+        val title: String,
+        val album: String?,
+        val state: String,
+        val positionMs: Long?,
+        val durationMs: Long?,
+        val priority: Int,
+    ) {
+        val dedupeKey: String
+            get() = listOf(packageName, artist, title, album ?: "", state).joinToString("|")
+    }
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private val networkExecutor = Executors.newSingleThreadExecutor()
     private val heartbeatExecutor = Executors.newSingleThreadScheduledExecutor()
     private val callbacks = mutableMapOf<MediaController, MediaController.Callback>()
-    private val lastSent = ConcurrentHashMap<String, String>()
 
     private lateinit var sessionManager: MediaSessionManager
     private lateinit var listenerComponent: ComponentName
+    private var lastSentKey: String? = null
+    private var lastPublished: Snapshot? = null
 
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
@@ -33,7 +47,7 @@ class ScrobbleService : NotificationListenerService() {
         listenerComponent = ComponentName(this, ScrobbleService::class.java)
 
         heartbeatExecutor.scheduleAtFixedRate(
-            { publishHeartbeat() },
+            { mainHandler.post { publishBestSession(force = true) } },
             45,
             45,
             TimeUnit.SECONDS,
@@ -64,23 +78,24 @@ class ScrobbleService : NotificationListenerService() {
         unbindControllers()
 
         controllers.forEach { controller ->
-                val callback = object : MediaController.Callback() {
-                    override fun onMetadataChanged(metadata: MediaMetadata?) {
-                        publish(controller, force = false)
-                    }
-
-                    override fun onPlaybackStateChanged(state: PlaybackState?) {
-                        publish(controller, force = false)
-                    }
-
-                    override fun onSessionDestroyed() {
-                        mainHandler.post { refreshSessions() }
-                    }
+            val callback = object : MediaController.Callback() {
+                override fun onMetadataChanged(metadata: MediaMetadata?) {
+                    publishBestSession(force = false)
                 }
-                controller.registerCallback(callback, mainHandler)
-                callbacks[controller] = callback
-                publish(controller, force = true)
+
+                override fun onPlaybackStateChanged(state: PlaybackState?) {
+                    publishBestSession(force = false)
+                }
+
+                override fun onSessionDestroyed() {
+                    mainHandler.post { refreshSessions() }
+                }
             }
+            controller.registerCallback(callback, mainHandler)
+            callbacks[controller] = callback
+        }
+
+        publishBestSession(force = true)
     }
 
     private fun refreshSessions() {
@@ -96,33 +111,51 @@ class ScrobbleService : NotificationListenerService() {
         callbacks.clear()
     }
 
-    private fun publishHeartbeat() {
-        mainHandler.post {
-            callbacks.keys.forEach { controller ->
-                val state = controller.playbackState?.state
-                if (
-                    state == PlaybackState.STATE_PLAYING ||
-                    state == PlaybackState.STATE_BUFFERING ||
-                    state == PlaybackState.STATE_CONNECTING
-                ) {
-                    publish(controller, force = true)
-                }
-            }
+    private fun publishBestSession(force: Boolean) {
+        val tracked = TrackedApps.get(this)
+        val best = callbacks.keys
+            .asSequence()
+            .filter { it.packageName in tracked }
+            .mapNotNull(::snapshot)
+            .maxWithOrNull(
+                compareBy<Snapshot> { it.priority }
+                    .thenBy { it.positionMs ?: 0L },
+            )
+
+        if (best == null) {
+            publishStoppedIfNeeded()
+            return
         }
+
+        if (!force && lastSentKey == best.dedupeKey) return
+        lastSentKey = best.dedupeKey
+        lastPublished = best
+        send(best)
     }
 
-    private fun publish(controller: MediaController, force: Boolean) {
-        val packageName = controller.packageName
-        if (packageName !in TrackedApps.get(this)) return
+    private fun publishStoppedIfNeeded() {
+        val previous = lastPublished ?: return
+        if (previous.state == "stopped") return
 
-        val metadata = controller.metadata ?: return
+        val stopped = previous.copy(
+            state = "stopped",
+            positionMs = null,
+            priority = 0,
+        )
+        lastSentKey = stopped.dedupeKey
+        lastPublished = stopped
+        send(stopped)
+    }
+
+    private fun snapshot(controller: MediaController): Snapshot? {
+        val metadata = controller.metadata ?: return null
         val playback = controller.playbackState
 
         val title = firstText(
             metadata.getString(MediaMetadata.METADATA_KEY_TITLE),
             metadata.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)?.toString(),
         )
-        if (title.isBlank()) return
+        if (title.isBlank()) return null
 
         val artist = firstText(
             metadata.getString(MediaMetadata.METADATA_KEY_ARTIST),
@@ -133,29 +166,48 @@ class ScrobbleService : NotificationListenerService() {
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
 
-        val state = playbackStateName(playback?.state)
         val duration = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION)
             .takeIf { it > 0L }
         val position = playback?.position?.takeIf { it >= 0L }
 
-        val dedupeKey = listOf(packageName, artist, title, album ?: "", state).joinToString("|")
-        if (!force && lastSent[packageName] == dedupeKey) return
-        lastSent[packageName] = dedupeKey
+        return Snapshot(
+            packageName = controller.packageName,
+            artist = artist,
+            title = title,
+            album = album,
+            state = playbackStateName(playback?.state),
+            positionMs = position,
+            durationMs = duration,
+            priority = playbackPriority(playback?.state),
+        )
+    }
 
+    private fun send(snapshot: Snapshot) {
         val token = SecureStore.token(this) ?: return
         networkExecutor.execute {
             ApiClient.sendPlayback(
                 token = token,
-                packageName = packageName,
-                artist = artist,
-                title = title,
-                album = album,
-                state = state,
-                positionMs = position,
-                durationMs = duration,
+                packageName = snapshot.packageName,
+                artist = snapshot.artist,
+                title = snapshot.title,
+                album = snapshot.album,
+                state = snapshot.state,
+                positionMs = snapshot.positionMs,
+                durationMs = snapshot.durationMs,
             )
         }
     }
+
+    private fun playbackPriority(state: Int?): Int =
+        when (state) {
+            PlaybackState.STATE_PLAYING -> 100
+            PlaybackState.STATE_BUFFERING,
+            PlaybackState.STATE_CONNECTING -> 90
+            PlaybackState.STATE_PAUSED -> 30
+            PlaybackState.STATE_STOPPED,
+            PlaybackState.STATE_NONE -> 10
+            else -> 0
+        }
 
     private fun playbackStateName(state: Int?): String =
         when (state) {
@@ -174,6 +226,7 @@ class ScrobbleService : NotificationListenerService() {
         } ?: ""
 
     override fun onDestroy() {
+        publishStoppedIfNeeded()
         unbindControllers()
         runCatching {
             sessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener)

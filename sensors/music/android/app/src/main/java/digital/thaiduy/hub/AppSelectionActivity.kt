@@ -1,11 +1,13 @@
 package digital.thaiduy.hub
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.service.notification.NotificationListenerService
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
@@ -74,6 +76,9 @@ class AppSelectionActivity : Activity() {
             setBackgroundColor(Color.rgb(25, 31, 28))
             setOnClickListener {
                 TrackedApps.save(this@AppSelectionActivity, selected)
+                NotificationListenerService.requestRebind(
+                    ComponentName(this@AppSelectionActivity, ScrobbleService::class.java),
+                )
                 setResult(RESULT_OK)
                 finish()
             }

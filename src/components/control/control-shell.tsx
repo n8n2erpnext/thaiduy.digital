@@ -11,6 +11,7 @@ const links = [
   ['CONTENT', '/control/content'],
   ['ASSETS', '/control/assets'],
   ['RUNTIME', '/control/runtime'],
+  ['MUSIC SENSOR', '/control/music-sensor'],
   ['TRAFFIC', '/control/traffic'],
   ['BRAINS', '/control/brains'],
   ['SETTINGS', '/control/settings'],

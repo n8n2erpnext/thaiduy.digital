@@ -48,8 +48,14 @@ function inferAcousticState(input: MusicSensorInput, archetypes: Record<string, 
   const instrumentalRule = rules.get('instrumental')
   const vocalMin = numberField(vocalRule, 'min', 0.64)
   const instrumentalMax = numberField(instrumentalRule, 'max', 0.15)
-  const vocal = a?.vocalProbability ?? 0
-  const texture = !a ? 'mixed' : vocalRule && vocal >= vocalMin ? 'vocal-led' : instrumentalRule && vocal <= instrumentalMax ? 'instrumental' : 'mixed'
+  const vocal = typeof a?.vocalProbability === 'number' ? clamp01(a.vocalProbability) : null
+  const texture = !a || vocal === null
+    ? 'mixed'
+    : vocalRule && vocal >= vocalMin
+      ? 'vocal-led'
+      : instrumentalRule && vocal <= instrumentalMax
+        ? 'instrumental'
+        : 'mixed'
   return {
     bands, dominantBand, vocalProbability:vocal, energy:a?.rms ?? 0, flux:a?.spectralFlux ?? 0,
     tempoBpm:a?.tempoBpm ?? null, meter:a?.meter ?? 'unknown', performedStyleVotes:votes, texture,
@@ -64,7 +70,7 @@ function buildLayers(acoustic: AcousticEarState | undefined, style: string | nul
     bass:live ? acoustic!.bands.bass : 0.2,
     lowMid:live ? acoustic!.bands.lowMid : 0.34,
     mid:live ? acoustic!.bands.mid : 0.46,
-    vocal:live ? acoustic!.vocalProbability : 0.26,
+    vocal:live ? (acoustic!.vocalProbability ?? 0.05) : 0.26,
     presence:live ? acoustic!.bands.presence : 0.28,
     air:live ? acoustic!.bands.air : 0.18,
   }

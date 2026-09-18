@@ -1,0 +1,57 @@
+import { MUSIC_SIGNAL_CHANNEL, getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
+import { ensureRedis } from '@/lib/redis'
+
+export const dynamic = 'force-dynamic'
+const encoder = new TextEncoder()
+
+function event(type: string, payload: unknown) {
+  return encoder.encode(`event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`)
+}
+
+function publicFrame(frame: Record<string, unknown>) {
+  const { deviceId: _deviceId, sampleRate: _sampleRate, ...safe } = frame
+  void _deviceId
+  void _sampleRate
+  return safe
+}
+
+export async function GET(request: Request) {
+  let cleanup: (() => void) | null = null
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const base = await ensureRedis()
+      const subscriber = base.duplicate()
+      if (subscriber.status === 'wait') await subscriber.connect()
+
+      const latest = await getLatestMusicDspFrame()
+      if (latest) controller.enqueue(event('signal', publicFrame(latest as unknown as Record<string, unknown>)))
+      controller.enqueue(event('ready', { at:new Date().toISOString() }))
+
+      const onMessage = (_channel: string, payload: string) => {
+        try { controller.enqueue(event('signal', publicFrame(JSON.parse(payload) as Record<string, unknown>))) } catch {}
+      }
+      subscriber.on('message', onMessage)
+      await subscriber.subscribe(MUSIC_SIGNAL_CHANNEL)
+
+      const heartbeat = setInterval(() => {
+        try { controller.enqueue(event('heartbeat', { at:new Date().toISOString() })) } catch {}
+      }, 15_000)
+
+      cleanup = () => {
+        clearInterval(heartbeat)
+        subscriber.off('message', onMessage)
+        void subscriber.unsubscribe(MUSIC_SIGNAL_CHANNEL).finally(() => subscriber.quit())
+        try { controller.close() } catch {}
+      }
+      request.signal.addEventListener('abort', cleanup, { once:true })
+    },
+    cancel() { cleanup?.() },
+  })
+
+  return new Response(stream, { headers:{
+    'Cache-Control':'no-cache, no-transform',
+    'Content-Type':'text/event-stream',
+    Connection:'keep-alive',
+    'X-Accel-Buffering':'no',
+  } })
+}

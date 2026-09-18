@@ -8,6 +8,13 @@
       "when": 1789662361696,
       "tag": "0000_greenfield_control_plane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789691981426,
+      "tag": "0001_music_sensor_devices",
+      "breakpoints": true
     }
   ]
 }

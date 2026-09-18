@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { runMusicSensorLearningCycle } from '@/brains/music-sensor/service'
+import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
 import type { MusicTagSource } from '@/brains/music-sensor/types'
 
 export const dynamic = 'force-dynamic'
@@ -110,7 +111,10 @@ export async function GET() {
   const recentUrl = lastfmUrl('user.getrecenttracks')
   recentUrl.searchParams.set('user', username)
   recentUrl.searchParams.set('limit', '2')
-  const recent = await getJson<LastfmRecent>(recentUrl)
+  const [recent, live] = await Promise.all([
+    getJson<LastfmRecent>(recentUrl),
+    getLatestMusicDspFrame(5_000),
+  ])
   if (!recent) return noStore(resting(false))
 
   const current = (recent.recenttracks?.track ?? []).find(track => track['@attr']?.nowplaying === 'true')
@@ -121,20 +125,28 @@ export async function GET() {
   const tags = await loadTags(artist, title)
   const cycle = await runMusicSensorLearningCycle({
     artist, title, tags,
-    playback:{ active:true, source:'lastfm' },
+    playback:{ active:true, source:live ? 'local' : 'lastfm' },
     identity:{ recordingMbid:current.mbid || undefined },
+    audio:live ? {
+      rms:live.rms, peak:live.peak,
+      bass:live.bass, lowMid:live.lowMid, mid:live.mid,
+      presence:live.presence, air:live.air,
+      spectralFlux:live.spectralFlux,
+      spectralCentroid:live.spectralCentroid,
+      vocalProbability:live.vocalProbability,
+    } : undefined,
   })
   if (!cycle.enabled) return noStore(resting(true))
 
   const state = cycle.decision.state
   const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
   return noStore({
-    mode:state.mode, connected:true, signal:'semantic',
+    mode:state.mode, connected:true, signal:live ? 'dsp' : 'semantic',
     track:{ artist, title, url:current.url ?? '' },
     genre:state.catalogGenre, style, arrangement:state.arrangement, texture:state.texture,
     mood:state.mood, reinterpretation:state.reinterpretation, dominantLayer:state.dominantLayer,
-    energy:0, confidence:cycle.decision.confidence, layers:state.layers,
-    updatedAt:new Date().toISOString(),
+    energy:live?.rms ?? 0, confidence:cycle.decision.confidence, layers:state.layers,
+    updatedAt:live?.at ?? new Date().toISOString(),
   })
 }
 

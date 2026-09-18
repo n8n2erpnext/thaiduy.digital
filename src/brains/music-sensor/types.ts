@@ -22,7 +22,7 @@ export type MusicSensorInput = {
     mid: number
     presence: number
     air: number
-    vocalProbability: number
+    vocalProbability?: number
     spectralFlux: number
     spectralCentroid?: number
     tempoBpm?: number
@@ -49,7 +49,7 @@ export type SemanticEarState = {
 export type AcousticEarState = {
   bands: Record<'bass' | 'lowMid' | 'mid' | 'presence' | 'air', number>
   dominantBand: 'bass' | 'lowMid' | 'mid' | 'presence' | 'air'
-  vocalProbability: number
+  vocalProbability: number | null
   energy: number
   flux: number
   tempoBpm: number | null

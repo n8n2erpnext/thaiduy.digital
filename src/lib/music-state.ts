@@ -3,6 +3,22 @@ export type MusicSignal = 'offline' | 'semantic' | 'dsp'
 export type MusicLayerName = 'bass' | 'lowMid' | 'mid' | 'vocal' | 'presence' | 'air'
 export type MusicLayer = { gain: number; weight: number }
 
+export type MusicDspPublicFrame = {
+  seq: number
+  at: string
+  windowMs: number
+  rms: number
+  peak: number
+  bass: number
+  lowMid: number
+  mid: number
+  presence: number
+  air: number
+  spectralFlux: number
+  spectralCentroid?: number
+  vocalProbability?: number
+}
+
 export type MusicCortexState = {
   mode: MusicMode
   connected: boolean

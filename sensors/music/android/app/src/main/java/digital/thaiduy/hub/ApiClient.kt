@@ -42,42 +42,7 @@ object ApiClient {
         )
     }
 
-    fun sendFrame(
-        token: String,
-        deviceId: String,
-        seq: Long,
-        sampleRate: Int,
-        windowMs: Int,
-        features: DspFeatures,
-    ): Boolean {
 
-        val payload = JSONObject()
-            .put("deviceId", deviceId)
-            .put("seq", seq)
-            .put("at", Instant.now().toString())
-            .put("sampleRate", sampleRate)
-            .put("windowMs", windowMs)
-            .put("rms", features.rms)
-            .put("peak", features.peak)
-            .put("bass", features.bass)
-            .put("lowMid", features.lowMid)
-            .put("mid", features.mid)
-            .put("presence", features.presence)
-            .put("air", features.air)
-            .put("spectralFlux", features.spectralFlux)
-            .put("spectralCentroid", features.spectralCentroid)
-            .toString()
-
-        return runCatching {
-            val conn = connection("/api/music/sensor/ingest")
-            conn.setRequestProperty("Authorization", "Bearer $token")
-            conn.outputStream.use { it.write(payload.toByteArray()) }
-
-            val ok = conn.responseCode == 202
-            conn.disconnect()
-            ok
-        }.getOrDefault(false)
-    }
     fun sendPlayback(
         token: String,
         packageName: String,

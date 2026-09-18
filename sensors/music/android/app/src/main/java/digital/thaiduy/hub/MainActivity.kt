@@ -1,12 +1,10 @@
 package digital.thaiduy.hub
 
-import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
@@ -25,7 +23,6 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
     companion object {
-        private const val REQUEST_NOTIFICATIONS = 2003
     }
 
     private lateinit var hubStatus: TextView
@@ -40,15 +37,6 @@ class MainActivity : Activity() {
         window.navigationBarColor = Color.rgb(10, 13, 12)
         setContentView(buildUi())
 
-        if (
-            Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_NOTIFICATIONS,
-            )
-        }
     }
 
     override fun onResume() {

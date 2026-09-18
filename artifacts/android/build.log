@@ -22,20 +22,22 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:compressDebugAssets
 > Task :app:desugarDebugFileDependencies
 > Task :app:mergeDebugJniLibFolders
-> Task :app:mergeDebugNativeLibs NO-SOURCE
-> Task :app:checkDebugDuplicateClasses
 > Task :app:processDebugManifestForPackage
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
 > Task :app:mergeLibDexDebug
 > Task :app:processDebugResources
 > Task :app:validateSigningDebug
+> Task :app:mergeExtDexDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
-> Task :app:mergeExtDexDebug
 
 > Task :app:compileDebugKotlin
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:24:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:25:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0. The daemon process output:
+    1. Kotlin compile daemon is ready
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:26:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:27:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:44:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:45:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
 
@@ -48,7 +50,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789697470477.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789697691706.json
 
-BUILD SUCCESSFUL in 20s
+BUILD SUCCESSFUL in 29s
 33 actionable tasks: 33 executed

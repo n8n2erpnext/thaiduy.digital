@@ -19,6 +19,13 @@ const toItem = (row: typeof siteRegistry.$inferSelect): ManagedRegistryItem => (
   deletedAt: row.deletedAt, createdAt: row.createdAt, updatedAt: row.updatedAt,
 })
 
+export async function getRegistryAll(kind: RegistryKind) {
+  const rows = await db.select().from(siteRegistry)
+    .where(eq(siteRegistry.kind, kind))
+    .orderBy(asc(siteRegistry.sort))
+  return rows.map(toItem)
+}
+
 export async function getRegistry(kind: RegistryKind) {
   const rows = await db.select().from(siteRegistry).where(and(
     eq(siteRegistry.kind, kind),
@@ -28,6 +35,35 @@ export async function getRegistry(kind: RegistryKind) {
   )).orderBy(asc(siteRegistry.sort))
   return rows.map(toItem)
 }
+export async function getRegistryByKey(key: string) {
+  const [row] = await db.select().from(siteRegistry)
+    .where(eq(siteRegistry.key, key))
+    .limit(1)
+  return row ? toItem(row) : null
+}
+
+export async function getPublishedRegistryItem(kind: RegistryKind, key: string) {
+  const [row] = await db.select().from(siteRegistry).where(and(
+    eq(siteRegistry.kind, kind),
+    eq(siteRegistry.key, key),
+    eq(siteRegistry.enabled, true),
+    eq(siteRegistry.status, 'published'),
+    isNull(siteRegistry.deletedAt),
+  )).limit(1)
+  return row ? toItem(row) : null
+}
+
+export async function getPublishedRegistryChildren(kind: RegistryKind, parentKey: string) {
+  const rows = await db.select().from(siteRegistry).where(and(
+    eq(siteRegistry.kind, kind),
+    eq(siteRegistry.parentKey, parentKey),
+    eq(siteRegistry.enabled, true),
+    eq(siteRegistry.status, 'published'),
+    isNull(siteRegistry.deletedAt),
+  )).orderBy(asc(siteRegistry.sort))
+  return rows.map(toItem)
+}
+
 export async function getRegistryAdmin() {
   const rows = await db.select().from(siteRegistry).orderBy(
     asc(siteRegistry.kind), asc(siteRegistry.sort), desc(siteRegistry.updatedAt),

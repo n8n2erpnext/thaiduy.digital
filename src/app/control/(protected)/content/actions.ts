@@ -6,11 +6,11 @@ import { z } from 'zod'
 import { purgeRegistry, restoreRegistry, saveRegistryItem, setRegistryEnabled, softDeleteRegistry } from '@/content/repository'
 import { requireControlOwner } from '@/lib/control-auth'
 
-const kindSchema = z.enum(['nav', 'project', 'stack-node', 'home-surface', 'section', 'feature'])
+const kindSchema = z.enum(['nav', 'project', 'stack-node', 'home-surface', 'section', 'feature', 'organ'])
 const statusSchema = z.enum(['draft', 'published', 'archived'])
 
 function refreshPublic() {
-  for (const path of ['/', '/projects', '/stack', '/control', '/control/content']) revalidatePath(path)
+  for (const path of ['/', '/projects', '/log', '/writing', '/stack', '/about', '/control', '/control/content']) revalidatePath(path)
 }
 
 function parseMeta(value: FormDataEntryValue | null) {

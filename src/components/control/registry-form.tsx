@@ -3,7 +3,7 @@ import { saveRegistryAction } from '@/app/control/(protected)/content/actions'
 
 type Props = { item?: ManagedRegistryItem | null }
 
-const kinds = ['nav', 'project', 'stack-node', 'home-surface', 'section', 'feature'] as const
+const kinds = ['nav', 'project', 'stack-node', 'home-surface', 'section', 'feature', 'organ'] as const
 const statuses = ['draft', 'published', 'archived'] as const
 
 export function RegistryForm({ item }: Props) {

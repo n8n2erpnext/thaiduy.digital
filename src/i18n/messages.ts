@@ -77,7 +77,7 @@ export const messages = {
       note: 'This is a safe public projection. Private addresses, credentials, control paths and sensitive topology remain outside the website.',
     },
     section: {
-      source: 'CONTENT SOURCE', notConnected: 'NOT CONNECTED', empty: 'This surface is intentionally empty until its real content/state source is connected.', back: 'Return to living field',
+      source: 'CONTENT SOURCE', managed: 'CONTROL REGISTRY', notConnected: 'NOT CONNECTED', empty: 'This surface is intentionally empty until its real content/state source is connected.', back: 'Return to living field',
     },
     sections: {
       projects: { eyebrow: 'PROJECTS / SYSTEMS', title: 'Systems with a pulse', copy: 'Projects will combine durable context with their sanitized public runtime state.' },
@@ -163,7 +163,7 @@ export const messages = {
       note: 'Đây là hình chiếu công khai an toàn. Địa chỉ riêng, credential, đường điều khiển và topology nhạy cảm không bao giờ được đưa lên website.',
     },
     section: {
-      source: 'NGUỒN NỘI DUNG', notConnected: 'CHƯA KẾT NỐI', empty: 'Bề mặt này được cố ý để trống cho đến khi nguồn nội dung/trạng thái thật được kết nối.', back: 'Trở về trường sống',
+      source: 'NGUỒN NỘI DUNG', managed: 'REGISTRY QUẢN TRỊ', notConnected: 'CHƯA KẾT NỐI', empty: 'Bề mặt này được cố ý để trống cho đến khi nguồn nội dung/trạng thái thật được kết nối.', back: 'Trở về trường sống',
     },
     sections: {
       projects: { eyebrow: 'DỰ ÁN / HỆ THỐNG', title: 'Những hệ thống có nhịp sống', copy: 'Mỗi dự án sẽ kết hợp bối cảnh bền vững với trạng thái runtime công khai đã được làm sạch.' },

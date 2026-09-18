@@ -577,6 +577,11 @@ main {
   gap: clamp(36px, 5vw, 84px);
 }
 
+.hero-v2.is-topology-off {
+  grid-template-columns: minmax(0, 880px);
+  justify-content: start;
+}
+
 .living-field {
   position: relative;
   min-height: 600px;

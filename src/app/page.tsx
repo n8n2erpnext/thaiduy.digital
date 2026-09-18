@@ -9,6 +9,7 @@ import { resolveManagedSection } from '@/content/presentation'
 import { metaList, metaText, textFor } from '@/content/types'
 import { resolveLocale } from '@/i18n/locale'
 import { messages } from '@/i18n/messages'
+import { getFeatureState } from '@/lib/feature-flags'
 
 export default async function Home() {
   const locale = await resolveLocale()
@@ -22,6 +23,7 @@ export default async function Home() {
     footer,
     managedSurfaces,
     allSurfaceRows,
+    featureState,
   ] = await Promise.all([
     resolveManagedSection('home.hero', locale, {
       eyebrow: t.eyebrow,
@@ -50,7 +52,15 @@ export default async function Home() {
     }),
     getRegistry('home-surface'),
     getRegistryAll('home-surface'),
+    getFeatureState(
+      ['public.topology', 'public.runtime_state', 'music.sensor'],
+      true,
+    ),
   ])
+
+  const topologyEnabled = featureState['public.topology']
+  const runtimeEnabled = featureState['public.runtime_state']
+  const musicEnabled = featureState['music.sensor']
 
   const heroMeta = hero.item?.meta
   const enter = metaText(heroMeta, 'enter', locale, t.enter)
@@ -84,15 +94,20 @@ export default async function Home() {
       <SiteHeader locale={locale} />
       <main>
         {hero.visible && (
-          <section className="hero hero-v2" data-managed={hero.managed || undefined}>
+          <section
+            className={`hero hero-v2${topologyEnabled ? '' : ' is-topology-off'}`}
+            data-managed={hero.managed || undefined}
+          >
             <div className="hero-copy">
               <p className="eyebrow">{hero.eyebrow}</p>
               <h1>{hero.title}</h1>
               <p className="hero-lede">{hero.copy}</p>
               <div className="hero-actions">
-                <a className="primary-action" href="#living-field">
-                  {enter} <span aria-hidden="true">↘</span>
-                </a>
+                {topologyEnabled && (
+                  <a className="primary-action" href="#living-field">
+                    {enter} <span aria-hidden="true">↘</span>
+                  </a>
+                )}
                 <a className="text-action" href="#projects">
                   {explore} <span aria-hidden="true">→</span>
                 </a>
@@ -102,30 +117,32 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="living-field" id="living-field">
-              <div className="field-topbar">
-                <span>{fieldTop}</span>
-                <span className="field-truth">{fieldTruth}</span>
+            {topologyEnabled && (
+              <div className="living-field" id="living-field">
+                <div className="field-topbar">
+                  <span>{fieldTop}</span>
+                  <span className="field-truth">{fieldTruth}</span>
+                </div>
+                <LivingCanvas locale={locale} />
+                <div className="field-footer">
+                  {fieldFooter.map((item) => <span key={item}>{item}</span>)}
+                </div>
               </div>
-              <LivingCanvas locale={locale} />
-              <div className="field-footer">
-                {fieldFooter.map((item) => <span key={item}>{item}</span>)}
-              </div>
-            </div>
+            )}
           </section>
         )}
 
-        <ActivityRail locale={locale} />
+        {runtimeEnabled && <ActivityRail locale={locale} />}
 
-        {organs.visible && (
+        {organs.visible && (runtimeEnabled || musicEnabled) && (
           <section className="organ-section" data-managed={organs.managed || undefined}>
             <div className="section-heading">
               <p className="eyebrow">{organs.eyebrow}</p>
               <h2>{organs.title}</h2>
             </div>
             <div className="organ-grid">
-              <EntityConsole locale={locale} />
-              <MusicOrgan locale={locale} />
+              {runtimeEnabled && <EntityConsole locale={locale} />}
+              {musicEnabled && <MusicOrgan locale={locale} />}
             </div>
           </section>
         )}

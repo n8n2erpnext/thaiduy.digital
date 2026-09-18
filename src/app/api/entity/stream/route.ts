@@ -1,3 +1,5 @@
+import { isFeatureEnabled } from '@/lib/feature-flags'
+
 export const dynamic = 'force-dynamic'
 
 const encoder = new TextEncoder()
@@ -7,6 +9,10 @@ function event(type: string, payload: Record<string, unknown>) {
 }
 
 export async function GET(request: Request) {
+  if (!(await isFeatureEnabled('public.runtime_state', true))) {
+    return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
+  }
+
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const pushHeartbeat = () => {

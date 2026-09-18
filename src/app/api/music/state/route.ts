@@ -3,6 +3,7 @@ import { runMusicSensorLearningCycle } from '@/brains/music-sensor/service'
 import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
 import { getLatestHubPlayback } from '@/brains/music-sensor/playback-signal'
 import type { MusicTagSource } from '@/brains/music-sensor/types'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -105,6 +106,10 @@ async function loadTags(artist: string, title: string) {
 }
 
 export async function GET() {
+  if (!(await isFeatureEnabled('music.sensor', true))) {
+    return noStore(resting(false))
+  }
+
   const [hubPlayback, live] = await Promise.all([
     getLatestHubPlayback(90_000),
     getLatestMusicDspFrame(5_000),

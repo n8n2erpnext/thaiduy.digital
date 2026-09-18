@@ -1,5 +1,6 @@
 import { MUSIC_SIGNAL_CHANNEL, getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
 import { ensureRedis } from '@/lib/redis'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export const dynamic = 'force-dynamic'
 const encoder = new TextEncoder()
@@ -16,6 +17,10 @@ function publicFrame(frame: Record<string, unknown>) {
 }
 
 export async function GET(request: Request) {
+  if (!(await isFeatureEnabled('music.sensor', true))) {
+    return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
+  }
+
   let cleanup: (() => void) | null = null
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

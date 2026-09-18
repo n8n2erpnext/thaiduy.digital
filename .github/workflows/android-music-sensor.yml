@@ -29,20 +29,23 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK and persist diagnostics
+      - name: Build aligned unsigned release APK and persist diagnostics
         id: apk
         shell: bash
         run: |
           set +e
           mkdir -p ../../../artifacts/android
-          rm -f ../../../artifacts/android/thaiduy-hub-debug.apk
-          gradle :app:assembleDebug --stacktrace > ../../../artifacts/android/build.log 2>&1
+          rm -f ../../../artifacts/android/thaiduy-hub-release-unsigned.apk
+          gradle :app:assembleRelease --stacktrace > ../../../artifacts/android/build.log 2>&1
           rc=$?
-          echo "$rc" > ../../../artifacts/android/build.status
           if [ "$rc" -eq 0 ]; then
-            cp app/build/outputs/apk/debug/app-debug.apk ../../../artifacts/android/thaiduy-hub-debug.apk
-          else
-            rm -f ../../../artifacts/android/thaiduy-hub-debug.apk
+            unsigned="app/build/outputs/apk/release/app-release-unsigned.apk"
+            zipalign -f -p 4 "$unsigned" ../../../artifacts/android/thaiduy-hub-release-unsigned.apk >> ../../../artifacts/android/build.log 2>&1
+            rc=$?
+          fi
+          echo "$rc" > ../../../artifacts/android/build.status
+          if [ "$rc" -ne 0 ]; then
+            rm -f ../../../artifacts/android/thaiduy-hub-release-unsigned.apk
           fi
           exit 0
 

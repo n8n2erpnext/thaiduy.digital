@@ -1,6 +1,5 @@
 package digital.thaiduy.hub
 
-import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.ComponentName
@@ -9,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
-import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -26,8 +24,6 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
     companion object {
-        private const val REQUEST_AUDIO = 2001
-        private const val REQUEST_PROJECTION = 2002
         private const val REQUEST_NOTIFICATIONS = 2003
     }
 
@@ -36,8 +32,6 @@ class MainActivity : Activity() {
     private lateinit var pairCode: EditText
     private lateinit var pairButton: Button
     private lateinit var trackedAppsButton: Button
-    private lateinit var deepDspButton: Button
-    private var pendingStart = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +70,7 @@ class MainActivity : Activity() {
             setPadding(0, dp(8), 0, dp(8))
         })
         root.addView(label(
-            "Background media sensing, optional acoustic DSP, and a future scoped control surface for thaiduy.digital.",
+            "Background media sensing and a future scoped control surface for thaiduy.digital.",
             13,
             Color.rgb(151, 163, 156),
         ))
@@ -132,24 +126,6 @@ class MainActivity : Activity() {
             Color.rgb(105, 117, 110),
         ).apply { setPadding(0, dp(12), 0, dp(18)) })
 
-        deepDspButton = actionButton("START DEEP DSP · OPTIONAL") { beginDeepDsp() }
-        root.addView(deepDspButton, LinearLayout.LayoutParams(-1, dp(54)))
-
-        root.addView(actionButton("STOP DEEP DSP") {
-            startService(
-                Intent(this, CaptureService::class.java)
-                    .setAction(CaptureService.ACTION_STOP),
-            )
-        }, LinearLayout.LayoutParams(-1, dp(54)).apply {
-            topMargin = dp(8)
-        })
-
-        root.addView(label(
-            "Deep DSP adds live bass / low-mid / mid / presence / air analysis. Android requires playback-capture consent for each DSP session.",
-            11,
-            Color.rgb(105, 117, 110),
-        ).apply { setPadding(0, dp(12), 0, 0) })
-
         root.addView(sectionTitle("WEB CONTROL").apply {
             setPadding(0, dp(30), 0, dp(8))
         })
@@ -201,66 +177,6 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    private fun beginDeepDsp() {
-        if (SecureStore.token(this) == null) {
-            setHubStatus("PAIR THIS HUB DEVICE FIRST", false)
-            return
-        }
-
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            pendingStart = true
-            requestPermissions(
-                arrayOf(Manifest.permission.RECORD_AUDIO),
-                REQUEST_AUDIO,
-            )
-            return
-        }
-        requestProjection()
-    }
-
-    private fun requestProjection() {
-        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        startActivityForResult(
-            manager.createScreenCaptureIntent(),
-            REQUEST_PROJECTION,
-        )
-    }
-
-    @Deprecated("Legacy result callback is sufficient for minSdk 29.")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != REQUEST_PROJECTION) return
-
-        if (resultCode != RESULT_OK || data == null) {
-            setHubStatus("DEEP DSP CAPTURE NOT GRANTED", false)
-            return
-        }
-
-        val service = Intent(this, CaptureService::class.java)
-            .setAction(CaptureService.ACTION_START)
-            .putExtra(CaptureService.EXTRA_RESULT_CODE, resultCode)
-            .putExtra(CaptureService.EXTRA_PROJECTION_DATA, data)
-
-        startForegroundService(service)
-        setHubStatus("PAIRED · DEEP DSP ACTIVE", true)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_AUDIO && pendingStart) {
-            pendingStart = false
-            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                requestProjection()
-            } else {
-                setHubStatus("RECORD_AUDIO IS REQUIRED ONLY FOR DEEP DSP", false)
-            }
-        }
-    }
-
     private fun refreshStatus() {
         val paired = SecureStore.token(this) != null
         val notificationAccess = notificationAccessGranted()
@@ -271,7 +187,6 @@ class MainActivity : Activity() {
             paired,
         )
         pairButton.text = if (paired) "PAIR AGAIN / REPLACE TOKEN" else "PAIR DEVICE"
-        deepDspButton.isEnabled = paired
         trackedAppsButton.isEnabled = true
 
         scrobbleStatus.text = buildString {

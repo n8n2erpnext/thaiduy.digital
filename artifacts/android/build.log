@@ -3,8 +3,8 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:generateReleaseResValues
 > Task :app:checkReleaseAarMetadata
+> Task :app:generateReleaseResValues
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:generateReleaseResources
 > Task :app:packageReleaseResources
@@ -18,7 +18,6 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseJniLibFolders
 > Task :app:mergeReleaseNativeLibs NO-SOURCE
-> Task :app:processReleaseManifestForPackage
 > Task :app:stripReleaseDebugSymbols NO-SOURCE
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
@@ -28,23 +27,24 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:processReleaseManifestForPackage
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
-> Task :app:processReleaseResources
 > Task :app:extractReleaseVersionControlInfo
+> Task :app:processReleaseResources
 > Task :app:collectReleaseDependencies
 > Task :app:sdkReleaseDependencyData
-> Task :app:writeReleaseAppMetadata
 > Task :app:optimizeReleaseResources
+> Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
 > Task :app:mergeExtDexRelease
 
 > Task :app:compileReleaseKotlin
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:26:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:27:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:39:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:40:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:36:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:37:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
 
 > Task :app:compileReleaseJavaWithJavac NO-SOURCE
 > Task :app:generateReleaseLintVitalReportModel
@@ -60,7 +60,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789698542101.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789698706519.json
 
-BUILD SUCCESSFUL in 36s
+BUILD SUCCESSFUL in 34s
 44 actionable tasks: 44 executed

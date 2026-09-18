@@ -35,6 +35,10 @@ export async function POST(request: Request) {
   if (!Number.isFinite(age) || age > 30_000) {
     return NextResponse.json({ accepted:false }, { status:400 })
   }
-  await publishMusicDspFrame(parsed.data)
+  const frame = {
+    ...parsed.data,
+    deviceId: device.id === 'legacy' ? parsed.data.deviceId : device.id,
+  }
+  await publishMusicDspFrame(frame)
   return new Response(null, { status:202 })
 }

@@ -142,18 +142,19 @@ export const brainMemory = pgTable('brain_memory', {
   index('brain_memory_lookup_idx').on(table.brainKey, table.hemisphere, table.learnedAt),
 ])
 
-export const musicSensorDevices = pgTable('music_sensor_devices', {
+export const hubDevices = pgTable('hub_devices', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 96 }).notNull(),
   platform: varchar('platform', { length: 24 }).default('android').notNull(),
   tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+  scopes: jsonb('scopes').$type<string[]>().default(['music:sensor:write']).notNull(),
   enabled: boolean('enabled').default(true).notNull(),
   lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   ...timestamps,
 }, table => [
-  uniqueIndex('music_sensor_devices_token_uq').on(table.tokenHash),
-  index('music_sensor_devices_enabled_idx').on(table.enabled, table.revokedAt),
+  uniqueIndex('hub_devices_token_uq').on(table.tokenHash),
+  index('hub_devices_enabled_idx').on(table.enabled, table.revokedAt),
 ])
 
 export const trafficSessions = pgTable('traffic_sessions', {

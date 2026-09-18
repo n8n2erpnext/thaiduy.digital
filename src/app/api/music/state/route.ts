@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { runMusicSensorLearningCycle } from '@/brains/music-sensor/service'
 import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
+import { getLatestHubPlayback } from '@/brains/music-sensor/playback-signal'
 import type { MusicTagSource } from '@/brains/music-sensor/types'
 
 export const dynamic = 'force-dynamic'
@@ -104,18 +105,74 @@ async function loadTags(artist: string, title: string) {
 }
 
 export async function GET() {
+  const [hubPlayback, live] = await Promise.all([
+    getLatestHubPlayback(90_000),
+    getLatestMusicDspFrame(5_000),
+  ])
+
+  const localActive = hubPlayback && (
+    hubPlayback.state === 'playing' || hubPlayback.state === 'buffering'
+  )
+
+  if (localActive) {
+    const artist = hubPlayback.artist.trim() || 'Unknown Artist'
+    const title = hubPlayback.title.trim()
+    const tags = process.env.LASTFM_API_KEY
+      ? await loadTags(artist, title)
+      : fallbackTags(title)
+
+    const cycle = await runMusicSensorLearningCycle({
+      artist,
+      title,
+      tags,
+      playback:{ active:true, source:'local' },
+      positionMs:hubPlayback.positionMs,
+      identity:{ durationMs:hubPlayback.durationMs },
+      audio:live ? {
+        rms:live.rms, peak:live.peak,
+        bass:live.bass, lowMid:live.lowMid, mid:live.mid,
+        presence:live.presence, air:live.air,
+        spectralFlux:live.spectralFlux,
+        spectralCentroid:live.spectralCentroid,
+        vocalProbability:live.vocalProbability,
+      } : undefined,
+    })
+    if (!cycle.enabled) return noStore(resting(true))
+
+    const state = cycle.decision.state
+    const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
+    return noStore({
+      mode:state.mode,
+      connected:true,
+      signal:live ? 'dsp' : 'semantic',
+      track:{ artist, title, url:'' },
+      genre:state.catalogGenre,
+      style,
+      arrangement:state.arrangement,
+      texture:state.texture,
+      mood:state.mood,
+      reinterpretation:state.reinterpretation,
+      dominantLayer:state.dominantLayer,
+      energy:live?.rms ?? 0,
+      confidence:cycle.decision.confidence,
+      layers:state.layers,
+      updatedAt:live?.at ?? hubPlayback.at,
+    })
+  }
+
+  if (hubPlayback) {
+    return noStore(resting(true))
+  }
+
   const apiKey = process.env.LASTFM_API_KEY
   const username = process.env.LASTFM_USERNAME
-  if (!apiKey || !username) return noStore(resting(false))
+  if (!apiKey || !username) return noStore(resting(Boolean(hubPlayback)))
 
   const recentUrl = lastfmUrl('user.getrecenttracks')
   recentUrl.searchParams.set('user', username)
   recentUrl.searchParams.set('limit', '2')
-  const [recent, live] = await Promise.all([
-    getJson<LastfmRecent>(recentUrl),
-    getLatestMusicDspFrame(5_000),
-  ])
-  if (!recent) return noStore(resting(false))
+  const recent = await getJson<LastfmRecent>(recentUrl)
+  if (!recent) return noStore(resting(Boolean(hubPlayback)))
 
   const current = (recent.recenttracks?.track ?? []).find(track => track['@attr']?.nowplaying === 'true')
   if (!current?.name) return noStore(resting(true))

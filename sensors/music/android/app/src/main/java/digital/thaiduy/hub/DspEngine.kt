@@ -1,4 +1,4 @@
-package digital.thaiduy.sentinelmusic
+package digital.thaiduy.hub
 
 import kotlin.math.PI
 import kotlin.math.cos

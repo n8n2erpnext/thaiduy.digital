@@ -1,4 +1,4 @@
-package digital.thaiduy.sentinelmusic
+package digital.thaiduy.hub
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -11,8 +11,8 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 object SecureStore {
-    private const val ALIAS = "sentinel_music_sensor_key"
-    private const val PREFS = "sentinel_music_sensor"
+    private const val ALIAS = "thaiduy_hub_key"
+    private const val PREFS = "thaiduy_hub"
     private const val TOKEN = "token"
     private const val DEVICE_ID = "device_id"
 

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SentinelMusicSensor"
+rootProject.name = "ThaiDuyHub"
 include(":app")

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { publishMusicDspFrame } from '@/brains/music-sensor/live-signal'
-import { authenticateMusicSensor } from '@/lib/music-sensor-auth'
+import { authenticateHubDevice, MUSIC_SENSOR_SCOPE } from '@/lib/hub-device-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +25,7 @@ const frameSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const device = await authenticateMusicSensor(request.headers.get('authorization'))
+  const device = await authenticateHubDevice(request.headers.get('authorization'), MUSIC_SENSOR_SCOPE)
   if (!device) return NextResponse.json({ accepted:false }, { status:401 })
   const parsed = frameSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {

@@ -1,4 +1,4 @@
-name: Android Music Sensor
+name: Android Hub
 
 permissions:
   contents: write
@@ -6,7 +6,7 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: [main, greenfield-android-sensor]
+    branches: [main]
     paths:
       - 'sensors/music/android/**'
       - '.github/workflows/android-music-sensor.yml'
@@ -35,13 +35,14 @@ jobs:
         run: |
           set +e
           mkdir -p ../../../artifacts/android
+          rm -f ../../../artifacts/android/thaiduy-hub-debug.apk
           gradle :app:assembleDebug --stacktrace > ../../../artifacts/android/build.log 2>&1
           rc=$?
           echo "$rc" > ../../../artifacts/android/build.status
           if [ "$rc" -eq 0 ]; then
-            cp app/build/outputs/apk/debug/app-debug.apk ../../../artifacts/android/sentinel-music-sensor-debug.apk
+            cp app/build/outputs/apk/debug/app-debug.apk ../../../artifacts/android/thaiduy-hub-debug.apk
           else
-            rm -f ../../../artifacts/android/sentinel-music-sensor-debug.apk
+            rm -f ../../../artifacts/android/thaiduy-hub-debug.apk
           fi
           exit 0
 
@@ -52,7 +53,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add artifacts/android
-          git diff --cached --quiet || git commit -m "ci: persist Android sensor build result [skip ci]"
+          git diff --cached --quiet || git commit -m "ci: persist Android Hub build result [skip ci]"
           git push origin HEAD:$GITHUB_REF_NAME
 
       - name: Fail workflow when APK compilation failed

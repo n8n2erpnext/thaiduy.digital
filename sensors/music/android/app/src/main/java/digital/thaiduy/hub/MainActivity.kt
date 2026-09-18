@@ -1,15 +1,19 @@
-package digital.thaiduy.sentinelmusic
+package digital.thaiduy.hub
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputFilter
 import android.text.InputType
 import android.view.Gravity
@@ -27,10 +31,12 @@ class MainActivity : Activity() {
         private const val REQUEST_NOTIFICATIONS = 2003
     }
 
-    private lateinit var status: TextView
+    private lateinit var hubStatus: TextView
+    private lateinit var scrobbleStatus: TextView
     private lateinit var pairCode: EditText
     private lateinit var pairButton: Button
-    private lateinit var startButton: Button
+    private lateinit var trackedAppsButton: Button
+    private lateinit var deepDspButton: Button
     private var pendingStart = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,9 +44,9 @@ class MainActivity : Activity() {
         window.statusBarColor = Color.rgb(10, 13, 12)
         window.navigationBarColor = Color.rgb(10, 13, 12)
         setContentView(buildUi())
-        refreshStatus()
 
-        if (Build.VERSION.SDK_INT >= 33 &&
+        if (
+            Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(
@@ -50,32 +56,37 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        refreshStatus()
+    }
+
     private fun buildUi(): ScrollView {
         val scroll = ScrollView(this).apply {
             setBackgroundColor(Color.rgb(10, 13, 12))
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(36), dp(24), dp(36))
+            setPadding(dp(24), dp(32), dp(24), dp(36))
         }
         scroll.addView(root, ViewGroup.LayoutParams(-1, -2))
 
-        root.addView(label("SENTINEL / MUSIC SENSOR", 12, Color.rgb(142, 232, 178)))
-        root.addView(label("Android playback ear", 30, Color.WHITE).apply {
-            setPadding(0, dp(10), 0, dp(8))
+        root.addView(label("THÁI DUY / HUB", 11, Color.rgb(246, 131, 48)))
+        root.addView(label("Private control surface", 30, Color.WHITE).apply {
+            setPadding(0, dp(8), 0, dp(8))
         })
         root.addView(label(
-            "Local playback analysis for thaiduy.digital. Raw audio never leaves this device.",
-            14,
+            "Background media sensing, optional acoustic DSP, and a future scoped control surface for thaiduy.digital.",
+            13,
             Color.rgb(151, 163, 156),
         ))
 
-        status = label("", 12, Color.rgb(142, 232, 178)).apply {
-            setPadding(0, dp(28), 0, dp(12))
+        hubStatus = label("", 12, Color.rgb(142, 232, 178)).apply {
+            setPadding(0, dp(24), 0, dp(12))
         }
-        root.addView(status)
+        root.addView(hubStatus)
 
-        root.addView(label("PAIR CODE", 10, Color.rgb(112, 124, 117)))
+        root.addView(sectionTitle("PAIR HUB DEVICE"))
         pairCode = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_NUMBER
             filters = arrayOf(InputFilter.LengthFilter(6))
@@ -95,25 +106,68 @@ class MainActivity : Activity() {
         pairButton = actionButton("PAIR DEVICE") { pairDevice() }
         root.addView(pairButton)
 
-        startButton = actionButton("START LISTENING") { beginListening() }
-        root.addView(startButton, LinearLayout.LayoutParams(-1, dp(58)).apply {
-            topMargin = dp(26)
+        root.addView(sectionTitle("MUSIC SENSOR").apply {
+            setPadding(0, dp(30), 0, dp(8))
         })
 
-        root.addView(actionButton("STOP SENSOR") {
+        scrobbleStatus = label("", 12, Color.rgb(151, 163, 156))
+        root.addView(scrobbleStatus)
+
+        root.addView(actionButton("ENABLE / MANAGE NOTIFICATION ACCESS") {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }, LinearLayout.LayoutParams(-1, dp(54)).apply {
+            topMargin = dp(10)
+        })
+
+        trackedAppsButton = actionButton("SELECT TRACKED APPS") {
+            startActivity(Intent(this, AppSelectionActivity::class.java))
+        }
+        root.addView(trackedAppsButton, LinearLayout.LayoutParams(-1, dp(54)).apply {
+            topMargin = dp(8)
+        })
+
+        root.addView(label(
+            "SCROBBLE MODE · DEFAULT
+Runs in the background using Android media sessions. No screen-share prompt and no raw audio upload.",
+            11,
+            Color.rgb(105, 117, 110),
+        ).apply { setPadding(0, dp(12), 0, dp(18)) })
+
+        deepDspButton = actionButton("START DEEP DSP · OPTIONAL") { beginDeepDsp() }
+        root.addView(deepDspButton, LinearLayout.LayoutParams(-1, dp(54)))
+
+        root.addView(actionButton("STOP DEEP DSP") {
             startService(
                 Intent(this, CaptureService::class.java)
                     .setAction(CaptureService.ACTION_STOP),
             )
-            setStatus("SENSOR STOPPED", false)
+        }, LinearLayout.LayoutParams(-1, dp(54)).apply {
+            topMargin = dp(8)
         })
 
         root.addView(label(
-            "Android will ask for playback-capture consent every new listening session. " +
-                "This app never uses the microphone as a fallback.",
+            "Deep DSP adds live bass / low-mid / mid / presence / air analysis. Android requires playback-capture consent for each DSP session.",
             11,
             Color.rgb(105, 117, 110),
-        ).apply { setPadding(0, dp(22), 0, 0) })
+        ).apply { setPadding(0, dp(12), 0, 0) })
+
+        root.addView(sectionTitle("WEB CONTROL").apply {
+            setPadding(0, dp(30), 0, dp(8))
+        })
+        root.addView(actionButton("OPEN THAIDUY.DIGITAL CONTROL") {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://thaiduy.digital/control"),
+                ),
+            )
+        }, LinearLayout.LayoutParams(-1, dp(54)))
+
+        root.addView(label(
+            "Native Hub controls will use separate owner-approved scopes. The Music Sensor token can never mutate site content or runtime settings.",
+            11,
+            Color.rgb(105, 117, 110),
+        ).apply { setPadding(0, dp(12), 0, 0) })
 
         return scroll
     }
@@ -121,11 +175,12 @@ class MainActivity : Activity() {
     private fun pairDevice() {
         val code = pairCode.text.toString().trim()
         if (code.length != 6) {
-            setStatus("ENTER THE 6-DIGIT CODE FROM /CONTROL/MUSIC-SENSOR", false)
+            setHubStatus("ENTER THE 6-DIGIT CODE FROM /CONTROL/MUSIC-SENSOR", false)
             return
         }
+
         pairButton.isEnabled = false
-        setStatus("PAIRING…", true)
+        setHubStatus("PAIRING…", true)
 
         Thread {
             val result = runCatching {
@@ -141,15 +196,15 @@ class MainActivity : Activity() {
                     pairCode.text.clear()
                     refreshStatus()
                 }.onFailure {
-                    setStatus("PAIRING FAILED · CREATE A NEW CODE AND TRY AGAIN", false)
+                    setHubStatus("PAIRING FAILED · CREATE A NEW CODE AND TRY AGAIN", false)
                 }
             }
         }.start()
     }
 
-    private fun beginListening() {
+    private fun beginDeepDsp() {
         if (SecureStore.token(this) == null) {
-            setStatus("PAIR THIS DEVICE FIRST", false)
+            setHubStatus("PAIR THIS HUB DEVICE FIRST", false)
             return
         }
 
@@ -161,7 +216,6 @@ class MainActivity : Activity() {
             )
             return
         }
-
         requestProjection()
     }
 
@@ -179,7 +233,7 @@ class MainActivity : Activity() {
         if (requestCode != REQUEST_PROJECTION) return
 
         if (resultCode != RESULT_OK || data == null) {
-            setStatus("PLAYBACK CAPTURE NOT GRANTED", false)
+            setHubStatus("DEEP DSP CAPTURE NOT GRANTED", false)
             return
         }
 
@@ -189,7 +243,7 @@ class MainActivity : Activity() {
             .putExtra(CaptureService.EXTRA_PROJECTION_DATA, data)
 
         startForegroundService(service)
-        setStatus("LISTENING · LOCAL DSP ACTIVE", true)
+        setHubStatus("PAIRED · DEEP DSP ACTIVE", true)
     }
 
     override fun onRequestPermissionsResult(
@@ -198,31 +252,61 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
         if (requestCode == REQUEST_AUDIO && pendingStart) {
             pendingStart = false
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                 requestProjection()
             } else {
-                setStatus("RECORD_AUDIO PERMISSION IS REQUIRED BY PLAYBACK CAPTURE", false)
+                setHubStatus("RECORD_AUDIO IS REQUIRED ONLY FOR DEEP DSP", false)
             }
         }
     }
 
     private fun refreshStatus() {
         val paired = SecureStore.token(this) != null
-        setStatus(if (paired) "PAIRED · READY" else "NOT PAIRED", paired)
+        val notificationAccess = notificationAccessGranted()
+        val trackedCount = TrackedApps.get(this).size
+
+        setHubStatus(
+            if (paired) "HUB DEVICE · PAIRED" else "HUB DEVICE · NOT PAIRED",
+            paired,
+        )
         pairButton.text = if (paired) "PAIR AGAIN / REPLACE TOKEN" else "PAIR DEVICE"
-        startButton.isEnabled = paired
+        deepDspButton.isEnabled = paired
+        trackedAppsButton.isEnabled = true
+
+        scrobbleStatus.text = buildString {
+            append(if (notificationAccess) "BACKGROUND SCROBBLE · READY" else "BACKGROUND SCROBBLE · ACCESS REQUIRED")
+            append("\nTRACKED APPS · ")
+            append(trackedCount)
+            if (!paired) append("\nPAIRING REQUIRED BEFORE SYNC")
+        }
+        scrobbleStatus.setTextColor(
+            if (notificationAccess && trackedCount > 0 && paired) {
+                Color.rgb(142, 232, 178)
+            } else {
+                Color.rgb(151, 163, 156)
+            },
+        )
     }
 
-    private fun setStatus(text: String, good: Boolean) {
-        status.text = text
-        status.setTextColor(
+    private fun notificationAccessGranted(): Boolean {
+        val manager = getSystemService(NotificationManager::class.java)
+        return manager.isNotificationListenerAccessGranted(
+            ComponentName(this, ScrobbleService::class.java),
+        )
+    }
+
+    private fun setHubStatus(text: String, good: Boolean) {
+        hubStatus.text = text
+        hubStatus.setTextColor(
             if (good) Color.rgb(142, 232, 178)
             else Color.rgb(220, 142, 126),
         )
     }
+
+    private fun sectionTitle(text: String) =
+        label(text, 10, Color.rgb(112, 124, 117))
 
     private fun label(text: String, size: Int, color: Int) = TextView(this).apply {
         this.text = text

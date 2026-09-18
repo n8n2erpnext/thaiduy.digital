@@ -1,4 +1,4 @@
-package digital.thaiduy.sentinelmusic
+package digital.thaiduy.hub
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -23,11 +23,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 class CaptureService : Service() {
     companion object {
-        const val ACTION_START = "digital.thaiduy.sentinelmusic.START"
-        const val ACTION_STOP = "digital.thaiduy.sentinelmusic.STOP"
+        const val ACTION_START = "digital.thaiduy.hub.START"
+        const val ACTION_STOP = "digital.thaiduy.hub.STOP"
         const val EXTRA_RESULT_CODE = "result_code"
         const val EXTRA_PROJECTION_DATA = "projection_data"
-        private const val CHANNEL_ID = "sentinel_music_sensor"
+        private const val CHANNEL_ID = "thaiduy_hub_deep_dsp"
         private const val NOTIFICATION_ID = 4107
     }
 
@@ -44,7 +44,7 @@ class CaptureService : Service() {
         super.onCreate()
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Sentinel Music Sensor",
+            "Thái Duy Hub · Deep DSP",
             NotificationManager.IMPORTANCE_LOW,
         )
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
@@ -61,7 +61,7 @@ class CaptureService : Service() {
     private fun notification(): Notification =
         Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle("Sentinel Music Sensor")
+            .setContentTitle("Thái Duy Hub · Deep DSP")
             .setContentText("Analyzing playback locally · no raw audio uploaded")
             .setOngoing(true)
             .build()

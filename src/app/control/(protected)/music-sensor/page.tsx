@@ -1,23 +1,23 @@
 import { desc } from 'drizzle-orm'
 import { db } from '@/db/client'
-import { musicSensorDevices } from '@/db/schema'
+import { hubDevices } from '@/db/schema'
 import { ensureRedis } from '@/lib/redis'
-import { createMusicSensorPairCodeAction, revokeMusicSensorAction } from './actions'
+import { createMusicSensorPairCodeAction, revokeHubDeviceAction } from './actions'
 
 export default async function MusicSensorControlPage() {
   const redis = await ensureRedis()
   const [devices, code] = await Promise.all([
-    db.select().from(musicSensorDevices).orderBy(desc(musicSensorDevices.createdAt)),
-    redis.get('music:sensor:pair:current'),
+    db.select().from(hubDevices).orderBy(desc(hubDevices.createdAt)),
+    redis.get('hub:pair:current'),
   ])
-  const ttl = code ? await redis.ttl('music:sensor:pair:current') : -1
+  const ttl = code ? await redis.ttl('hub:pair:current') : -1
 
   return (
     <section className="control-page">
       <header className="control-page-head">
         <p>CONTROL / MUSIC SENSOR</p>
-        <h1>Sensor pairing</h1>
-        <span>Pair Android playback sensors without embedding backend secrets in the APK.</span>
+        <h1>Hub device pairing</h1>
+        <span>Pair Thái Duy Hub devices with scoped permissions. Music Sensor is the first module.</span>
       </header>
 
       <div className="control-split">
@@ -32,7 +32,7 @@ export default async function MusicSensorControlPage() {
           <form action={createMusicSensorPairCodeAction}>
             <button type="submit">{code ? 'ROTATE PAIR CODE' : 'CREATE PAIR CODE'}</button>
           </form>
-          <p>Open Sentinel Music Sensor on Android, enter this six-digit code, then tap PAIR.</p>
+          <p>Open Thái Duy Hub on Android, enter this six-digit code, then tap PAIR.</p>
         </section>
 
         <section className="control-panel">
@@ -46,16 +46,17 @@ export default async function MusicSensorControlPage() {
                   <small>
                     {device.platform.toUpperCase()} · {device.enabled && !device.revokedAt ? 'ENABLED' : 'REVOKED'}
                     {' · '}LAST SEEN {device.lastSeenAt ? device.lastSeenAt.toISOString() : 'NEVER'}
+                    {' · '}SCOPES {device.scopes.join(', ')}
                   </small>
                 </div>
                 {device.enabled && !device.revokedAt && (
-                  <form action={revokeMusicSensorAction}>
+                  <form action={revokeHubDeviceAction}>
                     <input type="hidden" name="id" value={device.id} />
                     <button type="submit">REVOKE</button>
                   </form>
                 )}
               </article>
-            )) : <p>No paired sensor yet.</p>}
+            )) : <p>No paired Hub device yet.</p>}
           </div>
         </section>
       </div>

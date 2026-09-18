@@ -1,4 +1,4 @@
-package digital.thaiduy.sentinelmusic
+package digital.thaiduy.hub
 
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -27,7 +27,7 @@ object ApiClient {
             .put("platform", "android")
             .toString()
 
-        val conn = connection("/api/music/sensor/pair")
+        val conn = connection("/api/hub/pair")
         conn.outputStream.use { it.write(payload.toByteArray()) }
         if (conn.responseCode !in 200..299) {
             conn.disconnect()
@@ -78,4 +78,36 @@ object ApiClient {
             ok
         }.getOrDefault(false)
     }
+    fun sendPlayback(
+        token: String,
+        packageName: String,
+        artist: String,
+        title: String,
+        album: String?,
+        state: String,
+        positionMs: Long?,
+        durationMs: Long?,
+    ): Boolean {
+        val payload = JSONObject()
+            .put("packageName", packageName)
+            .put("artist", artist)
+            .put("title", title)
+            .put("state", state)
+            .put("at", Instant.now().toString())
+
+        if (!album.isNullOrBlank()) payload.put("album", album)
+        if (positionMs != null && positionMs >= 0) payload.put("positionMs", positionMs)
+        if (durationMs != null && durationMs > 0) payload.put("durationMs", durationMs)
+
+        return runCatching {
+            val conn = connection("/api/hub/music/playback")
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            conn.outputStream.use { it.write(payload.toString().toByteArray()) }
+            val ok = conn.responseCode == 202
+            conn.disconnect()
+            ok
+        }.getOrDefault(false)
+    }
+
+
 }

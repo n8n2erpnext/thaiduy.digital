@@ -127,8 +127,7 @@ class MainActivity : Activity() {
         })
 
         root.addView(label(
-            "SCROBBLE MODE · DEFAULT
-Runs in the background using Android media sessions. No screen-share prompt and no raw audio upload.",
+            "SCROBBLE MODE · DEFAULT\nRuns in the background using Android media sessions. No screen-share prompt and no raw audio upload.",
             11,
             Color.rgb(105, 117, 110),
         ).apply { setPadding(0, dp(12), 0, dp(18)) })

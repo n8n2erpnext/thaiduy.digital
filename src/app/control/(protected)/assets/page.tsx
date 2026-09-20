@@ -10,7 +10,10 @@ export default async function AssetsPage() {
   const provider = assetProvider()
   return (
     <section className="control-section">
-      <div className="control-section-head"><div><p>MEDIA LIBRARY</p><h1>Assets</h1></div><span>STORAGE / {provider.toUpperCase()}</span></div>
+      <div className="control-section-head">
+        <div><p>CONTENT / MEDIA</p><h1>Media library</h1><span>Upload once, reuse in posts and public surfaces.</span></div>
+        <span>STORAGE / {provider.toUpperCase()}</span>
+      </div>
       <AssetUpload />
       <div className="asset-grid">
         {rows.map(row => (

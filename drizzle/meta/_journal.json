@@ -22,6 +22,41 @@
       "when": 1789696938992,
       "tag": "0002_hub_devices",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789725927679,
+      "tag": "0003_cms_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789727683096,
+      "tag": "0004_asset_provenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789731688279,
+      "tag": "0005_writing_engagement",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789735339209,
+      "tag": "0006_writing_tags_highlight",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789748120882,
+      "tag": "0007_writing_tag_registry",
+      "breakpoints": true
     }
   ]
 }

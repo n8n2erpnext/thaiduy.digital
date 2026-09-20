@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { assets, auditLogs } from '@/db/schema'
 import { auth } from '@/lib/auth'
@@ -16,6 +17,32 @@ async function owner(request: NextRequest) {
   const ownerEmail = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
   if (!session?.user || !ownerEmail || session.user.email.toLowerCase() !== ownerEmail) return null
   return session
+}
+
+export async function GET(request: NextRequest) {
+  const session = await owner(request)
+  if (!session) return NextResponse.json({ error:'unauthorized' }, { status:401 })
+  const rows = await db.select({
+    id:assets.id,
+    fileName:assets.fileName,
+    mimeType:assets.mimeType,
+    sizeBytes:assets.sizeBytes,
+    publicUrl:assets.publicUrl,
+    altEn:assets.altEn,
+    altVi:assets.altVi,
+    source:assets.source,
+    sourceUrl:assets.sourceUrl,
+    creditName:assets.creditName,
+    creditUrl:assets.creditUrl,
+    createdAt:assets.createdAt,
+  }).from(assets).where(and(
+    eq(assets.status,'ready'),
+    isNull(assets.deletedAt),
+  )).orderBy(desc(assets.createdAt))
+
+  return NextResponse.json({
+    assets:rows.filter(row => row.mimeType.startsWith('image/') && row.publicUrl),
+  })
 }
 
 export async function POST(request: NextRequest) {

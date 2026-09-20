@@ -2,10 +2,9 @@ import type { ManagedRegistryItem } from './types'
 
 export const fallbackRegistry: ManagedRegistryItem[] = [
   { id:'nav-projects', key:'projects', kind:'nav', enabled:true, status:'published', sort:10, label:{en:'Projects',vi:'Dự án'}, meta:{href:'/projects'} },
-  { id:'nav-log', key:'log', kind:'nav', enabled:true, status:'published', sort:20, label:{en:'Log',vi:'Nhật ký'}, meta:{href:'/log'} },
-  { id:'nav-writing', key:'writing', kind:'nav', enabled:true, status:'published', sort:30, label:{en:'Writing',vi:'Bài viết'}, meta:{href:'/writing'} },
-  { id:'nav-stack', key:'stack', kind:'nav', enabled:true, status:'published', sort:40, label:{en:'Stack',vi:'Hạ tầng'}, meta:{href:'/stack'} },
-  { id:'nav-about', key:'about', kind:'nav', enabled:true, status:'published', sort:50, label:{en:'About',vi:'Giới thiệu'}, meta:{href:'/about'} },
+  { id:'nav-writing', key:'writing', kind:'nav', enabled:true, status:'published', sort:20, label:{en:'Writing',vi:'Bài viết'}, meta:{href:'/writing'} },
+  { id:'nav-stack', key:'stack', kind:'nav', enabled:true, status:'published', sort:30, label:{en:'Stack',vi:'Hạ tầng'}, meta:{href:'/stack'} },
+  { id:'nav-about', key:'about', kind:'nav', enabled:true, status:'published', sort:40, label:{en:'About',vi:'Giới thiệu'}, meta:{href:'/about'} },
 
   { id:'project-lightbi', key:'lightbi', kind:'project', enabled:true, status:'published', sort:10, label:{en:'LightBI',vi:'LightBI'}, title:{en:'Local-first BI / governed analytics',vi:'BI local-first / phân tích có quản trị'}, summary:{en:'Turns raw operational data into explainable, trusted analysis while keeping the core workflow local-first.',vi:'Biến dữ liệu vận hành thô thành phân tích có thể giải thích và đáng tin cậy, giữ luồng cốt lõi theo hướng local-first.'}, runtimeKey:'lightbi', meta:{plane:'DATA / COGNITION',mode:'PRODUCT'} },
   { id:'project-remote', key:'light-remote', kind:'project', enabled:true, status:'published', sort:20, label:{en:'Light Remote',vi:'Light Remote'}, title:{en:'Remote control plane',vi:'Mặt phẳng điều khiển từ xa'}, summary:{en:'A permission-aware bridge that lets authorized AI workflows reach real nodes without turning the public web into a control surface.',vi:'Cầu nối có nhận thức quyền hạn cho phép workflow AI đã được cấp phép chạm tới node thật mà không biến web công khai thành mặt điều khiển.'}, runtimeKey:'light-remote', meta:{plane:'REMOTE / NERVE',mode:'PLATFORM'} },

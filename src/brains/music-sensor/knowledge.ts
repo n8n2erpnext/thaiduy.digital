@@ -1,4 +1,5 @@
 import { listBrainMemory } from '@/brains/core/memory-store'
+import { findMusicK2Concept, MUSIC_K2_SEMANTIC_NODES } from './k2-general'
 import type { MusicSensorInput } from './types'
 
 export type MusicKnowledgeKind = 'genre' | 'style' | 'dance' | 'mood' | 'texture' | 'arrangement' | 'context' | 'ignore'
@@ -7,11 +8,11 @@ export type MusicKnowledgeNode = {
   wave?: Partial<Record<'bass'|'lowMid'|'mid'|'vocal'|'presence'|'air', number>>
 }
 
-export const MUSIC_KNOWLEDGE_VERSION = 'music-k1.0'
+export const MUSIC_KNOWLEDGE_VERSION = 'music-k2.0'
 
 export const SOURCE_WEIGHT: Record<string, number> = {
   'lastfm-track': 1, musicbrainz: 0.95, listenbrainz: 0.9,
-  'lastfm-artist': 0.58, memory: 0.76, heuristic: 0.15, unknown: 0.7,
+  'lastfm-artist': 0.38, memory: 0.82, heuristic: 0.32, unknown: 0.55,
 }
 
 export const MUSIC_NODES: MusicKnowledgeNode[] = [
@@ -20,7 +21,7 @@ export const MUSIC_NODES: MusicKnowledgeNode[] = [
   { id:'chamber-music', family:'classical', kind:'style', aliases:['chamber music','chamber classical'], wave:{mid:0.9,presence:0.62,air:0.46} },
   { id:'string-quartet', family:'classical', kind:'style', aliases:['string quartet','quartet'] },
   { id:'solo-piano', family:'instrumental', kind:'texture', aliases:['solo piano','piano solo'], wave:{mid:0.9,presence:0.54,air:0.42} },
-  { id:'acoustic-guitar', family:'instrumental', kind:'texture', aliases:['acoustic guitar','guitar instrumental'], wave:{lowMid:0.74,mid:0.86,presence:0.58} },
+  { id:'acoustic-guitar', family:'instrumental', kind:'texture', aliases:['acoustic guitar','acoustic guitar instrumental'], wave:{lowMid:0.74,mid:0.86,presence:0.58} },
   { id:'instrumental-ensemble', family:'instrumental', kind:'texture', aliases:['instrumental ensemble','instrumental music','instrumental'], wave:{mid:0.84,presence:0.62} },
   { id:'opera', family:'classical', kind:'style', aliases:['opera','operatic'], wave:{vocal:1,mid:0.76,air:0.5} },
   { id:'jazz', family:'jazz', kind:'genre', aliases:['jazz'] },
@@ -148,15 +149,77 @@ MUSIC_NODES.push(
   { id:'a-cappella', family:'vocal', kind:'texture', aliases:['a cappella','acapella'], wave:{vocal:1,mid:0.78,presence:0.64,air:0.55} },
 )
 
+MUSIC_NODES.push(
+  { id:'pop-rock', family:'rock', kind:'style', aliases:['pop rock','pop-rock'], wave:{bass:0.54,mid:0.78,vocal:0.76,presence:0.72} },
+  { id:'indie-pop', family:'pop', kind:'style', aliases:['indie pop','indie-pop'] },
+  { id:'city-pop', family:'pop', kind:'style', aliases:['city pop','city-pop','japanese city pop'] },
+  { id:'dream-pop', family:'pop', kind:'style', aliases:['dream pop','dream-pop'], wave:{mid:0.7,vocal:0.6,presence:0.44,air:0.82} },
+  { id:'art-pop', family:'pop', kind:'style', aliases:['art pop','art-pop'] },
+  { id:'electropop', family:'pop', kind:'style', aliases:['electropop','electro pop'] },
+  { id:'shoegaze', family:'rock', kind:'style', aliases:['shoegaze','shoe gaze'], wave:{mid:0.82,presence:0.76,air:0.72} },
+  { id:'britpop', family:'rock', kind:'style', aliases:['britpop','brit pop'] },
+  { id:'garage-rock', family:'rock', kind:'style', aliases:['garage rock','garage-rock'] },
+  { id:'post-punk', family:'rock', kind:'style', aliases:['post-punk','post punk'] },
+  { id:'new-wave', family:'rock', kind:'style', aliases:['new wave','new-wave'] },
+  { id:'death-metal', family:'metal', kind:'style', aliases:['death metal'] },
+  { id:'black-metal', family:'metal', kind:'style', aliases:['black metal'] },
+  { id:'metalcore', family:'metal', kind:'style', aliases:['metalcore','metal core'] },
+  { id:'nu-metal', family:'metal', kind:'style', aliases:['nu metal','nu-metal'] },
+  { id:'alternative-hip-hop', family:'hip-hop', kind:'style', aliases:['alternative hip hop','alternative hip-hop'] },
+  { id:'jazz-rap', family:'hip-hop', kind:'style', aliases:['jazz rap','jazz-rap'] },
+  { id:'drill', family:'hip-hop', kind:'style', aliases:['drill','drill music'] },
+  { id:'contemporary-rnb', family:'soul-rnb', kind:'style', aliases:['contemporary r&b','contemporary rnb'] },
+)
+
+MUSIC_NODES.push(
+  { id:'easy-listening', family:'pop', kind:'style', aliases:['easy listening','easy-listening'] },
+  { id:'adult-contemporary', family:'pop', kind:'style', aliases:['adult contemporary','adult-contemporary','ac music'] },
+  { id:'singer-songwriter', family:'folk-country', kind:'style', aliases:['singer-songwriter','singer songwriter'] },
+  { id:'folk-rock', family:'folk-country', kind:'style', aliases:['folk rock','folk-rock'] },
+  { id:'neo-classical', family:'classical', kind:'style', aliases:['neoclassical','neo-classical','neo classical'] },
+  { id:'minimalism', family:'classical', kind:'style', aliases:['minimalism','minimalist classical'] },
+  { id:'gospel', family:'soul-rnb', kind:'style', aliases:['gospel','gospel music'] },
+  { id:'nhac-do', family:'vietnamese', kind:'style', aliases:['nhac do','nhạc đỏ','red music vietnam'] },
+  { id:'que-huong', family:'vietnamese', kind:'style', aliases:['que huong','quê hương','nhac que huong','nhạc quê hương'] },
+  { id:'tien-chien', family:'vietnamese', kind:'style', aliases:['tien chien','tiền chiến','nhac tien chien','nhạc tiền chiến'] },
+  { id:'boy-band', family:'context', kind:'context', aliases:['boyband','boybands','boy band','boy bands'] },
+  { id:'era-00s', family:'context', kind:'context', aliases:['00s','2000s'] },
+  { id:'geo-vietnam', family:'context', kind:'context', aliases:['vietnam','vietnamese'] },
+  { id:'geo-british', family:'context', kind:'context', aliases:['british','uk','united kingdom'] },
+  { id:'geo-irish', family:'context', kind:'context', aliases:['irish','ireland'] },
+  { id:'geo-danish', family:'context', kind:'context', aliases:['danish','denmark'] },
+  { id:'idol-tag', family:'noise', kind:'ignore', aliases:['idol'] },
+)
+
 const normalize = (value: string) => value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ')
+
+// K2 expands semantic coverage without overriding hand-curated aliases above.
+{
+  const claimedAliases = new Set(MUSIC_NODES.flatMap(node => node.aliases.map(normalize)))
+  const claimedIds = new Set(MUSIC_NODES.map(node => node.id))
+  for (const node of MUSIC_K2_SEMANTIC_NODES) {
+    if (claimedIds.has(node.id)) continue
+    const aliases = node.aliases.filter(alias => !claimedAliases.has(normalize(alias)))
+    if (!aliases.length) continue
+    MUSIC_NODES.push({ ...node, aliases })
+    claimedIds.add(node.id)
+    for (const alias of aliases) claimedAliases.add(normalize(alias))
+  }
+}
+
 export function classifyMusicTags(tags: NonNullable<MusicSensorInput['tags']>, nodes: MusicKnowledgeNode[] = MUSIC_NODES, sourceWeights: Record<string, number> = SOURCE_WEIGHT) {
   const aliasIndex = new Map(nodes.flatMap(node => node.aliases.map(alias => [normalize(alias), node] as const)))
   const genreVotes: Record<string, number> = {}, styleVotes: Record<string, number> = {}
   const moodVotes: Record<string, number> = {}, textureVotes: Record<string, number> = {}
-  const arrangementVotes: Record<string, number> = {}, unknown: string[] = []
+  const arrangementVotes: Record<string, number> = {}, contextConcepts: string[] = [], unknown: string[] = []
   for (const tag of tags) {
     const node = aliasIndex.get(normalize(tag.name))
-    if (!node) { unknown.push(tag.name); continue }
+    if (!node) {
+      const concept = findMusicK2Concept(tag.name)
+      if (concept) { if (!contextConcepts.includes(concept.id)) contextConcepts.push(concept.id); continue }
+      unknown.push(tag.name)
+      continue
+    }
     if (node.kind === 'ignore' || node.kind === 'context') continue
     const raw = tag.weight > 1 ? tag.weight / 100 : tag.weight
     const sourceWeight = sourceWeights[tag.source ?? 'unknown'] ?? sourceWeights.unknown ?? 0.7
@@ -168,7 +231,7 @@ export function classifyMusicTags(tags: NonNullable<MusicSensorInput['tags']>, n
       genreVotes[node.family] = Math.max(genreVotes[node.family] ?? 0, vote * 0.62)
     }
   }
-  return { genreVotes, styleVotes, moodVotes, textureVotes, arrangementVotes, unknownTags: unknown }
+  return { genreVotes, styleVotes, moodVotes, textureVotes, arrangementVotes, contextConcepts, unknownTags: unknown }
 }
 
 export function topVote(votes: Record<string, number>) {
@@ -227,6 +290,11 @@ export const CORTEX_MUSIC_RULES = [
   'Genre shapes wave personality; realtime signal controls what the wave does now.',
   'When voice is dominant, vocal layer gains prominence; during instrumental breaks, acoustic bands take over smoothly.',
   'Hysteresis and crossfade prevent rapid style flapping between close candidates.',
+  'Tempo and meter describe motion and form; neither is sufficient genre evidence by itself.',
+  'Country, language, decade, fandom and artist-name tags are context, not genre labels.',
+  'A style may contribute evidence to its musical family, but a broad family must not invent a specific style.',
+  'Acoustic evidence describes the heard performance; semantic tags describe catalog and cultural context.',
+  'Prefer uncertainty over false precision when evidence sources disagree or remain weak.',
 ] as const
 
 
@@ -276,6 +344,12 @@ export const ACOUSTIC_FEATURE_KNOWLEDGE = [
   { id:'spectral-flux', role:'change/transient activity; useful for attack and onset behavior' },
   { id:'spectral-centroid', role:'brightness descriptor; useful for visual air/presence character' },
   { id:'dynamic-range', role:'contrast between quiet and loud; useful for release and wave breadth' },
+  { id:'tempo-bpm', role:'pulse-rate descriptor; useful for motion and phrasing but not genre by itself' },
+  { id:'beat-confidence', role:'confidence that a stable beat is present; gates rhythm-style inference' },
+  { id:'meter', role:'metrical grouping such as 3/4 or 4/4; form evidence, not standalone genre evidence' },
+  { id:'swingness', role:'degree of uneven subdivision; supports swing feel only when beat confidence is adequate' },
+  { id:'percussive-probability', role:'percussive/transient dominance; useful for groove and attack interpretation' },
+  { id:'harmonic-probability', role:'sustained harmonic content; useful for texture and phrase interpretation' },
   { id:'vocal-probability', role:'voice presence; controls vocal prominence, not catalog genre' },
 ] as const
 

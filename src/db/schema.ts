@@ -1,3 +1,4 @@
+import { user as authUser } from './auth-schema'
 import {
   bigint,
   boolean,
@@ -80,12 +81,80 @@ export const assets = pgTable('assets', {
   publicUrl: text('public_url'),
   altEn: text('alt_en'),
   altVi: text('alt_vi'),
+  source: varchar('source', { length: 24 }).default('upload').notNull(),
+  sourceUrl: text('source_url'),
+  creditName: text('credit_name'),
+  creditUrl: text('credit_url'),
   status: varchar('status', { length: 16 }).default('ready').notNull(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
   ...timestamps,
 }, table => [
   uniqueIndex('assets_storage_key_uq').on(table.storageKey),
   index('assets_status_idx').on(table.status, table.deletedAt),
+])
+
+export const writingTags = pgTable('writing_tags', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: varchar('slug', { length: 64 }).notNull(),
+  name: varchar('name', { length: 64 }).notNull(),
+  color: varchar('color', { length: 7 }).default('#dfe8e2').notNull(),
+  textColor: varchar('text_color', { length: 7 }).default('#172019').notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  ...timestamps,
+}, table => [
+  uniqueIndex('writing_tags_slug_uq').on(table.slug),
+  index('writing_tags_enabled_idx').on(table.enabled, table.name),
+])
+
+export const posts = pgTable('posts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: varchar('slug', { length: 180 }).notNull(),
+  status: varchar('status', { length: 16 }).default('draft').notNull(),
+  titleEn: text('title_en').default('').notNull(),
+  titleVi: text('title_vi').default('').notNull(),
+  excerptEn: text('excerpt_en'),
+  excerptVi: text('excerpt_vi'),
+  bodyEn: text('body_en').default('').notNull(),
+  bodyVi: text('body_vi').default('').notNull(),
+  coverAssetId: uuid('cover_asset_id').references(() => assets.id, { onDelete:'set null' }),
+  seoTitleEn: text('seo_title_en'),
+  seoTitleVi: text('seo_title_vi'),
+  seoDescriptionEn: text('seo_description_en'),
+  seoDescriptionVi: text('seo_description_vi'),
+  highlight: boolean('highlight').default(false).notNull(),
+  tags: jsonb('tags').$type<string[]>().default([]).notNull(),
+  authorId: varchar('author_id', { length: 128 }),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  ...timestamps,
+}, table => [
+  uniqueIndex('posts_slug_uq').on(table.slug),
+  index('posts_status_idx').on(table.status, table.deletedAt, table.publishedAt),
+])
+
+export const articleLikes = pgTable('article_likes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  postId: uuid('post_id').notNull().references(() => posts.id, { onDelete:'cascade' }),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone:true }).defaultNow().notNull(),
+}, table => [
+  uniqueIndex('article_likes_post_user_uq').on(table.postId,table.userId),
+  index('article_likes_post_idx').on(table.postId,table.createdAt),
+])
+
+export const articleComments = pgTable('article_comments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  postId: uuid('post_id').notNull().references(() => posts.id, { onDelete:'cascade' }),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  body: text('body').notNull(),
+  status: varchar('status', { length:16 }).default('pending').notNull(),
+  moderatedBy: text('moderated_by'),
+  moderatedAt: timestamp('moderated_at', { withTimezone:true }),
+  deletedAt: timestamp('deleted_at', { withTimezone:true }),
+  ...timestamps,
+}, table => [
+  index('article_comments_post_status_idx').on(table.postId,table.status,table.createdAt),
+  index('article_comments_user_idx').on(table.userId,table.createdAt),
 ])
 
 export const revisions = pgTable('revisions', {

@@ -44,3 +44,7 @@ next-env.d.ts
 /backend/postgres/
 /backend/redis/
 /public/media/
+unsplash.txt
+
+# generated runtime state
+/runtime/

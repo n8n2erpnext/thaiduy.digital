@@ -3,6 +3,35 @@ export type MusicSignal = 'offline' | 'semantic' | 'dsp'
 export type MusicLayerName = 'bass' | 'lowMid' | 'mid' | 'vocal' | 'presence' | 'air'
 export type MusicLayer = { gain: number; weight: number }
 
+export type HummingNote = {
+  midi: number
+  name: string
+  beat: number
+  duration: number
+  velocity: number
+  phrase: 'question' | 'answer'
+}
+
+export type HummingComposition = {
+  id: string
+  title: string
+  seed: number
+  bpm: number
+  meter: '3/4' | '4/4'
+  key: string
+  mode: string
+  bars: number
+  voice: 'hum' | 'whistle' | 'soft-synth' | 'breath'
+  swing: number
+  chordProgression: string[]
+  notes: HummingNote[]
+  startedAt: number
+  sketchNumber?: number
+  sketchbookMonth?: string
+  generated: true
+  storedMelody: false
+}
+
 export type MusicDspPublicFrame = {
   seq: number
   at: string
@@ -34,13 +63,14 @@ export type MusicCortexState = {
   energy: number
   confidence: number
   layers: Record<MusicLayerName, MusicLayer>
+  composition: HummingComposition | null
   updatedAt: string | null
 }
 
 export const restingMusicState: MusicCortexState = {
   mode:'resting', connected:false, signal:'offline', track:null,
   genre:null, style:null, arrangement:null, texture:'unknown', mood:'unresolved', reinterpretation:false,
-  dominantLayer:'mid', energy:0, confidence:0, updatedAt:null,
+  dominantLayer:'mid', energy:0, confidence:0, composition:null, updatedAt:null,
   layers:{
     bass:{ gain:0, weight:0.2 }, lowMid:{ gain:0, weight:0.35 }, mid:{ gain:0, weight:0.45 },
     vocal:{ gain:0, weight:0.1 }, presence:{ gain:0, weight:0.2 }, air:{ gain:0, weight:0.15 },

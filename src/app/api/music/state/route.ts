@@ -4,6 +4,11 @@ import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
 import { getLatestHubPlayback } from '@/brains/music-sensor/playback-signal'
 import type { MusicTagSource } from '@/brains/music-sensor/types'
 import { isFeatureEnabled } from '@/lib/feature-flags'
+import { ensureRedis } from '@/lib/redis'
+import { composeHumming, type HummingAfterglow } from '@/brains/music-sensor/composer'
+import { HUMMING_GRAMMARS, HUMMING_POLICY } from '@/brains/music-sensor/knowledge'
+import { persistHummingSketch } from '@/brains/music-sensor/sketchbook'
+import type { HummingComposition } from '@/lib/music-state'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -34,6 +39,7 @@ type PublicMusicState = {
   energy: number
   confidence: number
   layers: Record<'bass' | 'lowMid' | 'mid' | 'vocal' | 'presence' | 'air', { weight: number; gain: number }>
+  composition: HummingComposition | null
   updatedAt: string
 }
 
@@ -46,8 +52,151 @@ function resting(connected: boolean): PublicMusicState {
   return {
     mode:'resting', connected, signal:connected ? 'semantic' : 'offline', track:null,
     genre:null, style:null, arrangement:null, texture:'unknown', mood:'calm', reinterpretation:false,
-    dominantLayer:'mid', energy:0, confidence:0, layers:emptyLayers, updatedAt:new Date().toISOString(),
+    dominantLayer:'mid', energy:0, confidence:0, layers:emptyLayers, composition:null, updatedAt:new Date().toISOString(),
   }
+}
+
+const HUMMING_ACTIVITY_KEY = 'music:humming:last-activity'
+const HUMMING_CYCLE_KEY = 'music:humming:cycle'
+const HUMMING_AFTERGLOW_KEY = 'music:humming:afterglow'
+
+type HummingCycle = {
+  startedAt: number
+  durationMs: number
+  grammarId: string
+  composition?: HummingComposition
+}
+
+function boundedSpan(seed: number, min: number, max: number) {
+  if (max <= min) return min
+  return min + Math.abs(seed % (max - min + 1))
+}
+
+function hummingLayers(dominant: readonly string[]) {
+  const keys = ['bass','lowMid','mid','vocal','presence','air'] as const
+  return Object.fromEntries(keys.map((key, index) => {
+    const rank = dominant.indexOf(key)
+    const weight = rank === 0 ? .72 : rank === 1 ? .56 : .18 + index * .035
+    return [key, { weight, gain:Math.max(0, weight - .14) }]
+  })) as PublicMusicState['layers']
+}
+
+function hummingState(cycle: HummingCycle): PublicMusicState {
+  const grammar = HUMMING_GRAMMARS.find(item => item.id === cycle.grammarId) ?? HUMMING_GRAMMARS[0]
+  const energy = (grammar.energy[0] + grammar.energy[1]) / 2
+  const dominantLayer = grammar.dominant[0] as PublicMusicState['dominantLayer']
+  return {
+    mode:'humming', connected:true, signal:'semantic', track:null,
+    genre:null, style:null, arrangement:null,
+    texture:cycle.composition ? `generated-${cycle.composition.voice}` : 'generated-motion-grammar',
+    mood:grammar.mood, reinterpretation:false, dominantLayer, energy, confidence:.78,
+    layers:hummingLayers(grammar.dominant), composition:cycle.composition ?? null,
+    updatedAt:new Date().toISOString(),
+  }
+}
+
+async function loadAfterglow(redis: Awaited<ReturnType<typeof ensureRedis>>) {
+  const raw=await redis.get(HUMMING_AFTERGLOW_KEY)
+  if (!raw) return null
+  try {
+    const value=JSON.parse(raw) as HummingAfterglow
+    if (!Number.isFinite(value.at) || Date.now()-value.at > 24*60*60*1000) return null
+    return value
+  } catch { return null }
+}
+
+async function markRealPlayback() {
+  const redis = await ensureRedis()
+  await redis.set(HUMMING_ACTIVITY_KEY, String(Date.now()), 'EX', 60 * 60 * 24 * 7)
+  await redis.del(HUMMING_CYCLE_KEY)
+}
+
+async function rememberAfterglow(value:HummingAfterglow) {
+  const redis=await ensureRedis()
+  await redis.set(HUMMING_AFTERGLOW_KEY,JSON.stringify(value),'EX',60*60*24*7)
+}
+
+function abstractModeFamily(genre:string|null, style:string|null, mood:string) {
+  if (genre==='jazz' || style?.includes('jazz')) return 'dorian'
+  if (mood.includes('intimate') || mood.includes('melanch')) return 'minor-pentatonic'
+  if (mood.includes('warm')) return 'dorian'
+  return 'major-pentatonic'
+}
+
+async function idleMusicState(connected: boolean) {
+  if (!(await isFeatureEnabled('music.idle_humming', false))) return resting(connected)
+
+  const redis = await ensureRedis()
+  const now = Date.now()
+  const rawCycle = await redis.get(HUMMING_CYCLE_KEY)
+
+  if (rawCycle) {
+    try {
+      const cycle = JSON.parse(rawCycle) as HummingCycle
+      if (now < cycle.startedAt + cycle.durationMs) {
+        if (!cycle.composition) {
+          const grammar=HUMMING_GRAMMARS.find(item=>item.id===cycle.grammarId) ?? HUMMING_GRAMMARS[0]
+          cycle.composition=await composeHumming({
+            seed:Math.floor(cycle.startedAt/1000),startedAt:cycle.startedAt,durationMs:cycle.durationMs,
+            mood:grammar.mood,tempo:grammar.tempo,swing:grammar.swing,afterglow:await loadAfterglow(redis),
+          })
+          await redis.set(HUMMING_CYCLE_KEY,JSON.stringify(cycle),'PX',Math.max(1000,cycle.startedAt+cycle.durationMs-now+60_000))
+        } else if (!cycle.composition.sketchbookMonth || !cycle.composition.sketchNumber) {
+          cycle.composition=await persistHummingSketch(cycle.composition)
+          await redis.set(HUMMING_CYCLE_KEY,JSON.stringify(cycle),'PX',Math.max(1000,cycle.startedAt+cycle.durationMs-now+60_000))
+        }
+        return hummingState(cycle)
+      }
+      await redis.set(HUMMING_ACTIVITY_KEY,String(cycle.startedAt + cycle.durationMs),'EX',60 * 60 * 24 * 7)
+      await redis.del(HUMMING_CYCLE_KEY)
+      return resting(connected)
+    } catch {
+      await redis.del(HUMMING_CYCLE_KEY)
+    }
+  }
+
+  const rawLast = await redis.get(HUMMING_ACTIVITY_KEY)
+  if (!rawLast) {
+    await redis.set(HUMMING_ACTIVITY_KEY, String(now), 'EX', 60 * 60 * 24 * 7)
+    return resting(connected)
+  }
+
+  const lastActivity = Number(rawLast)
+  if (!Number.isFinite(lastActivity)) {
+    await redis.set(HUMMING_ACTIVITY_KEY, String(now), 'EX', 60 * 60 * 24 * 7)
+    return resting(connected)
+  }
+
+  const restMs = boundedSpan(
+    Math.floor(lastActivity / 1000),
+    HUMMING_POLICY.minRestMs,
+    HUMMING_POLICY.maxRestMs,
+  )
+  if (now - lastActivity < restMs) return resting(connected)
+
+  const grammarIndex = Math.abs(Math.floor(now / 60_000)) % HUMMING_GRAMMARS.length
+  const grammar = HUMMING_GRAMMARS[grammarIndex]
+  const durationMs = boundedSpan(
+    Math.floor(now / 1000) + grammarIndex * 97,
+    HUMMING_POLICY.minDurationMs,
+    HUMMING_POLICY.maxDurationMs,
+  )
+  const cycle: HummingCycle = {
+    startedAt:now,
+    durationMs,
+    grammarId:grammar.id,
+    composition:await composeHumming({
+      seed:Math.floor(now/1000)+grammarIndex*997,startedAt:now,durationMs,
+      mood:grammar.mood,tempo:grammar.tempo,swing:grammar.swing,afterglow:await loadAfterglow(redis),
+    }),
+  }
+  await redis.set(
+    HUMMING_CYCLE_KEY,
+    JSON.stringify(cycle),
+    'PX',
+    durationMs + 60_000,
+  )
+  return hummingState(cycle)
 }
 
 function lastfmUrl(method: string) {
@@ -120,6 +269,7 @@ export async function GET() {
   )
 
   if (localActive) {
+    await markRealPlayback()
     const artist = hubPlayback.artist.trim() || 'Unknown Artist'
     const title = hubPlayback.title.trim()
     const tags = process.env.LASTFM_API_KEY
@@ -146,6 +296,12 @@ export async function GET() {
 
     const state = cycle.decision.state
     const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
+    await rememberAfterglow({
+      at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
+      dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,
+      swingness:style==='swing' || state.catalogGenre==='jazz' ? .34 : .08,
+      meter:style==='waltz' ? '3/4' : '4/4', modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
+    })
     return noStore({
       mode:state.mode,
       connected:true,
@@ -161,27 +317,29 @@ export async function GET() {
       energy:live?.rms ?? 0,
       confidence:cycle.decision.confidence,
       layers:state.layers,
+      composition:null,
       updatedAt:live?.at ?? hubPlayback.at,
     })
   }
 
   if (hubPlayback) {
-    return noStore(resting(true))
+    return noStore(await idleMusicState(true))
   }
 
   const apiKey = process.env.LASTFM_API_KEY
   const username = process.env.LASTFM_USERNAME
-  if (!apiKey || !username) return noStore(resting(Boolean(hubPlayback)))
+  if (!apiKey || !username) return noStore(await idleMusicState(Boolean(hubPlayback)))
 
   const recentUrl = lastfmUrl('user.getrecenttracks')
   recentUrl.searchParams.set('user', username)
   recentUrl.searchParams.set('limit', '2')
   const recent = await getJson<LastfmRecent>(recentUrl)
-  if (!recent) return noStore(resting(Boolean(hubPlayback)))
+  if (!recent) return noStore(await idleMusicState(Boolean(hubPlayback)))
 
   const current = (recent.recenttracks?.track ?? []).find(track => track['@attr']?.nowplaying === 'true')
-  if (!current?.name) return noStore(resting(true))
+  if (!current?.name) return noStore(await idleMusicState(true))
 
+  await markRealPlayback()
   const artist = current.artist?.['#text']?.trim() || 'Unknown Artist'
   const title = current.name.trim()
   const tags = await loadTags(artist, title)
@@ -202,12 +360,19 @@ export async function GET() {
 
   const state = cycle.decision.state
   const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
+  await rememberAfterglow({
+    at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
+    dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,
+    swingness:style==='swing' || state.catalogGenre==='jazz' ? .34 : .08,
+    meter:style==='waltz' ? '3/4' : '4/4', modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
+  })
   return noStore({
     mode:state.mode, connected:true, signal:live ? 'dsp' : 'semantic',
     track:{ artist, title, url:current.url ?? '' },
     genre:state.catalogGenre, style, arrangement:state.arrangement, texture:state.texture,
     mood:state.mood, reinterpretation:state.reinterpretation, dominantLayer:state.dominantLayer,
     energy:live?.rms ?? 0, confidence:cycle.decision.confidence, layers:state.layers,
+    composition:null,
     updatedAt:live?.at ?? new Date().toISOString(),
   })
 }

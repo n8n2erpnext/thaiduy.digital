@@ -1,0 +1,155 @@
+.visual{
+  --line:rgba(210,220,230,.66);
+  --line-soft:rgba(210,220,230,.22);
+  --surface:rgba(255,255,255,.035);
+  --blue:#8fb4ff;
+  --green:#6bd7a6;
+  --amber:#e2b26e;
+  --dim:#8b96a2;
+  width:min(100%,1000px);
+  margin:0;
+  color:var(--line);
+}
+:global(html[data-theme='normal']) .visual{
+  --line:rgba(43,52,61,.68);
+  --line-soft:rgba(43,52,61,.18);
+  --surface:rgba(255,255,255,.3);
+  --blue:#3e68bc;
+  --green:#318967;
+  --amber:#aa7136;
+  --dim:#7c8791;
+}
+.svg{display:block;width:100%;height:auto;overflow:visible}
+
+.rackTop,.rackFront,.rackSide,.innerFrame,.bladeFace,.switchFace,.lowerFace,.nodeTop,.nodeSide,.disk,.edgeGlyph,.globe ellipse,.globe path,.labels path,.labels circle,.caption path,.rails path,.rails circle,.ventBoundary,.sidePanel,.fanRingOuter,.fanRingInner,.fanGuard{
+  fill:none;
+  stroke:var(--line);
+  vector-effect:non-scaling-stroke;
+}
+.rackTop,.rackFront,.rackSide{fill:color-mix(in srgb,var(--surface) 80%,transparent);stroke-width:1.05}
+.innerFrame{stroke:var(--line-soft);stroke-width:.8}
+.bladeFace,.switchFace,.lowerFace{fill:color-mix(in srgb,var(--surface) 55%,transparent);stroke:var(--line-soft);stroke-width:.85}
+.nodeTop{fill:color-mix(in srgb,var(--surface) 78%,transparent);stroke-width:1}
+.nodeSide{fill:color-mix(in srgb,var(--surface) 50%,transparent);stroke-width:.9}
+
+.labels text,.caption text,.switch text{
+  fill:var(--line);
+  font-family:var(--font-terminal),monospace;
+  letter-spacing:.1em;
+}
+.labels text{font-size:13px}
+.caption text{font-size:12px}
+.switch text{font-size:9px}
+.labels path,.labels circle{stroke:var(--line-soft)}
+
+.floor path{
+  fill:none;
+  stroke:var(--line-soft);
+  stroke-width:.58;
+  opacity:.5;
+  vector-effect:non-scaling-stroke;
+}
+.globe ellipse,.globe path,.disk,.edgeGlyph{stroke-width:.9}
+.driveHandle{fill:none;stroke:var(--line-soft);stroke-width:.7}
+.vent{fill:var(--line-soft)}
+.mesh{fill:none;stroke:var(--line-soft);stroke-width:.7;stroke-dasharray:2 2}
+.port{fill:color-mix(in srgb,var(--line) 11%,transparent);stroke:var(--line-soft);stroke-width:.65}
+.rails{opacity:.55}
+
+.topVentPlane .ventBoundary{
+  fill:color-mix(in srgb,var(--surface) 26%,transparent);
+  stroke:var(--line-soft);
+  stroke-width:.6;
+}
+.topVentPlane circle{
+  fill:var(--line-soft);
+  opacity:.9;
+}
+.sidePanel{
+  fill:color-mix(in srgb,var(--surface) 18%,transparent);
+  stroke:var(--line-soft);
+  stroke-width:.82;
+}
+.fanRingOuter{
+  stroke:color-mix(in srgb,var(--line) 58%,transparent);
+  stroke-width:1;
+}
+.fanRingInner{
+  stroke:var(--line-soft);
+  stroke-width:.8;
+}
+.fanGuard{
+  stroke:var(--line-soft);
+  stroke-width:.65;
+}
+.fanBlade{
+  fill:color-mix(in srgb,var(--line) 10%,transparent);
+  stroke:color-mix(in srgb,var(--line) 32%,transparent);
+  stroke-width:.65;
+  vector-effect:non-scaling-stroke;
+}
+.fanHub{
+  fill:color-mix(in srgb,var(--line) 38%,transparent);
+  stroke:var(--line-soft);
+  stroke-width:.7;
+  vector-effect:non-scaling-stroke;
+}
+.fanRotor{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:fanSpin 1.9s linear infinite;
+}
+.sideVentDots circle{
+  fill:var(--line-soft);
+  opacity:.72;
+}
+
+.cables path{
+  fill:none;
+  stroke:var(--line);
+  stroke-width:2.25;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+.rearCables{opacity:.58}
+.frontCables{opacity:.68}
+.devicePort{
+  fill:color-mix(in srgb,var(--surface) 72%,transparent);
+  stroke:var(--line);
+  stroke-width:.9;
+  vector-effect:non-scaling-stroke;
+}
+
+.led{
+  filter:url(#rackv2-glow);
+  transition:opacity 38ms linear;
+}
+.blue{fill:var(--blue)}
+.green{fill:var(--green)}
+.amber{fill:var(--amber)}
+.dim{fill:var(--dim)}
+.pulse{
+  filter:url(#rackv2-glow);
+  opacity:.96;
+}
+.pulse.blue{fill:var(--blue)}
+.pulse.green{fill:var(--green)}
+.pulse.amber{fill:var(--amber)}
+
+.rack{transform-origin:830px 480px;animation:rackFloat 8s ease-in-out infinite}
+.internet{transform-origin:270px 470px;animation:nodeFloat 9.3s ease-in-out infinite}
+.storage{transform-origin:1360px 350px;animation:nodeFloat 8.6s ease-in-out infinite reverse}
+.edge{transform-origin:1360px 710px;animation:nodeFloat 9.8s ease-in-out infinite}
+
+@keyframes rackFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+@keyframes nodeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
+@keyframes fanSpin{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .visual{width:min(100%,900px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .rack,.internet,.storage,.edge,.fanRotor{animation:none!important}
+  .led{transition:none}
+}

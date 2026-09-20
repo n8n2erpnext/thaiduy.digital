@@ -41,6 +41,7 @@ export type SemanticEarState = {
   moodVotes: Record<string, number>
   textureVotes: Record<string, number>
   arrangementVotes: Record<string, number>
+  contextConcepts: string[]
   unknownTags: string[]
   identityConfidence: number
   classificationConfidence: number

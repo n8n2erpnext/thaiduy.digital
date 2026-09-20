@@ -9,8 +9,9 @@ type Props = {
 const links = [
   ['OVERVIEW', '/control'],
   ['CONTENT', '/control/content'],
-  ['ASSETS', '/control/assets'],
+  ['MEDIA', '/control/assets'],
   ['RUNTIME', '/control/runtime'],
+  ['STACK', '/control/stack'],
   ['MUSIC SENSOR', '/control/music-sensor'],
   ['TRAFFIC', '/control/traffic'],
   ['BRAINS', '/control/brains'],

@@ -1,10 +1,32 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { rememberBrainMemory } from '@/brains/core/memory-store'
 import { db } from '@/db/client'
-import { brainProfiles } from '@/db/schema'
+import { brainMemory, brainProfiles } from '@/db/schema'
+import { MUSIC_K2_CONCEPTS, MUSIC_K2_HEMISPHERE } from './k2-general'
 import { ACOUSTIC_ARCHETYPES, ACOUSTIC_FEATURE_KNOWLEDGE, CORTEX_MUSIC_POLICY, CORTEX_MUSIC_RULES, HUMMING_GRAMMARS, HUMMING_POLICY, MUSIC_KNOWLEDGE_VERSION, MUSIC_NODES, RECORDING_IDENTITY_RULES, SOURCE_WEIGHT } from './knowledge'
 
 const brainKey = 'sentinel-music'
+
+async function seedK2GeneralKnowledge() {
+  const now = new Date()
+  const rows = MUSIC_K2_CONCEPTS.map(concept => ({
+    brainKey,
+    hemisphere:MUSIC_K2_HEMISPHERE[concept.domain],
+    memoryKey:`concept:${concept.id}`,
+    value:{ version:MUSIC_KNOWLEDGE_VERSION, enabled:true, concept },
+    confidence:1,
+    learnedAt:now,
+    expiresAt:null as Date | null,
+  }))
+  for (let index = 0; index < rows.length; index += 100) {
+    const chunk = rows.slice(index, index + 100)
+    await db.insert(brainMemory).values(chunk).onConflictDoUpdate({
+      target:[brainMemory.brainKey, brainMemory.hemisphere, brainMemory.memoryKey],
+      set:{ value:sql`excluded.value`, confidence:sql`excluded.confidence`, learnedAt:now, expiresAt:null },
+    })
+  }
+  return rows.length
+}
 
 export async function seedDefaultMusicKnowledge() {
   for (const node of MUSIC_NODES) {
@@ -76,6 +98,7 @@ export async function seedDefaultMusicKnowledge() {
     })
   }
 
+  const general = await seedK2GeneralKnowledge()
   const [profile] = await db.select().from(brainProfiles).where(eq(brainProfiles.brainKey, brainKey)).limit(1)
   if (profile) {
     const stamp = { knowledgeVersion:MUSIC_KNOWLEDGE_VERSION }
@@ -91,5 +114,6 @@ export async function seedDefaultMusicKnowledge() {
     left:MUSIC_NODES.length + 1,
     right:ACOUSTIC_ARCHETYPES.length + ACOUSTIC_FEATURE_KNOWLEDGE.length,
     cortex:CORTEX_MUSIC_RULES.length + RECORDING_IDENTITY_RULES.length + HUMMING_GRAMMARS.length + 2,
+    general,
   }
 }

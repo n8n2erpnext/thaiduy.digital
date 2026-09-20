@@ -7,10 +7,9 @@ const vi = messages.vi
 
 const sectionRows = [
   ['section.projects', en.sections.projects, vi.sections.projects, 10],
-  ['section.log', en.sections.log, vi.sections.log, 20],
-  ['section.writing', en.sections.writing, vi.sections.writing, 30],
-  ['section.stack', en.sections.stack, vi.sections.stack, 40],
-  ['section.about', en.sections.about, vi.sections.about, 50],
+  ['section.writing', en.sections.writing, vi.sections.writing, 20],
+  ['section.stack', en.sections.stack, vi.sections.stack, 30],
+  ['section.about', en.sections.about, vi.sections.about, 40],
 ].map(([key, enCopy, viCopy, sort]) => ({
   key: key as string,
   kind: 'section',
@@ -93,26 +92,10 @@ const homeRows = [
       lines: { en: [...en.home.manifestoMeta], vi: [...vi.home.manifestoMeta] },
     },
   },
-  {
-    key: 'home.footer',
-    kind: 'section',
-    enabled: true,
-    status: 'published',
-    sort: 5,
-    labelEn: en.home.footerLeft,
-    labelVi: vi.home.footerLeft,
-    titleEn: null,
-    titleVi: null,
-    summaryEn: null,
-    summaryVi: null,
-    meta: {
-      right: { en: en.home.footerRight, vi: vi.home.footerRight },
-    },
-  },
 ]
 
 const surfaces = en.home.surfaces.map((surface, index) => ({
-  key: ['home.projects', 'home.log', 'home.stack'][index],
+  key: ['home.projects', 'home.writing', 'home.stack'][index],
   kind: 'home-surface',
   enabled: true,
   status: 'published',
@@ -123,7 +106,7 @@ const surfaces = en.home.surfaces.map((surface, index) => ({
   titleVi: vi.home.surfaces[index].title,
   summaryEn: surface.copy,
   summaryVi: vi.home.surfaces[index].copy,
-  meta: { href: ['/projects', '/log', '/stack'][index] },
+  meta: { href: ['/projects', '/writing', '/stack'][index] },
 }))
 
 const rows = [...sectionRows, ...homeRows, ...surfaces]

@@ -2,6 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
 import { LanguageSwitch } from '@/components/site/language-switch'
+import { SiteSearch } from '@/components/site/site-search'
+import { ThemeSwitch } from '@/components/site/theme-switch'
 import { getRegistry } from '@/content/repository'
 import { textFor } from '@/content/types'
 import type { Locale } from '@/i18n/config'
@@ -42,6 +44,8 @@ export async function SiteHeader({ locale }: Props) {
         ))}
       </nav>
       <div className="header-actions">
+        <SiteSearch locale={locale} />
+        <ThemeSwitch locale={locale} />
         {musicEnabled && <MusicWaveIndicator locale={locale} />}
         <LanguageSwitch
           locale={locale}

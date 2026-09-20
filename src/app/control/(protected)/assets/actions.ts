@@ -38,7 +38,7 @@ export async function purgeAsset(id: string) {
   const session = await requireControlOwner()
   const [row] = await db.select().from(assets).where(eq(assets.id, id)).limit(1)
   if (!row) return
-  await deleteStoredAsset(row.storageKey)
+  if (row.source === 'upload') await deleteStoredAsset(row.storageKey)
   await db.delete(assets).where(eq(assets.id, id))
   await audit(session.user.id, 'asset.purge', id, { storageKey: row.storageKey })
   revalidatePath('/control/assets')

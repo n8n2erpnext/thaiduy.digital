@@ -1,0 +1,7 @@
+[Unit]
+Description=Thaiduy Stack full host discovery refresh
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/n8n2erpnext/thaiduy.digital
+ExecStart=/usr/bin/flock -w 30 /tmp/thaiduy-stack-refresh.lock %h/.bun/bin/bun scripts/stack-refresh.ts

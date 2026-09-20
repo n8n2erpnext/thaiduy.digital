@@ -14,9 +14,15 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        before: async (candidate) => {
+        before: async (candidate, context) => {
           const ownerEmail = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
-          if (!ownerEmail || candidate.email.toLowerCase() !== ownerEmail) return false
+          const email = candidate.email.toLowerCase()
+
+          if (context?.path === '/callback/:id' && context.params?.id === 'google') {
+            return
+          }
+
+          if (!ownerEmail || email !== ownerEmail) return false
           const existing = await db.select({ id: authSchema.user.id }).from(authSchema.user).limit(1)
           if (existing.length > 0) return false
         },

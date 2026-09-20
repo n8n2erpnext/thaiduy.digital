@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import { SiteFooter } from '@/components/site/footer'
 import { TrafficBeacon } from '@/components/site/traffic-beacon'
 import { WebVitalsReporter } from '@/components/site/web-vitals-reporter'
 import { resolveLocale } from '@/i18n/locale'
@@ -78,10 +79,20 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang={locale}
       data-scroll-behavior="smooth"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${googleSans.variable} ${googleSansCode.variable} antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:"try{var t=localStorage.getItem('thaiduy-theme');var m=t==='normal'?'normal':'dark';document.documentElement.dataset.theme=m;document.documentElement.style.colorScheme=m==='dark'?'dark':'light'}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         {children}
+        <SiteFooter locale={locale} />
         {trafficEnabled && <TrafficBeacon />}
         {trafficEnabled && <WebVitalsReporter />}
       </body>

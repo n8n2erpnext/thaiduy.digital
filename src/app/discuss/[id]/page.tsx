@@ -50,7 +50,7 @@ export default async function DiscussThreadPage({params,searchParams}:Props) {
     <div className="site-shell">
       <SiteHeader locale={locale} />
       <main className="discuss-thread-page">
-        <Link className="text-action" href="/discuss">
+        <Link className="discuss-back-link" href="/discuss">
           ← Discuss
         </Link>
 

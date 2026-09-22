@@ -8931,9 +8931,24 @@ html[data-theme='normal'] .cv-education{
   margin: 74px auto 96px;
 }
 
-.discuss-thread-page > .text-action {
-  display: inline-block;
-  margin-bottom: 22px;
+.discuss-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 18px 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  font-weight: 500;
+  letter-spacing: .04em;
+}
+
+.discuss-back-link:hover {
+  color: var(--text);
 }
 
 .discuss-thread-detail {

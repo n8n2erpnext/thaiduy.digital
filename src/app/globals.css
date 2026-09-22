@@ -15,6 +15,7 @@
   --ambient-a: rgba(79, 143, 103, 0.12);
   --ambient-b: rgba(83, 104, 94, 0.08);
   --grid-line: rgba(255, 255, 255, 0.025);
+  --modal-scrim: rgba(6, 10, 8, 0.54);
   --font-terminal: "Cascadia Mono", "Cascadia Code", Consolas, var(--font-google-sans-code), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -2878,6 +2879,7 @@ html[data-theme='normal'] {
   --ambient-a: rgba(42, 162, 113, 0.08);
   --ambient-b: rgba(72, 127, 159, 0.055);
   --grid-line: rgba(15, 29, 20, 0.035);
+  --modal-scrim: rgba(244, 246, 242, 0.72);
 }
 
 html,
@@ -10184,5 +10186,174 @@ html[data-theme='normal'] .cv-education{
     grid-column: 1 / -1;
     justify-self: start;
     height: 32px;
+  }
+}
+
+/* Discuss in-app link dialog */
+.discuss-link-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--modal-scrim);
+  backdrop-filter: blur(5px);
+}
+
+.discuss-link-dialog {
+  width: min(520px,100%);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+
+.discuss-link-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 17px;
+  border-bottom: 1px solid var(--line);
+}
+
+.discuss-link-dialog > header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.discuss-link-dialog > header span,
+.discuss-link-dialog-selection > span,
+.discuss-link-dialog > label > span {
+  color: var(--signal);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  letter-spacing: .07em;
+}
+
+.discuss-link-dialog > header strong {
+  color: var(--text);
+  font-size: var(--type-body);
+  font-weight: 560;
+}
+
+.discuss-link-dialog > header > button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.discuss-link-dialog-selection {
+  display: grid;
+  gap: 5px;
+  margin: 14px 17px 0;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.discuss-link-dialog-selection p {
+  overflow: hidden;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discuss-link-dialog > label {
+  display: grid;
+  gap: 7px;
+  padding: 14px 17px 0;
+}
+
+.discuss-link-dialog > label input {
+  width: 100%;
+  height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: var(--type-ui);
+}
+
+.discuss-link-dialog > label input:focus {
+  border-color: rgba(142,232,178,.38);
+}
+
+.discuss-link-dialog-error {
+  margin: 8px 17px 0;
+  color: var(--amber);
+  font-size: var(--type-body-sm);
+}
+
+.discuss-link-dialog > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 17px;
+}
+
+.discuss-link-dialog > footer > div {
+  display: flex;
+  gap: 7px;
+}
+
+.discuss-link-dialog > footer button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+
+.discuss-link-dialog > footer button:hover {
+  border-color: rgba(142,232,178,.28);
+  background: var(--signal-soft);
+  color: var(--text);
+}
+
+.discuss-link-dialog > footer button.is-primary {
+  border-color: rgba(142,232,178,.42);
+  color: var(--text);
+}
+
+.discuss-link-dialog > footer button.is-remove {
+  border-color: rgba(222,160,89,.28);
+  color: var(--amber);
+}
+
+@media (max-width: 620px) {
+  .discuss-link-dialog-layer {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .discuss-link-dialog {
+    border-radius: 14px 14px 10px 10px;
+  }
+
+  .discuss-link-dialog > footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .discuss-link-dialog > footer > div {
+    justify-content: flex-end;
   }
 }

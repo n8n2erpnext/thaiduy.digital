@@ -5,6 +5,20 @@ import { assets } from '@/db/schema'
 import { assetProvider } from '@/lib/assets'
 import { purgeAsset, restoreAsset, toggleAsset, trashAsset, updateAssetMeta } from './actions'
 
+function assetStorageLabel(publicUrl:string|null,source:string) {
+  if (source==='unsplash') return 'UNSPLASH'
+  if (!publicUrl) return 'NO URL'
+  try {
+    const url=new URL(publicUrl,'https://thaiduy.digital')
+    const r2Base=process.env.R2_PUBLIC_URL?new URL(process.env.R2_PUBLIC_URL):null
+    if (r2Base && url.host===r2Base.host) return 'R2'
+    if (url.host==='thaiduy.digital' && url.pathname.startsWith('/media/')) return 'LOCAL'
+    return 'EXTERNAL'
+  } catch {
+    return 'UNKNOWN'
+  }
+}
+
 export default async function AssetsPage() {
   const rows = await db.select().from(assets).orderBy(desc(assets.createdAt))
   const provider = assetProvider()
@@ -59,7 +73,7 @@ export default async function AssetsPage() {
                   style={row.mimeType.startsWith('image/') && row.publicUrl ? { backgroundImage: `url(${row.publicUrl})` } : undefined}
                 >
                   <span>{row.mimeType}</span>
-                  <i>{row.source.toUpperCase()}</i>
+                  <i>{assetStorageLabel(row.publicUrl,row.source)}</i>
                 </div>
 
                 <div className="asset-meta">

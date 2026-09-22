@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { assetUploadMessage } from '@/lib/asset-errors'
 
 export function AssetUpload() {
   const router = useRouter()
@@ -10,22 +11,31 @@ export function AssetUpload() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const form=event.currentTarget
     setPending(true)
     setMessage('')
-    const response = await fetch('/api/control/assets', {
-      method: 'POST',
-      body: new FormData(event.currentTarget),
-      credentials: 'same-origin',
-    })
-    const payload = await response.json() as { error?: string }
-    setPending(false)
-    if (!response.ok) {
-      setMessage(payload.error ?? 'UPLOAD FAILED')
-      return
+    try {
+      const response=await fetch('/api/control/assets',{
+        method:'POST',
+        body:new FormData(form),
+        credentials:'same-origin',
+      })
+      const payload=await response.json() as {
+        error?:string
+        provider?:'r2'|'local'
+      }
+      if (!response.ok) {
+        setMessage(assetUploadMessage(payload.error ?? 'asset_upload_failed'))
+        return
+      }
+      form.reset()
+      setMessage(`UPLOAD VERIFIED · ${(payload.provider ?? 'storage').toUpperCase()} READY`)
+      router.refresh()
+    } catch {
+      setMessage('Upload request failed before R2 verification.')
+    } finally {
+      setPending(false)
     }
-    event.currentTarget.reset()
-    setMessage('UPLOAD COMPLETE')
-    router.refresh()
   }
 
   return (

@@ -2600,4 +2600,65 @@ Verification:
 
 ---
 
+# 64. DISCUSS LINK DIALOG + R2 MEDIA VERIFICATION — 2026-09-22
+
+Discuss link UX:
+
+- browser-native window.prompt was removed from the public Discuss link flow
+- link insertion/editing now uses a site-styled in-app modal
+- modal preserves the selected text range while focus moves into the URL input
+- modal shows selected text, URL field, Cancel, Apply and Remove Link when editing
+- Escape cancels; Enter submits
+- invalid URLs render an inline site error instead of a browser-native validation popup
+- only http, https and mailto URLs are accepted
+- successful link insertion collapses the caret after the selected text and clears stored marks, so later typing remains plain text
+- public Discuss source contains no window.prompt link flow
+
+R2 media audit findings:
+
+- runtime asset provider is R2
+- R2 credentials/bucket/endpoint/public custom domain are configured
+- current R2 public host is drive.thaiduy.store
+- latest uploaded asset exists in R2 and its public URL returns HTTP 200 with the expected PNG bytes
+- current Media DB contains 12 assets:
+  - 1 source=upload asset on R2
+  - 10 source=screenshot assets served locally from thaiduy.digital/media/writing/*
+  - 1 Unsplash asset
+- the single R2 upload asset is currently orphaned: it is not referenced by any Writing cover or body
+- 11 Writing posts currently contain zero embedded body images
+- Writing cover distribution:
+  - 10 local screenshot covers
+  - 1 Unsplash cover
+  - 0 R2 covers
+
+No historical cover migration was performed in this change. Existing live URLs remain unchanged.
+
+R2 upload hardening:
+
+- src/lib/assets.ts now normalizes/infer MIME types for supported image/PDF extensions
+- common browser MIME aliases are normalized
+- R2_PUBLIC_URL is required and validated before R2 storage returns success
+- R2 PUT now sends immutable cache-control metadata
+- every R2 PUT is followed by HeadObject verification
+- verification checks ContentLength against the uploaded byte length
+- failed verification best-effort deletes the object and returns r2_verify_failed
+- raw AWS/storage errors are no longer returned directly to the browser
+- upload API returns safe error codes and correct HTTP statuses
+- upload API returns the actual storage provider used
+- Media library and Writing editor surface user-readable upload errors
+- successful UI feedback is provider-aware rather than hardcoded
+- /control/assets now labels each asset by actual storage backend: R2 / LOCAL / UNSPLASH / EXTERNAL
+
+R2 QA:
+
+- created a temporary 1x1 PNG with an empty MIME type
+- production storeAsset() inferred image/png
+- object uploaded to R2
+- HeadObject verification passed
+- public URL returned HTTP 200
+- downloaded byte length matched the original upload
+- temporary QA object was deleted from R2 afterwards
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

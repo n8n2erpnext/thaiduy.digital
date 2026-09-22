@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const [row] = await db.insert(assets).values({
       storageKey: stored.storageKey,
       fileName: file.name.slice(0, 500),
-      mimeType: file.type,
+      mimeType: stored.mimeType,
       sizeBytes: file.size,
       publicUrl: stored.publicUrl,
       altEn,
@@ -71,11 +71,32 @@ export async function POST(request: NextRequest) {
       action: 'asset.upload',
       entityType: 'asset',
       entityId: row.id,
-      metadata: { provider: stored.provider, mimeType: file.type, sizeBytes: file.size },
+      metadata: { provider: stored.provider, mimeType: stored.mimeType, sizeBytes: file.size },
     })
-    return NextResponse.json({ ok: true, asset: row }, { status: 201 })
+    return NextResponse.json({
+      ok:true,
+      asset:row,
+      provider:stored.provider,
+    },{status:201})
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'upload_failed'
-    return NextResponse.json({ error: message }, { status: 400 })
+    const code=error instanceof Error?error.message:'asset_upload_failed'
+    const known=new Set([
+      'unsupported_asset_type',
+      'invalid_asset_size',
+      'r2_public_url_missing',
+      'r2_public_url_invalid',
+      'r2_upload_failed',
+      'r2_verify_failed',
+    ])
+    const safeCode=known.has(code)?code:'asset_upload_failed'
+    const status=
+      safeCode==='unsupported_asset_type'?415:
+      safeCode==='invalid_asset_size'?413:
+      safeCode.startsWith('r2_')?502:500
+    console.error('[asset.upload.failed]',{
+      code:safeCode,
+      name:error instanceof Error?error.name:'unknown',
+    })
+    return NextResponse.json({ error:safeCode }, { status })
   }
 }

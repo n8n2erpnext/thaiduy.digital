@@ -12,6 +12,7 @@ import { common, createLowlight } from 'lowlight'
 import { CmsSelectionBubble, CmsSlashMenu } from '@/components/control/cms-editor-menus'
 import type { PostRow } from '@/content/posts'
 import { savePostAction } from '@/app/control/(protected)/content/writing/actions'
+import { assetUploadMessage } from '@/lib/asset-errors'
 
 const lowlight = createLowlight(common)
 
@@ -261,17 +262,28 @@ export function CmsPostEditor({ post, availableTags=[] }: Props) {
         body:form,
         credentials:'same-origin',
       })
-      const payload = await response.json() as { asset?:MediaAsset; error?:string }
-      if (!response.ok || !payload.asset?.publicUrl) {
-        setUploadMessage(payload.error ?? 'UPLOAD FAILED')
+      const payload=await response.json() as {
+        asset?:MediaAsset
+        error?:string
+        provider?:'r2'|'local'
+      }
+      if (!response.ok) {
+        setUploadMessage(assetUploadMessage(payload.error ?? 'asset_upload_failed'))
         return
       }
-      const asset = payload.asset
-      setMedia(current => [asset,...current.filter(item => item.id !== asset.id)])
+      if (!payload.asset?.publicUrl) {
+        setUploadMessage('Upload verified, but no public media URL was returned.')
+        return
+      }
+      const asset=payload.asset
+      setMedia(current=>[asset,...current.filter(item=>item.id!==asset.id)])
+      setUploadMessage(`${(payload.provider ?? 'storage').toUpperCase()} READY`)
       selectAsset(asset)
+    } catch {
+      setUploadMessage('Upload request failed before R2 verification.')
     } finally {
       setUploading(false)
-      event.target.value = ''
+      event.target.value=''
     }
   }
 

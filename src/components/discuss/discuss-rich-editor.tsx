@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo,useState } from 'react'
+import { FormEvent,useEffect,useMemo,useRef,useState } from 'react'
 import { Node } from '@tiptap/core'
 import TiptapLink from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -64,6 +64,12 @@ type ChangeValue={
   text:string
 }
 
+type LinkDialogState={
+  from:number
+  to:number
+  editing:boolean
+}
+
 type Props={
   locale:'en'|'vi'
   participants:CommunityParticipant[]
@@ -118,6 +124,10 @@ export function DiscussRichEditor({
   const [emojiOpen,setEmojiOpen]=useState(false)
   const [mentionOpen,setMentionOpen]=useState(false)
   const [mentionQuery,setMentionQuery]=useState('')
+  const [linkDialog,setLinkDialog]=useState<LinkDialogState|null>(null)
+  const [linkValue,setLinkValue]=useState('')
+  const [linkError,setLinkError]=useState('')
+  const linkInputRef=useRef<HTMLInputElement>(null)
 
   const editor=useEditor({
     extensions:extensions(placeholder),
@@ -155,44 +165,92 @@ export function DiscussRichEditor({
     return participants.filter(item=>item.name.toLocaleLowerCase(locale==='vi'?'vi-VN':'en-US').includes(query))
   },[mentionQuery,participants,locale])
 
+  useEffect(()=>{
+    if (!linkDialog) return
+    const frame=requestAnimationFrame(()=>{
+      linkInputRef.current?.focus()
+      linkInputRef.current?.select()
+    })
+    return ()=>cancelAnimationFrame(frame)
+  },[linkDialog])
+
   if (!editor) return null
 
-  const link=()=>{
+  const closeLinkDialog=(restoreSelection=true)=>{
+    if (linkDialog && restoreSelection) {
+      editor.chain().focus().setTextSelection({
+        from:linkDialog.from,
+        to:linkDialog.to,
+      }).run()
+    }
+    setLinkDialog(null)
+    setLinkError('')
+  }
+
+  const openLinkDialog=()=>{
     const active=editor.isActive('link')
-    const originalSelection=editor.state.selection
+    const selection=editor.state.selection
+    if (selection.empty && !active) return
 
-    if (originalSelection.empty && !active) return
-
-    if (originalSelection.empty && active) {
+    if (selection.empty && active) {
       editor.chain().focus().extendMarkRange('link').run()
     }
 
-    const selectionEnd=editor.state.selection.to
+    const current=editor.state.selection
     const previous=editor.getAttributes('link').href as string | undefined
-    const value=window.prompt(vi?'Địa chỉ liên kết':'Link URL',previous ?? 'https://')
-    if (value===null) {
-      editor.commands.setTextSelection(selectionEnd)
-      return
-    }
+    setEmojiOpen(false)
+    setMentionOpen(false)
+    setLinkError('')
+    setLinkValue(previous ?? 'https://')
+    setLinkDialog({
+      from:current.from,
+      to:current.to,
+      editing:active,
+    })
+  }
 
+  const normalizedLink=(value:string)=>{
     const href=value.trim()
-    if (!href) {
-      editor.chain().focus().unsetLink().setTextSelection(selectionEnd).run()
-      editor.view.dispatch(editor.state.tr.setStoredMarks([]))
-      return
+    if (!href) return ''
+    if (/^mailto:[^\s@]+@[^\s@]+$/i.test(href)) return href
+    try {
+      const parsed=new URL(href)
+      return parsed.protocol==='http:' || parsed.protocol==='https:' ? href : ''
+    } catch {
+      return ''
     }
-    if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
-      editor.commands.setTextSelection(selectionEnd)
+  }
+
+  const applyLink=(event?:FormEvent)=>{
+    event?.preventDefault()
+    if (!linkDialog) return
+
+    const href=normalizedLink(linkValue)
+    if (!href) {
+      setLinkError(vi?'Nhập URL http(s) hoặc mailto hợp lệ.':'Enter a valid http(s) or mailto URL.')
       return
     }
 
     editor.chain()
       .focus()
+      .setTextSelection({from:linkDialog.from,to:linkDialog.to})
       .setLink({href})
-      .setTextSelection(selectionEnd)
+      .setTextSelection(linkDialog.to)
       .run()
-
     editor.view.dispatch(editor.state.tr.setStoredMarks([]))
+    closeLinkDialog(false)
+  }
+
+  const removeLink=()=>{
+    if (!linkDialog) return
+    editor.chain()
+      .focus()
+      .setTextSelection({from:linkDialog.from,to:linkDialog.to})
+      .unsetLink()
+      .setTextSelection(linkDialog.to)
+      .run()
+    editor.view.dispatch(editor.state.tr.setStoredMarks([]))
+    closeLinkDialog(false)
   }
 
   const insertEmoji=(emoji:string)=>{
@@ -236,7 +294,7 @@ export function DiscussRichEditor({
           title={vi?'Liên kết':'Link'}
           active={editor.isActive('link')}
           disabled={editor.state.selection.empty && !editor.isActive('link')}
-          onClick={link}
+          onClick={openLinkDialog}
         />
         <ToolbarButton label="</>" title="Code" active={editor.isActive('codeBlock')} onClick={()=>editor.chain().focus().toggleCodeBlock().run()} />
         <ToolbarButton label="—" title={vi?'Đường phân cách':'Divider'} onClick={()=>editor.chain().focus().setHorizontalRule().run()} />
@@ -301,6 +359,73 @@ export function DiscussRichEditor({
               <p>{vi?'Không có người phù hợp trong chủ đề này.':'No matching participant in this topic.'}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {linkDialog && (
+        <div
+          className="discuss-link-dialog-layer"
+          role="presentation"
+          onPointerDown={event=>{
+            if (event.target===event.currentTarget) closeLinkDialog()
+          }}
+        >
+          <form
+            className="discuss-link-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={vi?'Chèn liên kết':'Insert link'}
+            onSubmit={applyLink}
+            onKeyDown={event=>{
+              if (event.key==='Escape') {
+                event.preventDefault()
+                closeLinkDialog()
+              }
+            }}
+          >
+            <header>
+              <div>
+                <span>{vi?'LIÊN KẾT':'LINK'}</span>
+                <strong>{linkDialog.editing
+                  ? (vi?'Chỉnh sửa liên kết':'Edit link')
+                  : (vi?'Gắn liên kết vào đoạn đã chọn':'Link selected text')}</strong>
+              </div>
+              <button type="button" aria-label={vi?'Đóng':'Close'} onClick={()=>closeLinkDialog()}>×</button>
+            </header>
+            <div className="discuss-link-dialog-selection">
+              <span>{vi?'ĐÃ CHỌN':'SELECTED'}</span>
+              <p>{editor.state.doc.textBetween(linkDialog.from,linkDialog.to,' ')}</p>
+            </div>
+            <label>
+              <span>URL</span>
+              <input
+                ref={linkInputRef}
+                type="text"
+                inputMode="url"
+                value={linkValue}
+                onChange={event=>{
+                  setLinkValue(event.target.value)
+                  if (linkError) setLinkError('')
+                }}
+                placeholder="https://example.com"
+                spellCheck={false}
+              />
+            </label>
+            {linkError && <p className="discuss-link-dialog-error">{linkError}</p>}
+            <footer>
+              <div>
+                {linkDialog.editing && (
+                  <button className="is-remove" type="button" onClick={removeLink}>
+                    {vi?'BỎ LINK':'REMOVE LINK'}
+                  </button>
+                )}
+              </div>
+              <div>
+                <button type="button" onClick={()=>closeLinkDialog()}>{vi?'HỦY':'CANCEL'}</button>
+                <button className="is-primary" type="submit">{vi?'ÁP DỤNG':'APPLY'}</button>
+              </div>
+            </footer>
+          </form>
         </div>
       )}
 

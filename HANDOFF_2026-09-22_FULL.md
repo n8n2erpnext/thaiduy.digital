@@ -2661,4 +2661,107 @@ R2 QA:
 
 ---
 
+# 65. LOG ROTATION / STANDALONE DOCKER LOGGING CONTRACT — 2026-09-22
+
+Current host log audit:
+
+- root filesystem: 121 GB total, 85 GB used, 36 GB free, 71% used
+- /var/log total: approximately 1.1 GB
+- systemd journal: approximately 489 MB
+- journald is already capped by host config:
+  - SystemMaxUse=500M
+  - MaxRetentionSec=7d
+- gpt-vps-operator operations log: approximately 20 MB
+- /etc/logrotate.d/gpt-vps-operator already enforces:
+  - size 50M
+  - rotate 3
+  - compress
+  - delaycompress
+  - copytruncate
+- Docker daemon default logging driver: json-file
+- no /etc/docker/daemon.json exists, so unrelated containers without per-service logging options remain unbounded by Docker defaults
+
+Observed Docker log volume over the previous 24 hours:
+
+- netbird-proxy: ~17.88 MB
+- netbird-traefik: ~10.95 MB
+- netbird-crowdsec: ~3.81 MB
+- thaiduy-postgres: ~0.19 MB
+- thaiduy-redis: ~0.02 MB
+- most other containers were below ~0.2 MB/day
+
+NetBird was intentionally not recreated or reconfigured during this change because it is part of the current remote/connectivity path. Its existing containers already have explicit max-size/max-file options, though several are currently set to 500m x 2.
+
+thaiduy.digital development log:
+
+- current Next dev stdout/stderr target: /tmp/thaiduy-digital-dev.log
+- observed size before rotation: ~997 KB after roughly 5 hours
+- canonical policy:
+  - rotate at 5 MB
+  - keep 3 rotations
+  - compress old rotations
+  - delaycompress
+  - copytruncate so the running Next dev process keeps its open file descriptor
+- config: ops/logrotate/thaiduy-digital-dev.conf
+- watcher: ops/logrotate/watch-dev-log.sh
+- watcher interval: 1800 seconds / 30 minutes
+- watcher runs as ubuntu and uses state file:
+  /home/ubuntu/.local/state/thaiduy-digital-logrotate.status
+- current watcher is active as a detached user process
+- package.json dev command now starts through scripts/dev-with-logrotate.sh, which ensures the watcher exists before exec'ing next dev
+
+Real dev-log rotation verification:
+
+- forced one rotation of /tmp/thaiduy-digital-dev.log
+- previous ~997 KB content moved to .1
+- active log was truncated to 0 with copytruncate
+- a subsequent /discuss request wrote new bytes to the active log
+- result: copytruncate_continues=PASS
+
+thaiduy.digital Docker backend logging:
+
+backend/docker-compose.yml now defines a reusable YAML anchor:
+
+- driver: json-file
+- max-size: 10m
+- max-file: 3
+
+The policy is attached to:
+
+- thaiduy-postgres
+- thaiduy-redis
+
+Both containers were recreated one-by-one so Docker would actually apply the new log options.
+
+Verification after recreation:
+
+- thaiduy-postgres:
+  - json-file
+  - max-size=10m
+  - max-file=3
+  - healthy
+- thaiduy-redis:
+  - json-file
+  - max-size=10m
+  - max-file=3
+  - healthy
+- public smoke after recreation:
+  - / -> 200
+  - /discuss -> 200
+  - /writing -> 200
+  - /control/assets -> 307 when logged out, expected auth redirect
+
+Standalone Docker contract:
+
+- every future thaiduy.digital standalone service must use an explicit per-service logging policy
+- default contract is json-file, max-size 10m, max-file 3
+- do not rely on Docker daemon defaults
+- keep application logs on stdout/stderr inside containers rather than writing unbounded files inside the container filesystem
+- database/redis/app/proxy services should all attach the same logging policy unless a service has a documented reason for a different retention window
+- this keeps the standalone deployment portable even on hosts with no daemon.json logging limits
+
+Docker build cache was approximately 4.0 GB during this audit. This is not runtime logging and was not deleted as part of the log-rotation change.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

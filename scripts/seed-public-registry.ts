@@ -116,7 +116,7 @@ const navRows = [
     kind:'nav',
     enabled:true,
     status:'published',
-    sort:50,
+    sort:40,
     labelEn:'Discuss',
     labelVi:'Discuss',
     meta:{href:'/discuss'},

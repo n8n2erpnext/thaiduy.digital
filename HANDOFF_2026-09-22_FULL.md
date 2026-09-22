@@ -3847,4 +3847,53 @@ Validation:
 
 ---
 
+# Control overview weekly line/area chart
+
+Control sidebar identity:
+
+- Removed the `TD /` prefix.
+- Sidebar identity now displays simply `CONTROL`.
+- Public brand logo and control-home SVG shortcuts remain unchanged.
+
+Control overview traffic chart:
+
+- Replaced the old 7-column bar chart with an SVG line/area chart inspired by the supplied reference.
+- Two real telemetry series:
+  - PAGEVIEWS: blue line + blue translucent area
+  - EVENTS: pink line + pink translucent area
+- Horizontal value grid and compact Y-axis labels added.
+- Per-day points expose native SVG tooltips with pageview/event counts.
+- No chart library dependency was added; chart is server-rendered SVG.
+
+Weekly date behavior:
+
+- Overview no longer uses a rolling previous-7-days series.
+- Added `getTrafficCurrentWeekSeries()`.
+- Week is defined in `Asia/Ho_Chi_Minh`, Monday through Sunday.
+- X-axis labels automatically change with each calendar week.
+- Future days remain on the weekly axis but are flagged `future` and are NOT included in the plotted line/area, preventing false drops to zero.
+- Current live query during QA:
+  - Mon 21 Sep: 66 pageviews / 0 events / 3 visitors
+  - Tue 22 Sep: 167 pageviews / 0 events / 2 visitors
+  - Wed 23 Sep through Sun 27 Sep: future
+
+Chart header/footer:
+
+- header now reads `PUBLIC ACTIVITY / THIS WEEK`
+- footer displays current week bounds and `ASIA/HO_CHI_MINH`
+- `OPEN TRAFFIC →` retained
+
+Validation:
+
+- live DB current-week query PASS
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- stale bar-chart selectors/components removed
+- git diff --check PASS
+- local /control/login 200
+- public /control/login 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

@@ -1,19 +1,78 @@
 import Link from 'next/link'
-import { getControlOverview, getTrafficDailySeries } from '@/control/queries'
+import { getControlOverview, getTrafficCurrentWeekSeries } from '@/control/queries'
 
 type Row=Record<string,unknown>
+
+const CHART={
+  width:1000,
+  height:310,
+  left:58,
+  right:22,
+  top:24,
+  bottom:48,
+}
+
+function compact(value:number) {
+  return new Intl.NumberFormat('en-US',{
+    notation:'compact',
+    maximumFractionDigits:value>=1000?1:0,
+  }).format(value)
+}
 
 export default async function ControlOverviewPage() {
   const [stats,seriesRaw]=await Promise.all([
     getControlOverview(),
-    getTrafficDailySeries(7),
+    getTrafficCurrentWeekSeries(),
   ])
 
-  const series=seriesRaw as Row[]
-  const maxValue=Math.max(
+  const series=(seriesRaw as Row[]).map(row=>({
+    label:String(row.label ?? ''),
+    weekday:String(row.weekday ?? ''),
+    future:Boolean(row.future),
+    views:Number(row.views ?? 0),
+    events:Number(row.events ?? 0),
+    visitors:Number(row.visitors ?? 0),
+  }))
+
+  const maxRaw=Math.max(
     1,
-    ...series.flatMap(row=>[Number(row.views ?? 0),Number(row.events ?? 0)]),
+    ...series
+      .filter(row=>!row.future)
+      .flatMap(row=>[row.views,row.events]),
   )
+  const magnitude=10**Math.floor(Math.log10(maxRaw))
+  const maxValue=Math.ceil(maxRaw/magnitude)*magnitude
+  const plotWidth=CHART.width-CHART.left-CHART.right
+  const plotHeight=CHART.height-CHART.top-CHART.bottom
+  const baseline=CHART.top+plotHeight
+  const step=series.length>1?plotWidth/(series.length-1):0
+  const x=(index:number)=>CHART.left+index*step
+  const y=(value:number)=>CHART.top+(1-value/maxValue)*plotHeight
+
+  function pointsFor(key:'views'|'events') {
+    return series
+      .map((row,index)=>row.future?null:{x:x(index),y:y(row[key]),value:row[key],row,index})
+      .filter((point):point is NonNullable<typeof point>=>point!==null)
+  }
+
+  function linePath(key:'views'|'events') {
+    const points=pointsFor(key)
+    return points.map((point,index)=>`${index?'L':'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ')
+  }
+
+  function areaPath(key:'views'|'events') {
+    const points=pointsFor(key)
+    if(points.length<2) return ''
+    const line=points.map((point,index)=>`${index?'L':'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ')
+    return `${line} L ${points.at(-1)!.x.toFixed(2)} ${baseline} L ${points[0].x.toFixed(2)} ${baseline} Z`
+  }
+
+  const yTicks=[1,.75,.5,.25,0].map(ratio=>({
+    value:maxValue*ratio,
+    y:CHART.top+(1-ratio)*plotHeight,
+  }))
+  const weekStart=series[0]?.label ?? '—'
+  const weekEnd=series.at(-1)?.label ?? '—'
 
   const cards = [
     ['REGISTRY',stats.registry,'/control/content'],
@@ -50,7 +109,7 @@ export default async function ControlOverviewPage() {
       <section className="control-overview-chart">
         <header>
           <div>
-            <span>PUBLIC ACTIVITY / 7D</span>
+            <span>PUBLIC ACTIVITY / THIS WEEK</span>
             <h2>Views and explicit events</h2>
           </div>
           <div className="control-chart-legend">
@@ -59,34 +118,64 @@ export default async function ControlOverviewPage() {
           </div>
         </header>
 
-        <div className="control-bar-chart">
-          {series.map(row=>{
-            const views=Number(row.views ?? 0)
-            const events=Number(row.events ?? 0)
-            const visitors=Number(row.visitors ?? 0)
-            return (
-              <div className="control-bar-day" key={String(row.label)}>
-                <div className="control-bar-stage">
-                  <i
-                    data-series="views"
-                    style={{height:`${Math.max(2,views/maxValue*100)}%`}}
-                    title={`${views} pageviews`}
-                  />
-                  <i
-                    data-series="events"
-                    style={{height:`${Math.max(2,events/maxValue*100)}%`}}
-                    title={`${events} events`}
-                  />
-                </div>
-                <strong>{views.toLocaleString('en-US')}</strong>
-                <small>{events.toLocaleString('en-US')} EVT · {visitors.toLocaleString('en-US')} VIS</small>
-                <span>{String(row.label)}</span>
-              </div>
-            )
-          })}
+        <div className="control-line-chart-scroll">
+          <svg
+            className="control-line-chart"
+            viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+            role="img"
+            aria-label={`Pageviews and events for ${weekStart} through ${weekEnd}`}
+          >
+            <defs>
+              <linearGradient id="controlViewsArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4aa7ff" stopOpacity=".28"/>
+                <stop offset="100%" stopColor="#4aa7ff" stopOpacity="0"/>
+              </linearGradient>
+              <linearGradient id="controlEventsArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#df96b6" stopOpacity=".22"/>
+                <stop offset="100%" stopColor="#df96b6" stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <g className="control-line-grid">
+              {yTicks.map(tick=>(
+                <g key={tick.y}>
+                  <line x1={CHART.left} y1={tick.y} x2={CHART.width-CHART.right} y2={tick.y}/>
+                  <text x={CHART.left-12} y={tick.y+3} textAnchor="end">{compact(tick.value)}</text>
+                </g>
+              ))}
+            </g>
+
+            {areaPath('views') && <path className="control-line-area" data-series="views" d={areaPath('views')}/>}
+            {areaPath('events') && <path className="control-line-area" data-series="events" d={areaPath('events')}/>}
+            <path className="control-line-series" data-series="views" d={linePath('views')}/>
+            <path className="control-line-series" data-series="events" d={linePath('events')}/>
+
+            <g className="control-line-points">
+              {series.map((row,index)=>row.future?null:(
+                <g key={row.label}>
+                  <circle data-series="views" cx={x(index)} cy={y(row.views)} r="3.5">
+                    <title>{row.label} · {row.views} pageviews · {row.visitors} visitors</title>
+                  </circle>
+                  <circle data-series="events" cx={x(index)} cy={y(row.events)} r="3.5">
+                    <title>{row.label} · {row.events} events</title>
+                  </circle>
+                </g>
+              ))}
+            </g>
+
+            <g className="control-line-x-axis">
+              {series.map((row,index)=>(
+                <text key={row.label} x={x(index)} y={CHART.height-18} textAnchor="middle" data-future={row.future||undefined}>
+                  <tspan x={x(index)}>{row.weekday.toUpperCase()}</tspan>
+                  <tspan x={x(index)} dy="11">{row.label}</tspan>
+                </text>
+              ))}
+            </g>
+          </svg>
         </div>
+
         <footer>
-          <span>LOCAL DAY · ASIA/HO_CHI_MINH</span>
+          <span>CURRENT WEEK · {weekStart.toUpperCase()} — {weekEnd.toUpperCase()} · ASIA/HO_CHI_MINH</span>
           <Link href="/control/traffic">OPEN TRAFFIC →</Link>
         </footer>
       </section>

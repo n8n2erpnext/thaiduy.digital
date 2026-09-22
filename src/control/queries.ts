@@ -252,6 +252,32 @@ export async function getTrafficDailySeries(days = 7) {
   return rows
 }
 
+export async function getTrafficCurrentWeekSeries() {
+  const rows = await db.execute(sql`
+    with week_bounds as (
+      select date_trunc('week', current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date as monday
+    ),
+    day_series as (
+      select (w.monday + n)::date as day
+      from week_bounds w
+      cross join generate_series(0,6) as n
+    )
+    select
+      to_char(d.day, 'DD Mon') as label,
+      to_char(d.day, 'Dy') as weekday,
+      (d.day > (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date) as future,
+      count(e.id) filter (where e.type = 'pageview')::int as views,
+      count(e.id) filter (where e.type = 'event')::int as events,
+      count(distinct e.session_id)::int as visitors
+    from day_series d
+    left join traffic_events e
+      on (e.created_at at time zone 'Asia/Ho_Chi_Minh')::date = d.day
+    group by d.day
+    order by d.day
+  `)
+  return rows
+}
+
 export async function getAuditLog(limit = 100) {
   return db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(limit)
 }

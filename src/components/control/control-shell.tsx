@@ -18,7 +18,7 @@ export function ControlShell({ email, children }: Props) {
               <Image src="/brand-mark.svg" width={28} height={28} alt="" priority />
             </Link>
             <div className="control-brand-copy">
-              <strong>TD / CONTROL</strong>
+              <strong>CONTROL</strong>
               <small>living systems operator</small>
             </div>
             <Link className="control-brand-home" href="/control" aria-label="Control overview" title="Control overview">

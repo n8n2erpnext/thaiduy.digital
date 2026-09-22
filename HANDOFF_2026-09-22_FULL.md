@@ -4082,4 +4082,61 @@ Validation:
 
 ---
 
+# Command overlay + signal ticker + Music Sensor text-fit fixes
+
+Command palette close bug:
+
+- Root cause: the fixed command backdrop was rendered inside the sticky/blurred header containing block, so the visual overlay was effectively constrained by the header and clicks below it did not reach the backdrop.
+- The palette now renders through `createPortal(..., document.body)`.
+- Backdrop close uses pointer events, so mouse/touch outside the panel closes reliably.
+- ESC remains supported.
+- Body scrolling is locked while the command palette is open and restored on close.
+
+Homepage public signal ticker:
+
+- Replaced the old single-track `translateX(-50%)` loop with the seamless two-copy marquee pattern used conceptually by `thaiduy.old`.
+- The two identical signal sets now animate by exactly one full set width plus a fixed gap.
+- Reset swaps identical copies at the same visual position, removing the visible seam / interruption.
+- Edge fade and reduced-motion behavior remain intact.
+
+Homepage LIVE INSTRUMENT / Music Sensor:
+
+- Widened the semantic/insight column and reduced the wave column proportionally:
+  - before: `1.55fr / .45fr`, right minimum 280px
+  - now: `1.38fr / .62fr`, right minimum 420px
+- This provides enough room for:
+  - semantic pipeline text
+  - palette + motion labels
+  - energy / valence values
+- Removed forced ellipsis from the primary expression label so the widened panel can show the full text.
+- Existing <=980px stacked responsive layout remains unchanged.
+
+Header wave tooltip:
+
+- Re-read `/home/ubuntu/thaiduy.old/frontend/src/components/layout/now-playing-waveform.tsx`.
+- Ported the proven overflow-measurement behavior:
+  - measure `scrollWidth - clientWidth`
+  - only animate when the title actually overflows
+- Title is now forced to one line.
+- Long titles pan immediately when the tooltip opens; there is no old 2-second hold.
+- The title viewport fades at both horizontal edges while panning.
+- Closing and reopening the tooltip resets the title animation back to the beginning.
+- Short titles remain static.
+- Tooltip width was increased to accommodate the longest current metadata lines without wrapping.
+- Non-title metadata rows are also forced to one line.
+- Tooltip visibility is now driven by component state instead of CSS hover alone so animation restart is deterministic.
+- Light/dark contrast mapping was updated for the new title selector.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local / 200
+- local /music-sensor 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

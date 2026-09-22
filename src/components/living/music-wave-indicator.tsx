@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect,useMemo,useRef,useState } from 'react'
+import { useEffect,useMemo,useRef,useState,type CSSProperties } from 'react'
 import { HummingPlayer } from '@/components/living/humming-player'
 import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
@@ -95,7 +95,11 @@ export function MusicWaveIndicator({locale}:Props) {
   const active=state.mode==='listening'||state.mode==='humming'
   const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
   const [displayMotion,setDisplayMotion]=useState(expression.motion)
+  const [tooltipOpen,setTooltipOpen]=useState(false)
+  const [tooltipCycle,setTooltipCycle]=useState(0)
+  const [titleDistance,setTitleDistance]=useState(0)
   const targetMotionRef=useRef(expression.motion)
+  const titleViewportRef=useRef<HTMLDivElement>(null)
 
   useEffect(()=>{
     const sync=()=>setTheme(readTheme())
@@ -120,6 +124,23 @@ export function MusicWaveIndicator({locale}:Props) {
     frame=requestAnimationFrame(tick)
     return ()=>cancelAnimationFrame(frame)
   },[active])
+
+  useEffect(()=>{
+    if(!tooltipOpen) return
+    let frame=0
+    const measure=()=>{
+      const element=titleViewportRef.current
+      if(!element) return
+      setTitleDistance(Math.max(0,element.scrollWidth-element.clientWidth))
+    }
+    frame=requestAnimationFrame(measure)
+    const observer=new ResizeObserver(measure)
+    if(titleViewportRef.current) observer.observe(titleViewportRef.current)
+    return()=>{
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  },[tooltipOpen,state.track?.title,state.track?.artist,state.composition?.title,state.mode,locale])
 
   const vi=locale==='vi'
   const styleLabel=state.style??state.genre??(vi?'chưa xác định':'unresolved')
@@ -155,9 +176,27 @@ export function MusicWaveIndicator({locale}:Props) {
       +' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
     : null
 
+  const shouldPanTitle=titleDistance>4
+  const titlePanDuration=Math.min(14,Math.max(6,6+titleDistance/42))
+
+  const openTooltip=()=>{
+    if(tooltipOpen) return
+    setTitleDistance(0)
+    setTooltipCycle(cycle=>cycle+1)
+    setTooltipOpen(true)
+  }
+
   return (
     <div className="header-wave-cluster">
-      <div className="header-wave-wrap">
+      <div
+        className="header-wave-wrap"
+        onMouseEnter={openTooltip}
+        onMouseLeave={()=>setTooltipOpen(false)}
+        onFocusCapture={openTooltip}
+        onBlurCapture={event=>{
+          if(!event.currentTarget.contains(event.relatedTarget as Node|null)) setTooltipOpen(false)
+        }}
+      >
         <div
           className="header-wave"
           role="img"
@@ -204,8 +243,24 @@ export function MusicWaveIndicator({locale}:Props) {
             })}
           </svg>
         </div>
-        <div className="header-wave-tooltip" role="tooltip">
-          <strong>{title}</strong>
+        <div className="header-wave-tooltip" role="tooltip" data-open={tooltipOpen?'true':'false'}>
+          <div
+            ref={titleViewportRef}
+            className="header-wave-title-viewport"
+            data-pan={shouldPanTitle?'true':'false'}
+          >
+            <strong
+              key={title+'-'+tooltipCycle}
+              className="header-wave-title"
+              style={{
+                '--header-wave-title-distance':titleDistance+'px',
+                '--header-wave-title-duration':titlePanDuration+'s',
+                animation:tooltipOpen&&shouldPanTitle
+                  ? 'header-wave-title-pan var(--header-wave-title-duration) ease-in-out infinite'
+                  : undefined,
+              } as CSSProperties}
+            >{title}</strong>
+          </div>
           <span>{detail}</span>
           <span>{visualDetail}</span>
           <span>{motionDetail}</span>

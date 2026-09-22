@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect,useMemo,useRef,useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 
@@ -39,9 +40,14 @@ export function HeaderCommand({locale}:Props) {
   useEffect(()=>{
     if(!open) return
     inputRef.current?.focus()
+    const previousOverflow=document.body.style.overflow
+    document.body.style.overflow='hidden'
     const close=(event:KeyboardEvent)=>event.key==='Escape'&&setOpen(false)
     document.addEventListener('keydown',close)
-    return()=>document.removeEventListener('keydown',close)
+    return()=>{
+      document.removeEventListener('keydown',close)
+      document.body.style.overflow=previousOverflow
+    }
   },[open])
 
   const commands=useMemo<CommandItem[]>(()=>[
@@ -98,9 +104,9 @@ export function HeaderCommand({locale}:Props) {
         <CommandIcon/>
       </button>
 
-      {open&&(
-        <div className="header-command-backdrop" onMouseDown={()=>setOpen(false)}>
-          <div className="header-command-panel" ref={panelRef} onMouseDown={event=>event.stopPropagation()} role="dialog" aria-modal="true">
+      {open&&createPortal(
+        <div className="header-command-backdrop" onPointerDown={()=>setOpen(false)}>
+          <div className="header-command-panel" ref={panelRef} onPointerDown={event=>event.stopPropagation()} role="dialog" aria-modal="true">
             <form className="header-command-search" onSubmit={submitSearch}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
               <input ref={inputRef} value={query} onChange={event=>setQuery(event.target.value)} placeholder={vi?'Nhập lệnh hoặc tìm kiếm':'Type a command or search'}/>
@@ -125,7 +131,8 @@ export function HeaderCommand({locale}:Props) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

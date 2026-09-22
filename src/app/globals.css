@@ -624,9 +624,11 @@ main {
   top: calc(100% + 8px);
   right: 0;
   display: grid;
-  min-width: 250px;
+  width: min(420px, calc(100vw - 24px));
+  min-width: min(330px, calc(100vw - 24px));
   gap: 4px;
   padding: 10px 12px;
+  overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
   background: rgba(13,16,15,.96);
@@ -637,8 +639,41 @@ main {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 .header-wave-tooltip[data-open='true'] { opacity: 1; transform: translateY(0); }
-.header-wave-tooltip strong { color: #d8e0db; font-size: 10px; font-weight: 500; }
-.header-wave-tooltip span { color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; text-transform: uppercase; }
+.header-wave-title-viewport{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+}
+.header-wave-title-viewport[data-pan='true']{
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.header-wave-tooltip .header-wave-title{
+  display:inline-block;
+  width:max-content;
+  max-width:none;
+  color:#d8e0db;
+  font-size:10px;
+  font-weight:500;
+  white-space:nowrap;
+  will-change:transform;
+}
+.header-wave-tooltip span{
+  overflow:hidden;
+  color:var(--muted-2);
+  font:8px/1.4 var(--font-terminal),monospace;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+@keyframes header-wave-title-pan{
+  0%{transform:translateX(0)}
+  58%,72%{transform:translateX(calc(var(--header-wave-title-distance) * -1))}
+  100%{transform:translateX(0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .header-wave-title{animation:none!important}
+}
 
 .humming-player { position: relative; display: flex; align-items: center; }
 .humming-speaker {
@@ -3639,11 +3674,7 @@ html[data-theme='normal'] .theme-switch-horizon {
   cursor: default;
 }
 
-.header-wave-wrap:hover .header-wave-tooltip,
-.header-wave-wrap:focus-within .header-wave-tooltip {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* Tooltip visibility is driven by component state so title panning can restart on every open. */
 
 /* Normal-mode hero field: clearer panel, quieter shadow. */
 html[data-theme='normal'] .living-field {
@@ -4381,6 +4412,7 @@ html[data-theme='normal'] body {
 html[data-theme='normal'] .brand-copy strong,
 html[data-theme='normal'] .site-header nav a,
 html[data-theme='normal'] .header-wave-tooltip strong,
+html[data-theme='normal'] .header-wave-tooltip .header-wave-title,
 html[data-theme='normal'] .humming-score-head strong {
   color: var(--text-strong);
 }
@@ -5899,7 +5931,7 @@ html[data-theme='normal'] .home-public-page{
 }
 .home-public-instrument .music-organ{
   display:grid;
-  grid-template-columns:minmax(0,1.55fr) minmax(280px,.45fr);
+  grid-template-columns:minmax(0,1.38fr) minmax(420px,.62fr);
   border:0;
   border-radius:0;
   background:transparent;
@@ -6057,20 +6089,22 @@ html[data-theme='normal'] .home-public-page{
   mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
 }
 .home-public-signal-track{
+  --home-signal-gap:32px;
   display:flex;
   width:max-content;
-  animation:home-public-signal-flow 36s linear infinite;
-  will-change:transform;
+  gap:var(--home-signal-gap);
 }
 .home-public-signal-set{
   display:flex;
   flex:none;
   align-items:center;
   gap:24px;
-  padding:12px 24px 12px 0;
+  padding:12px 0;
   white-space:nowrap;
   font:var(--type-meta)/1 var(--font-terminal),monospace;
   letter-spacing:.055em;
+  animation:home-public-signal-flow 36s linear infinite;
+  will-change:transform;
 }
 .home-public-signal-set span{color:var(--demo-meta)}
 .home-public-signal-set i{
@@ -6082,10 +6116,10 @@ html[data-theme='normal'] .home-public-page{
   box-shadow:0 0 8px color-mix(in srgb,var(--demo-live) 34%,transparent);
 }
 @keyframes home-public-signal-flow{
-  to{transform:translateX(-50%)}
+  to{transform:translate3d(calc(-100% - var(--home-signal-gap)),0,0)}
 }
 @media(prefers-reduced-motion:reduce){
-  .home-public-signal-track{animation:none}
+  .home-public-signal-set{animation:none}
 }
 
 .home-public-close{
@@ -10784,9 +10818,9 @@ html[data-theme='normal'] .cv-education{
 }
 
 .music-expression-mini span:first-child {
-  overflow: hidden;
+  overflow: visible;
   color: var(--text-secondary);
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 

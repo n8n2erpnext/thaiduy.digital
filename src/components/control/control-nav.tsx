@@ -56,11 +56,11 @@ export function ControlNav() {
           type="button"
           onClick={()=>setCommunityOpen(open=>!open)}
         >
-          <span>COMMUNITY</span>
+          <span>DISCUSS</span>
           <i aria-hidden="true">{communityOpen?'−':'+'}</i>
         </button>
         <div id="control-community-children" hidden={!communityOpen}>
-          <Link aria-current={pathname==='/control/community'?'page':undefined} href="/control/community">Moderation</Link>
+          <Link aria-current={pathname==='/control/community'?'page':undefined} href="/control/community">Topics</Link>
           <Link aria-current={pathname==='/control/community/users'?'page':undefined} href="/control/community/users">Users</Link>
         </div>
       </div>

@@ -27,7 +27,7 @@ type Props={
   participants?:CommunityParticipant[]
 }
 
-export function GuestbookComposer({
+export function DiscussComposer({
   locale,
   viewer,
   threadId,
@@ -65,6 +65,9 @@ export function GuestbookComposer({
     if (code==='parent_reply_not_found') {
       return vi?'Phản hồi gốc không còn khả dụng.':'The reply you are responding to is no longer available.'
     }
+    if (code==='thread_locked') {
+      return vi?'Chủ đề này đã khóa và không nhận thêm phản hồi.':'This topic is locked and no longer accepts replies.'
+    }
     if (code==='title_length_invalid') {
       return vi?'Tiêu đề cần từ 3 đến 180 ký tự.':'Title must be between 3 and 180 characters.'
     }
@@ -88,8 +91,8 @@ export function GuestbookComposer({
     setMessage('')
     try {
       const endpoint=isReply
-        ? '/api/guestbook/threads/'+encodeURIComponent(threadId!)+'/replies'
-        : '/api/guestbook/threads'
+        ? '/api/discuss/threads/'+encodeURIComponent(threadId!)+'/replies'
+        : '/api/discuss/threads'
       const response=await fetch(endpoint,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -122,7 +125,7 @@ export function GuestbookComposer({
 
   return (
     <section
-      className={'guestbook-composer'+(isReply?' is-reply':'')+(replyTo?' is-targeted':'')+(showEditor?' is-open':' is-compact')}
+      className={'discuss-composer'+(isReply?' is-reply':'')+(replyTo?' is-targeted':'')+(showEditor?' is-open':' is-compact')}
     >
       <header>
         <div>
@@ -142,13 +145,13 @@ export function GuestbookComposer({
           </strong>
         </div>
         {!signedIn ? (
-          <button className="guestbook-google-login" type="button" onClick={()=>void googleLogin()}>
+          <button className="discuss-google-login" type="button" onClick={()=>void googleLogin()}>
             <b>G</b>
             <span>{vi?'Đăng nhập Google':'Continue with Google'}</span>
           </button>
         ) : !isReply ? (
           <button
-            className="guestbook-new-thread-button"
+            className="discuss-new-thread-button"
             type="button"
             disabled={viewer?.blocked}
             onClick={()=>setOpen(value=>!value)}
@@ -161,7 +164,7 @@ export function GuestbookComposer({
       </header>
 
       {replyTo && targetPreview && (
-        <blockquote className="guestbook-reply-target">
+        <blockquote className="discuss-reply-target">
           <span>↪ @{replyTo.name}</span>
           <p>{targetPreview}{replyTo.body.trim().length>180?'…':''}</p>
         </blockquote>
@@ -169,7 +172,7 @@ export function GuestbookComposer({
 
       {showEditor && (
         <>
-          <div className="guestbook-viewer">
+          <div className="discuss-viewer">
             {viewer?.image
               ? <img src={viewer.image} alt="" />
               : <i>{viewer?.name.slice(0,2).toUpperCase()}</i>}
@@ -186,7 +189,7 @@ export function GuestbookComposer({
           <form onSubmit={submit}>
             {!isReply && (
               <label>
-                <span className="guestbook-field-row">
+                <span className="discuss-field-row">
                   <span>{vi?'TIÊU ĐỀ':'TITLE'}</span>
                   <small>{title.length} / 180</small>
                 </span>
@@ -251,13 +254,13 @@ export function GuestbookComposer({
       )}
 
       {!signedIn && !replyTo && (
-        <p className="guestbook-login-note">
+        <p className="discuss-login-note">
           {vi
             ? 'Đọc tự do. Đăng nhập Google khi muốn tạo chủ đề, phản hồi hoặc thích một bài.'
             : 'Read freely. Sign in with Google to create topics, reply, or like a post.'}
         </p>
       )}
-      {message && <p className="guestbook-form-message">{message}</p>}
+      {message && <p className="discuss-form-message">{message}</p>}
     </section>
   )
 }

@@ -23,11 +23,11 @@ export default async function CommunityUsersPage() {
     <section className="control-page community-users-page">
       <header className="control-page-head control-page-head-row">
         <div>
-          <p>CONTROL / COMMUNITY / USERS</p>
-          <h1>Guestbook members</h1>
-          <span>Google accounts that can participate in the public Guestbook.</span>
+          <p>CONTROL / DISCUSS / USERS</p>
+          <h1>Discuss members</h1>
+          <span>Google accounts that can participate in public Discuss topics.</span>
         </div>
-        <Link className="control-back" href="/control/community">← MODERATION</Link>
+        <Link className="control-back" href="/control/community">← TOPICS</Link>
       </header>
       <div className="community-users-list">
         {users.length===0 && (

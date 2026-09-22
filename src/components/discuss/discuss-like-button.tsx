@@ -13,7 +13,7 @@ type Props={
   blocked:boolean
 }
 
-export function GuestbookLikeButton({
+export function DiscussLikeButton({
   kind,id,locale,initialLiked,initialCount,canLike,blocked,
 }:Props) {
   const vi=locale==='vi'
@@ -33,7 +33,7 @@ export function GuestbookLikeButton({
 
     setPending(true)
     try {
-      const response=await fetch('/api/guestbook/likes',{
+      const response=await fetch('/api/discuss/likes',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({kind,id}),
@@ -56,7 +56,7 @@ export function GuestbookLikeButton({
 
   return (
     <button
-      className="guestbook-like"
+      className="discuss-like"
       data-liked={liked || undefined}
       type="button"
       disabled={pending || blocked}

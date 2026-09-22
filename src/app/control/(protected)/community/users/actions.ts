@@ -14,5 +14,5 @@ export async function setCommunityUserStatusAction(formData:FormData) {
   await setCommunityMemberStatus(userId,status,session.user.id)
   revalidatePath('/control/community')
   revalidatePath('/control/community/users')
-  revalidatePath('/guestbook')
+  revalidatePath('/discuss')
 }

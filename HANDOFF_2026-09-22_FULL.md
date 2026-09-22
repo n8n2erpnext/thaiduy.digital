@@ -2340,4 +2340,145 @@ The existing demo topic can be removed after owner visual review; reply/Like/men
 
 ---
 
+# 61. DISCUSS CANONICAL ROUTE + SCALABLE TOPIC ADMIN — 2026-09-22
+
+Discuss is now the canonical public forum surface.
+
+Canonical public routes:
+
+- /discuss
+- /discuss/[id]
+
+Compatibility:
+
+- /guestbook permanently redirects with HTTP 308 to /discuss
+- /guestbook/[id] permanently redirects with HTTP 308 to /discuss/[id]
+- page/search query values are preserved where relevant
+- legacy API filesystem routes may remain for compatibility, but the current Discuss client uses /api/discuss/*
+- no public navigation, footer, registry href, control link or source display string emits Guestbook/GUESTBOOK
+
+Canonical public APIs:
+
+- POST /api/discuss/threads
+- POST /api/discuss/threads/[id]/replies
+- POST /api/discuss/likes
+
+Public Discuss additions:
+
+- topic search by title/content
+- search pagination preserves q
+- pinned topics sort before ordinary topics
+- locked topics remain readable and likeable
+- locked topics do not show reply controls/composer
+- server independently rejects reply submission to locked topics with thread_locked / HTTP 423
+- public topic cards expose compact PINNED / LOCKED state
+
+New topic governance:
+
+Migration:
+- drizzle/0014_discuss_topic_flags.sql
+
+community_threads additions:
+- pinned boolean default false not null
+- locked boolean default false not null
+
+Owner-only control actions:
+- PIN / UNPIN
+- LOCK / UNLOCK
+
+Both actions write durable audit log entries.
+
+Control navigation:
+
+- parent label is DISCUSS
+- child label is Topics
+- Users remains a separate child
+
+/control/community is now a scalable topic index rather than one mixed thread/reply stream.
+
+Topic index features:
+
+- 20 topics per page
+- search by topic title, topic body, author name or author email
+- status filters: ALL / ATTENTION / PENDING TOPIC / APPROVED / HIDDEN / REJECTED
+- ATTENTION means topic pending OR topic contains one or more pending replies
+- PENDING stat links to ATTENTION
+- topics requiring moderation are ordered before ordinary topics even in ALL mode
+- each row shows topic status, pinned/locked state, pending reply count, reply count, like count and latest activity
+- each row drills into one topic management page
+- public Discuss and Users links remain directly reachable from the page
+
+/control/community/[id] is the topic management detail.
+
+Topic detail features:
+
+- topic author + email
+- topic status and rich-content preview
+- APPROVE / REJECT / HIDE / TRASH
+- PIN / UNPIN
+- LOCK / UNLOCK
+- public topic link
+- replies are isolated to that topic
+- reply search by body/author/email
+- reply status filter
+- 20 replies per page
+- reply rich-content preview
+- targeted-reply parent author indicator
+- reply like count
+- per-reply APPROVE / REJECT / HIDE / TRASH
+
+Public/navigation migration:
+
+- fallback nav points to /discuss
+- global footer points to /discuss
+- site_registry Discuss nav href updated live to /discuss
+- seed registry creates /discuss href for fresh installs
+
+Component naming:
+
+- public interaction components moved from components/guestbook to components/discuss
+- exported component names now use Discuss*
+- CSS/markup namespace migrated from guestbook-* to discuss-*
+- user-visible Guestbook/GUESTBOOK tokens in src/scripts: zero
+- rendered /discuss detail HTML contains no guestbook token
+- rendered homepage HTML contains no guestbook token
+
+Scale/behavior QA:
+
+- ATTENTION query found an approved topic with a pending reply
+- pending reply count returned 1
+- topic-detail pending filter returned the exact pending reply
+- pinned QA topic sorted first on public Discuss
+- locked QA topic rejected new reply with thread_locked
+- all temporary scale QA users/topics/replies removed by cascade; example.invalid QA count returned 0
+
+Route smoke before final closeout:
+
+- /discuss -> 200
+- live /discuss/[demo-id] -> 200
+- /guestbook -> 308 Location /discuss
+- /guestbook/[demo-id] -> 308 Location /discuss/[demo-id]
+- unauthenticated POST /api/discuss/threads -> 401
+- homepage contains /discuss links
+- homepage contains no /guestbook href
+- logged-out /control/community -> 307
+- logged-out /control/community/[id] -> 307
+- /discuss?q=Mini -> 200 and returned the live demo topic
+- /guestbook?q=Mini -> 308 Location /discuss?q=Mini
+- rendered /discuss/[demo-id] HTML contains no guestbook token
+
+Final governance/build:
+
+- TypeScript PASS
+- ESLint 0 errors; only external Google-avatar <img> warnings remain
+- Layout PASS
+- Theme PASS
+- Typography PASS
+- git diff --check PASS
+- production build PASS 52/52
+
+This section supersedes the earlier handoff statements that treated /guestbook as the canonical public route.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

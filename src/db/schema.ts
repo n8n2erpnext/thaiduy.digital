@@ -178,6 +178,8 @@ export const communityThreads = pgTable('community_threads', {
   mentions: jsonb('mentions').$type<string[]>().default([]).notNull(),
   locale: varchar('locale', { length:2 }).default('en').notNull(),
   status: varchar('status', { length:16 }).default('pending').notNull(),
+  pinned: boolean('pinned').default(false).notNull(),
+  locked: boolean('locked').default(false).notNull(),
   moderatedBy: text('moderated_by'),
   moderatedAt: timestamp('moderated_at', { withTimezone:true }),
   lastActivityAt: timestamp('last_activity_at', { withTimezone:true }).defaultNow().notNull(),

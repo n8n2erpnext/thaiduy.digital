@@ -1,4 +1,4 @@
-import { and,count,desc,eq,isNull,sql } from 'drizzle-orm'
+import { and,count,desc,eq,ilike,isNull,or,sql } from 'drizzle-orm'
 import sanitizeHtml from 'sanitize-html'
 import { db } from '@/db/client'
 import {
@@ -156,12 +156,19 @@ export async function getCommunityParticipants(threadId:string):Promise<Communit
   return rows as unknown as CommunityParticipant[]
 }
 
-export async function getPublicCommunityThreads(page=1,limit=10) {
+export async function getPublicCommunityThreads(page=1,limit=10,q='') {
   const safeLimit=Math.min(30,Math.max(1,limit))
   const safePage=Math.max(1,Number.isFinite(page)?Math.floor(page):1)
+  const term=q.trim().slice(0,100)
   const publicWhere=and(
     eq(communityThreads.status,'approved'),
     isNull(communityThreads.deletedAt),
+    term
+      ? or(
+          ilike(communityThreads.title,'%'+term+'%'),
+          ilike(communityThreads.body,'%'+term+'%'),
+        )
+      : undefined,
   )
   const [countRow]=await db.select({value:count()}).from(communityThreads).where(publicWhere)
   const total=Number(countRow?.value ?? 0)
@@ -173,6 +180,8 @@ export async function getPublicCommunityThreads(page=1,limit=10) {
     title:communityThreads.title,
     body:communityThreads.body,
     locale:communityThreads.locale,
+    pinned:communityThreads.pinned,
+    locked:communityThreads.locked,
     createdAt:communityThreads.createdAt,
     lastActivityAt:communityThreads.lastActivityAt,
     authorName:user.name,
@@ -191,11 +200,11 @@ export async function getPublicCommunityThreads(page=1,limit=10) {
     .from(communityThreads)
     .innerJoin(user,eq(communityThreads.userId,user.id))
     .where(publicWhere)
-    .orderBy(desc(communityThreads.lastActivityAt))
+    .orderBy(desc(communityThreads.pinned),desc(communityThreads.lastActivityAt))
     .limit(safeLimit)
     .offset((currentPage-1)*safeLimit)
 
-  return {items,total,page:currentPage,pages,limit:safeLimit}
+  return {items,total,page:currentPage,pages,limit:safeLimit,q:term}
 }
 
 export async function getPublicCommunityThread(
@@ -218,6 +227,8 @@ export async function getPublicCommunityThread(
     body:communityThreads.body,
     bodyHtml:communityThreads.bodyHtml,
     locale:communityThreads.locale,
+    pinned:communityThreads.pinned,
+    locked:communityThreads.locked,
     createdAt:communityThreads.createdAt,
     lastActivityAt:communityThreads.lastActivityAt,
     authorName:user.name,
@@ -351,13 +362,17 @@ export async function submitCommunityReply(
   parentReplyId?:string | null,
 ) {
   await requireCommunityPostingAccess(userId)
-  const [thread]=await db.select({id:communityThreads.id}).from(communityThreads)
+  const [thread]=await db.select({
+    id:communityThreads.id,
+    locked:communityThreads.locked,
+  }).from(communityThreads)
     .where(and(
       eq(communityThreads.id,threadId),
       eq(communityThreads.status,'approved'),
       isNull(communityThreads.deletedAt),
     )).limit(1)
   if (!thread) throw new Error('thread_not_found')
+  if (thread.locked) throw new Error('thread_locked')
 
   const participants=await getCommunityParticipants(threadId)
   const allowedMentions=new Map(participants.map(item=>[item.id,item.name]))
@@ -459,6 +474,292 @@ export async function toggleCommunityLike(
   const [row]=await db.select({value:count()}).from(communityReplyLikes)
     .where(eq(communityReplyLikes.replyId,id))
   return {liked:!existing,likeCount:Number(row?.value ?? 0)}
+}
+
+export type CommunityAdminFilterStatus='all'|'attention'|CommunityStatus
+
+export async function getCommunityTopicsAdmin({
+  page=1,
+  limit=20,
+  status='all',
+  q='',
+}:{
+  page?:number
+  limit?:number
+  status?:CommunityAdminFilterStatus
+  q?:string
+}={}) {
+  const safeLimit=Math.min(50,Math.max(5,Math.floor(limit)))
+  const safePage=Math.max(1,Math.floor(page))
+  const term=q.trim().slice(0,120)
+  const statusClause=
+    status==='all'
+      ? sql``
+      : status==='attention'
+        ? sql`and (
+            t.status='pending'
+            or exists (
+              select 1 from community_replies attention_r
+              where attention_r.thread_id=t.id
+                and attention_r.deleted_at is null
+                and attention_r.status='pending'
+            )
+          )`
+        : sql`and t.status=${status}`
+  const searchClause=term
+    ? sql`and (
+        t.title ilike ${'%'+term+'%'}
+        or t.body ilike ${'%'+term+'%'}
+        or u.name ilike ${'%'+term+'%'}
+        or u.email ilike ${'%'+term+'%'}
+      )`
+    : sql``
+
+  const countRows=await db.execute(sql`
+    select count(*)::int as total
+    from community_threads t
+    join "user" u on u.id=t.user_id
+    where t.deleted_at is null
+    ${statusClause}
+    ${searchClause}
+  `)
+  const total=Number((countRows[0] as {total?:number|string}|undefined)?.total ?? 0)
+  const pages=Math.max(1,Math.ceil(total/safeLimit))
+  const currentPage=Math.min(safePage,pages)
+  const offset=(currentPage-1)*safeLimit
+
+  const rows=await db.execute(sql`
+    select
+      t.id,
+      t.title,
+      t.body,
+      t.status,
+      t.pinned,
+      t.locked,
+      t.created_at as "createdAt",
+      t.last_activity_at as "lastActivityAt",
+      u.name as "authorName",
+      u.email as "authorEmail",
+      u.image as "authorImage",
+      (
+        select count(*)::int
+        from community_replies r
+        where r.thread_id=t.id and r.deleted_at is null
+      ) as "replyCount",
+      (
+        select count(*)::int
+        from community_replies r
+        where r.thread_id=t.id and r.deleted_at is null and r.status='pending'
+      ) as "pendingReplies",
+      (
+        select count(*)::int
+        from community_thread_likes l
+        where l.thread_id=t.id
+      ) as "likeCount"
+    from community_threads t
+    join "user" u on u.id=t.user_id
+    where t.deleted_at is null
+    ${statusClause}
+    ${searchClause}
+    order by
+      case
+        when t.status='pending'
+          or exists (
+            select 1 from community_replies priority_r
+            where priority_r.thread_id=t.id
+              and priority_r.deleted_at is null
+              and priority_r.status='pending'
+          )
+        then 0 else 1
+      end,
+      t.pinned desc,
+      t.last_activity_at desc
+    limit ${safeLimit}
+    offset ${offset}
+  `)
+
+  return {
+    items:rows as unknown as Array<{
+      id:string
+      title:string
+      body:string
+      status:CommunityStatus
+      pinned:boolean
+      locked:boolean
+      createdAt:Date
+      lastActivityAt:Date
+      authorName:string
+      authorEmail:string
+      authorImage:string|null
+      replyCount:number
+      pendingReplies:number
+      likeCount:number
+    }>,
+    total,
+    page:currentPage,
+    pages,
+    limit:safeLimit,
+    q:term,
+    status,
+  }
+}
+
+export async function getCommunityTopicAdmin(
+  threadId:string,
+  {
+    page=1,
+    limit=20,
+    status='all',
+    q='',
+  }:{
+    page?:number
+    limit?:number
+    status?:CommunityAdminFilterStatus
+    q?:string
+  }={},
+) {
+  const [topic]=await db.select({
+    id:communityThreads.id,
+    title:communityThreads.title,
+    body:communityThreads.body,
+    bodyHtml:communityThreads.bodyHtml,
+    status:communityThreads.status,
+    pinned:communityThreads.pinned,
+    locked:communityThreads.locked,
+    createdAt:communityThreads.createdAt,
+    lastActivityAt:communityThreads.lastActivityAt,
+    authorName:user.name,
+    authorEmail:user.email,
+    authorImage:user.image,
+    likeCount:sql<number>`(
+      select count(*)::int from community_thread_likes l
+      where l.thread_id=${communityThreads.id}
+    )`,
+  })
+    .from(communityThreads)
+    .innerJoin(user,eq(communityThreads.userId,user.id))
+    .where(and(
+      eq(communityThreads.id,threadId),
+      isNull(communityThreads.deletedAt),
+    ))
+    .limit(1)
+  if (!topic) return null
+
+  const safeLimit=Math.min(50,Math.max(5,Math.floor(limit)))
+  const safePage=Math.max(1,Math.floor(page))
+  const term=q.trim().slice(0,120)
+  const statusClause=
+    status==='all'
+      ? sql``
+      : status==='attention'
+        ? sql`and r.status='pending'`
+        : sql`and r.status=${status}`
+  const searchClause=term
+    ? sql`and (
+        r.body ilike ${'%'+term+'%'}
+        or u.name ilike ${'%'+term+'%'}
+        or u.email ilike ${'%'+term+'%'}
+      )`
+    : sql``
+
+  const countRows=await db.execute(sql`
+    select count(*)::int as total
+    from community_replies r
+    join "user" u on u.id=r.user_id
+    where r.thread_id=${threadId}
+      and r.deleted_at is null
+    ${statusClause}
+    ${searchClause}
+  `)
+  const total=Number((countRows[0] as {total?:number|string}|undefined)?.total ?? 0)
+  const pages=Math.max(1,Math.ceil(total/safeLimit))
+  const currentPage=Math.min(safePage,pages)
+  const offset=(currentPage-1)*safeLimit
+
+  const replies=await db.execute(sql`
+    select
+      r.id,
+      r.parent_reply_id as "parentReplyId",
+      r.body,
+      r.body_html as "bodyHtml",
+      r.status,
+      r.created_at as "createdAt",
+      u.name as "authorName",
+      u.email as "authorEmail",
+      u.image as "authorImage",
+      (
+        select pu.name
+        from community_replies pr
+        join "user" pu on pu.id=pr.user_id
+        where pr.id=r.parent_reply_id
+        limit 1
+      ) as "parentAuthorName",
+      (
+        select count(*)::int
+        from community_reply_likes l
+        where l.reply_id=r.id
+      ) as "likeCount"
+    from community_replies r
+    join "user" u on u.id=r.user_id
+    where r.thread_id=${threadId}
+      and r.deleted_at is null
+    ${statusClause}
+    ${searchClause}
+    order by
+      case when r.status='pending' then 0 else 1 end,
+      r.created_at desc
+    limit ${safeLimit}
+    offset ${offset}
+  `)
+
+  return {
+    topic,
+    replies:replies as unknown as Array<{
+      id:string
+      parentReplyId:string|null
+      body:string
+      bodyHtml:string|null
+      status:CommunityStatus
+      createdAt:Date
+      authorName:string
+      authorEmail:string
+      authorImage:string|null
+      parentAuthorName:string|null
+      likeCount:number
+    }>,
+    total,
+    page:currentPage,
+    pages,
+    limit:safeLimit,
+    q:term,
+    status,
+  }
+}
+
+export async function setCommunityThreadFlag(
+  threadId:string,
+  flag:'pinned'|'locked',
+  value:boolean,
+  moderatorId:string,
+) {
+  const now=new Date()
+  const [row]=await db.update(communityThreads)
+    .set(flag==='pinned'
+      ? {pinned:value,updatedAt:now}
+      : {locked:value,updatedAt:now})
+    .where(and(
+      eq(communityThreads.id,threadId),
+      isNull(communityThreads.deletedAt),
+    ))
+    .returning({id:communityThreads.id})
+  if (!row) throw new Error('community_item_not_found')
+  await db.insert(auditLogs).values({
+    actorId:moderatorId,
+    action:'community.thread.'+flag+'.'+(value?'on':'off'),
+    entityType:'community_thread',
+    entityId:threadId,
+    metadata:{value},
+  })
 }
 
 export async function getCommunityModerationQueue() {

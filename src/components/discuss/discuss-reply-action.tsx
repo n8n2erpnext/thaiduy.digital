@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { CommunityParticipant } from '@/community/data'
-import { GuestbookComposer } from './guestbook-composer'
+import { DiscussComposer } from './discuss-composer'
 
 type Viewer={
   name:string
@@ -22,7 +22,7 @@ type Props={
   participants:CommunityParticipant[]
 }
 
-export function GuestbookReplyAction({
+export function DiscussReplyAction({
   locale,viewer,threadId,replyId,authorName,body,participants,
 }:Props) {
   const vi=locale==='vi'
@@ -31,15 +31,15 @@ export function GuestbookReplyAction({
   return (
     <>
       <button
-        className="guestbook-reply-button"
+        className="discuss-reply-button"
         type="button"
         onClick={()=>setOpen(value=>!value)}
       >
         ↩ {open?(vi?'Đóng':'Close'):(vi?'Trả lời':'Reply')}
       </button>
       {open && (
-        <div className="guestbook-inline-reply">
-          <GuestbookComposer
+        <div className="discuss-inline-reply">
+          <DiscussComposer
             locale={locale}
             viewer={viewer}
             threadId={threadId}

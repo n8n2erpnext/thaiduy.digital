@@ -18,7 +18,7 @@ export function SiteFooter({ locale }: Props) {
     [t.writing,'/writing'],
     [t.stack,'/stack'],
     [t.about,'/about'],
-    [t.guestbook,'/guestbook'],
+    [t.guestbook,'/discuss'],
     [t.music,'/music-sensor'],
   ] as const
 

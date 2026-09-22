@@ -119,7 +119,7 @@ const navRows = [
     sort:50,
     labelEn:'Discuss',
     labelVi:'Discuss',
-    meta:{href:'/guestbook'},
+    meta:{href:'/discuss'},
   },
 ]
 

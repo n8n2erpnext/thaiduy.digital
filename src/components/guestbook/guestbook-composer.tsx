@@ -19,17 +19,18 @@ type Props={
 export function GuestbookComposer({locale,viewer,threadId}:Props) {
   const vi=locale==='vi'
   const isReply=Boolean(threadId)
+  const [open,setOpen]=useState(isReply && Boolean(viewer?.googleConnected))
   const [title,setTitle]=useState('')
   const [body,setBody]=useState('')
   const [sending,setSending]=useState(false)
   const [message,setMessage]=useState('')
+
   async function googleLogin() {
     await authClient.signIn.social({
       provider:'google',
       callbackURL:window.location.pathname,
     })
   }
-
   function errorMessage(code:string) {
     if (code==='community_rate_limited') {
       return vi?'Bạn vừa gửi nội dung. Vui lòng chờ một chút rồi thử lại.':'You just posted. Please wait a moment and try again.'
@@ -80,72 +81,99 @@ export function GuestbookComposer({locale,viewer,threadId}:Props) {
     }
   }
 
+  const signedIn=Boolean(viewer?.googleConnected)
+  const showEditor=signedIn && (isReply || open)
+
   return (
-    <section className={'guestbook-composer'+(isReply?' is-reply':'')}>
+    <section
+      className={'guestbook-composer'+(isReply?' is-reply':'')+(showEditor?' is-open':' is-compact')}
+    >
       <header>
-        <span>{isReply?(vi?'PHẢN HỒI':'REPLY'):(vi?'ĐỂ LẠI LỜI NHẮN':'LEAVE A MESSAGE')}</span>
-        <strong>{isReply
-          ? (vi?'Tiếp tục cuộc trao đổi':'Continue the thread')
-          : (vi?'Mở một chủ đề mới':'Start a new thread')}</strong>
+        <div>
+          <span>{isReply?(vi?'PHẢN HỒI':'REPLY'):(vi?'GUESTBOOK / CHỦ ĐỀ':'GUESTBOOK / TOPICS')}</span>
+          <strong>{isReply
+            ? (vi?'Tiếp tục cuộc trao đổi':'Continue the thread')
+            : (vi?'Tham gia cuộc trao đổi':'Join the conversation')}</strong>
+        </div>
+        {!signedIn ? (
+          <button className="guestbook-google-login" type="button" onClick={()=>void googleLogin()}>
+            <b>G</b>
+            <span>{vi?'Đăng nhập Google':'Continue with Google'}</span>
+          </button>
+        ) : !isReply ? (
+          <button
+            className="guestbook-new-thread-button"
+            type="button"
+            disabled={viewer?.blocked}
+            onClick={()=>setOpen(value=>!value)}
+          >
+            {open
+              ? (vi?'ĐÓNG':'CLOSE')
+              : (vi?'+ TẠO CHỦ ĐỀ MỚI':'+ NEW TOPIC')}
+          </button>
+        ) : null}
       </header>
 
-      {viewer?.googleConnected ? (
-        <div className="guestbook-viewer">
-          {viewer.image
-            ? <img src={viewer.image} alt="" />
-            : <i>{viewer.name.slice(0,2).toUpperCase()}</i>}
-          <div><strong>{viewer.name}</strong><small>GOOGLE ACCOUNT</small></div>
-          {viewer.blocked && <em>{vi?'ĐÃ BỊ KHÓA ĐĂNG':'POSTING BLOCKED'}</em>}
-        </div>
-      ) : (
-        <button className="guestbook-google-login" type="button" onClick={()=>void googleLogin()}>
-          <b>G</b>
-          <span>{vi?'Đăng nhập Google để tham gia':'Continue with Google to join'}</span>
-        </button>
+      {showEditor && (
+        <>
+          <div className="guestbook-viewer">
+            {viewer?.image
+              ? <img src={viewer.image} alt="" />
+              : <i>{viewer?.name.slice(0,2).toUpperCase()}</i>}
+            <div><strong>{viewer?.name}</strong><small>GOOGLE ACCOUNT</small></div>
+            {viewer?.blocked && <em>{vi?'ĐÃ BỊ KHÓA ĐĂNG':'POSTING BLOCKED'}</em>}
+          </div>
+
+          <form onSubmit={submit}>
+            {!isReply && (
+              <label>
+                <span>{vi?'TIÊU ĐỀ':'TITLE'}</span>
+                <input
+                  value={title}
+                  onChange={event=>setTitle(event.target.value.slice(0,180))}
+                  placeholder={vi?'Bạn muốn nói về điều gì?':'What would you like to talk about?'}
+                  disabled={viewer?.blocked || sending}
+                />
+              </label>
+            )}
+            <label>
+              <span>{isReply?(vi?'PHẢN HỒI':'REPLY'):(vi?'NỘI DUNG':'MESSAGE')}</span>
+              <textarea
+                rows={isReply?4:6}
+                value={body}
+                onChange={event=>setBody(event.target.value.slice(0,isReply?3000:5000))}
+                placeholder={isReply
+                  ? (vi?'Viết phản hồi…':'Write a reply…')
+                  : (vi?'Một lời chào, câu hỏi, góp ý hoặc chủ đề muốn trao đổi…':'A hello, question, thought, or something worth discussing…')}
+                disabled={viewer?.blocked || sending}
+              />
+            </label>
+            <footer>
+              <small>
+                {viewer?.blocked
+                  ? (vi?'Bạn vẫn có thể đọc Guestbook nhưng hiện không thể đăng.':'You can still read the Guestbook, but posting is disabled for this account.')
+                  : (vi?'Nội dung được duyệt trước khi hiển thị công khai.':'Messages are moderated before they become public.')}
+              </small>
+              {!viewer?.blocked && (
+                <button type="submit" disabled={sending || body.trim().length<2 || (!isReply && title.trim().length<3)}>
+                  {sending
+                    ? (vi?'ĐANG GỬI…':'SENDING…')
+                    : (isReply?(vi?'GỬI PHẢN HỒI':'SUBMIT REPLY'):(vi?'GỬI CHỦ ĐỀ':'SUBMIT TOPIC'))}
+                </button>
+              )}
+            </footer>
+          </form>
+        </>
       )}
 
-      <form onSubmit={submit}>
-        {!isReply && (
-          <label>
-            <span>{vi?'TIÊU ĐỀ':'TITLE'}</span>
-            <input
-              value={title}
-              onChange={event=>setTitle(event.target.value.slice(0,180))}
-              placeholder={vi?'Bạn muốn nói về điều gì?':'What would you like to talk about?'}
-              disabled={!viewer?.googleConnected || viewer.blocked || sending}
-            />
-          </label>
-        )}
-        <label>
-          <span>{isReply?(vi?'PHẢN HỒI':'REPLY'):(vi?'NỘI DUNG':'MESSAGE')}</span>
-          <textarea
-            rows={isReply?4:6}
-            value={body}
-            onChange={event=>setBody(event.target.value.slice(0,isReply?3000:5000))}
-            placeholder={isReply
-              ? (vi?'Viết phản hồi…':'Write a reply…')
-              : (vi?'Một lời chào, câu hỏi, góp ý hoặc chủ đề muốn trao đổi…':'A hello, question, thought, or something worth discussing…')}
-            disabled={!viewer?.googleConnected || viewer.blocked || sending}
-          />
-        </label>
-        <footer>
-          <small>
-            {viewer?.googleConnected
-              ? (viewer.blocked
-                ? (vi?'Bạn vẫn có thể đọc Guestbook nhưng hiện không thể đăng.':'You can still read the Guestbook, but posting is disabled for this account.')
-                : (vi?'Nội dung được duyệt trước khi hiển thị công khai.':'Messages are moderated before they become public.'))
-              : (vi?'Google chỉ cung cấp tên và ảnh đại diện cho phần trao đổi này.':'Google provides your name and avatar for this discussion surface.')}
-          </small>
-          {viewer?.googleConnected && !viewer.blocked && (
-            <button type="submit" disabled={sending || body.trim().length<2 || (!isReply && title.trim().length<3)}>
-              {sending
-                ? (vi?'ĐANG GỬI…':'SENDING…')
-                : (isReply?(vi?'GỬI PHẢN HỒI':'SUBMIT REPLY'):(vi?'GỬI CHỦ ĐỀ':'SUBMIT THREAD'))}
-            </button>
-          )}
-        </footer>
-        {message && <p className="guestbook-form-message">{message}</p>}
-      </form>
+      {!signedIn && (
+        <p className="guestbook-login-note">
+          {vi
+            ? 'Đọc tự do. Đăng nhập Google khi muốn tạo chủ đề, phản hồi hoặc thích một bài.'
+            : 'Read freely. Sign in with Google to create topics, reply, or like a post.'}
+        </p>
+      )}
+      {message && <p className="guestbook-form-message">{message}</p>}
     </section>
   )
 }

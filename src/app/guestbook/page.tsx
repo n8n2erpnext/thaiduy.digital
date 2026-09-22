@@ -42,8 +42,8 @@ export default async function GuestbookPage() {
         <section className="guestbook-thread-list">
           <header>
             <div>
-              <span>{locale==='vi'?'CUỘC TRAO ĐỔI':'CONVERSATIONS'}</span>
-              <h2>{locale==='vi'?'Những lời nhắn đã được duyệt':'Approved threads'}</h2>
+              <span>{locale==='vi'?'DIỄN ĐÀN NHỎ':'MINI FORUM'}</span>
+              <h2>{locale==='vi'?'Chủ đề gần đây':'Recent topics'}</h2>
             </div>
             <strong>{threads.length.toLocaleString(locale==='vi'?'vi-VN':'en-US')}</strong>
           </header>
@@ -69,7 +69,8 @@ export default async function GuestbookPage() {
                 <p>{thread.body}</p>
               </div>
               <div className="guestbook-thread-meta">
-                <span>{thread.replyCount} {locale==='vi'?'phản hồi':'replies'}</span>
+                <span>♡ {thread.likeCount} {locale==='vi'?'thích':'likes'}</span>
+                <span>↩ {thread.replyCount} {locale==='vi'?'phản hồi':'replies'}</span>
                 <time>{locale==='vi'?'HOẠT ĐỘNG':'ACTIVE'} · {thread.lastActivityAt.toLocaleDateString(locale==='vi'?'vi-VN':'en-GB')}</time>
                 <b>→</b>
               </div>

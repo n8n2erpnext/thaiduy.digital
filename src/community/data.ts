@@ -4,6 +4,8 @@ import {
   auditLogs,
   communityMembers,
   communityReplies,
+  communityReplyLikes,
+  communityThreadLikes,
   communityThreads,
 } from '@/db/schema'
 import { account,user } from '@/db/auth-schema'
@@ -52,6 +54,10 @@ export async function getPublicCommunityThreads(limit=40) {
       where r.thread_id = ${communityThreads.id}
         and r.status = 'approved' and r.deleted_at is null
     )`,
+    likeCount:sql<number>`(
+      select count(*)::int from community_thread_likes l
+      where l.thread_id = ${communityThreads.id}
+    )`,
   })
     .from(communityThreads)
     .innerJoin(user,eq(communityThreads.userId,user.id))
@@ -63,7 +69,13 @@ export async function getPublicCommunityThreads(limit=40) {
     .limit(safeLimit)
 }
 
-export async function getPublicCommunityThread(id:string) {
+export async function getPublicCommunityThread(id:string,userId?:string | null) {
+  const threadLiked=userId
+    ? sql<boolean>`exists(
+        select 1 from community_thread_likes l
+        where l.thread_id=${communityThreads.id} and l.user_id=${userId}
+      )`
+    : sql<boolean>`false`
   const [thread]=await db.select({
     id:communityThreads.id,
     title:communityThreads.title,
@@ -73,6 +85,11 @@ export async function getPublicCommunityThread(id:string) {
     lastActivityAt:communityThreads.lastActivityAt,
     authorName:user.name,
     authorImage:user.image,
+    likeCount:sql<number>`(
+      select count(*)::int from community_thread_likes l
+      where l.thread_id=${communityThreads.id}
+    )`,
+    liked:threadLiked,
   })
     .from(communityThreads)
     .innerJoin(user,eq(communityThreads.userId,user.id))
@@ -84,12 +101,24 @@ export async function getPublicCommunityThread(id:string) {
     .limit(1)
   if (!thread) return null
 
+  const replyLiked=userId
+    ? sql<boolean>`exists(
+        select 1 from community_reply_likes l
+        where l.reply_id=${communityReplies.id} and l.user_id=${userId}
+      )`
+    : sql<boolean>`false`
+
   const replies=await db.select({
     id:communityReplies.id,
     body:communityReplies.body,
     createdAt:communityReplies.createdAt,
     authorName:user.name,
     authorImage:user.image,
+    likeCount:sql<number>`(
+      select count(*)::int from community_reply_likes l
+      where l.reply_id=${communityReplies.id}
+    )`,
+    liked:replyLiked,
   })
     .from(communityReplies)
     .innerJoin(user,eq(communityReplies.userId,user.id))
@@ -153,6 +182,64 @@ export async function submitCommunityReply(
     threadId,userId,body,status:'pending',
   }).returning({id:communityReplies.id,status:communityReplies.status})
   return created
+}
+
+export async function toggleCommunityLike(
+  kind:'thread'|'reply',
+  id:string,
+  userId:string,
+) {
+  await requireCommunityPostingAccess(userId)
+
+  if (kind==='thread') {
+    const [target]=await db.select({id:communityThreads.id}).from(communityThreads)
+      .where(and(
+        eq(communityThreads.id,id),
+        eq(communityThreads.status,'approved'),
+        isNull(communityThreads.deletedAt),
+      )).limit(1)
+    if (!target) throw new Error('community_item_not_found')
+
+    const [existing]=await db.select({id:communityThreadLikes.id}).from(communityThreadLikes)
+      .where(and(
+        eq(communityThreadLikes.threadId,id),
+        eq(communityThreadLikes.userId,userId),
+      )).limit(1)
+
+    if (existing) {
+      await db.delete(communityThreadLikes).where(eq(communityThreadLikes.id,existing.id))
+    } else {
+      await db.insert(communityThreadLikes).values({threadId:id,userId})
+    }
+
+    const [row]=await db.select({value:count()}).from(communityThreadLikes)
+      .where(eq(communityThreadLikes.threadId,id))
+    return {liked:!existing,likeCount:Number(row?.value ?? 0)}
+  }
+
+  const [target]=await db.select({id:communityReplies.id}).from(communityReplies)
+    .where(and(
+      eq(communityReplies.id,id),
+      eq(communityReplies.status,'approved'),
+      isNull(communityReplies.deletedAt),
+    )).limit(1)
+  if (!target) throw new Error('community_item_not_found')
+
+  const [existing]=await db.select({id:communityReplyLikes.id}).from(communityReplyLikes)
+    .where(and(
+      eq(communityReplyLikes.replyId,id),
+      eq(communityReplyLikes.userId,userId),
+    )).limit(1)
+
+  if (existing) {
+    await db.delete(communityReplyLikes).where(eq(communityReplyLikes.id,existing.id))
+  } else {
+    await db.insert(communityReplyLikes).values({replyId:id,userId})
+  }
+
+  const [row]=await db.select({value:count()}).from(communityReplyLikes)
+    .where(eq(communityReplyLikes.replyId,id))
+  return {liked:!existing,likeCount:Number(row?.value ?? 0)}
 }
 
 export async function getCommunityModerationQueue() {

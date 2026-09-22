@@ -2089,4 +2089,71 @@ This section supersedes the earlier 44/44 route-count statement for the latest b
 
 ---
 
+# 58. GUESTBOOK MINI-FORUM REFINEMENT — 2026-09-22
+
+The Guestbook public UX was refined after visual owner review.
+
+Reason:
+
+- the original Google login treatment was too large
+- the always-open new-thread form made the page feel like a contact form instead of a small forum
+- Like was not yet implemented
+
+Current public interaction model:
+
+- anonymous visitors read approved topics/replies
+- anonymous composer is compact; it does not render disabled title/body fields
+- Google sign-in is a small inline CTA rather than a full-width primary surface
+- authenticated users see a compact + NEW TOPIC / + TẠO CHỦ ĐỀ MỚI control
+- the new-topic editor only expands after that control is activated
+- thread detail keeps the reply composer available for signed-in users
+- topics are ordered by latest approved activity
+- topic list shows Like count, Reply count and latest activity date
+
+Like support:
+
+- topics can be liked/unliked
+- individual replies can be liked/unliked
+- Like requires Google-authenticated community access
+- blocked community users cannot Like
+- Like is immediate and does not enter moderation
+- one Like maximum per user per topic/reply
+- deleting a topic/reply cascades its Like records
+
+New API:
+
+- POST /api/guestbook/likes
+
+New migration:
+
+- drizzle/0011_guestbook_likes.sql
+
+New tables:
+
+- community_thread_likes
+- community_reply_likes
+
+Both tables have unique user/item constraints and cascade on content/user deletion.
+
+Acceptance:
+
+- TypeScript PASS
+- ESLint 0 errors; only existing Google-avatar <img> warnings remain
+- Layout PASS
+- Theme PASS
+- Typography PASS
+- git diff --check PASS
+- production build PASS
+- generated static pass 49/49
+- /guestbook -> 200
+- anonymous new-topic editor is not rendered
+- unauthenticated Like API -> 401
+- temporary QA Google account verified topic Like 0→1→0
+- temporary QA Google account verified reply Like 0→1→0
+- QA account/content/member/likes removed by cascade; no example.invalid QA users remain
+
+This section supersedes section 57's 48/48 latest-build count.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

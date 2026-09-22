@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { GuestbookComposer } from '@/components/guestbook/guestbook-composer'
+import { GuestbookLikeButton } from '@/components/guestbook/guestbook-like-button'
 import {
   getCommunityMemberState,
   getPublicCommunityThread,
@@ -18,7 +19,7 @@ export default async function GuestbookThreadPage({params}:Props) {
   const {id}=await params
   const session=await auth.api.getSession({headers:await headers()})
   const [data,googleConnected,member]=await Promise.all([
-    getPublicCommunityThread(id),
+    getPublicCommunityThread(id,session?.user.id),
     session?.user?hasCommunityGoogleAccount(session.user.id):Promise.resolve(false),
     session?.user?getCommunityMemberState(session.user.id):Promise.resolve(null),
   ])
@@ -53,6 +54,18 @@ export default async function GuestbookThreadPage({params}:Props) {
             </div>
           </header>
           <p className="guestbook-thread-message">{data.thread.body}</p>
+          <footer className="guestbook-thread-actions">
+            <GuestbookLikeButton
+              kind="thread"
+              id={data.thread.id}
+              locale={locale}
+              initialLiked={Boolean(data.thread.liked)}
+              initialCount={Number(data.thread.likeCount)}
+              canLike={googleConnected}
+              blocked={member?.status==='blocked'}
+            />
+            <span>{locale==='vi'?'Thích chủ đề này hoặc kéo xuống để phản hồi.':'Like this topic or continue below with a reply.'}</span>
+          </footer>
         </article>
 
         <section className="guestbook-replies">
@@ -76,6 +89,17 @@ export default async function GuestbookThreadPage({params}:Props) {
                   <time>{reply.createdAt.toLocaleString(locale==='vi'?'vi-VN':'en-GB')}</time>
                 </header>
                 <p>{reply.body}</p>
+                <footer>
+                  <GuestbookLikeButton
+                    kind="reply"
+                    id={reply.id}
+                    locale={locale}
+                    initialLiked={Boolean(reply.liked)}
+                    initialCount={Number(reply.likeCount)}
+                    canLike={googleConnected}
+                    blocked={member?.status==='blocked'}
+                  />
+                </footer>
               </div>
             </article>
           ))}

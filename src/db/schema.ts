@@ -200,6 +200,26 @@ export const communityReplies = pgTable('community_replies', {
   index('community_replies_user_idx').on(table.userId,table.createdAt),
 ])
 
+export const communityThreadLikes = pgTable('community_thread_likes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  threadId: uuid('thread_id').notNull().references(() => communityThreads.id, { onDelete:'cascade' }),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone:true }).defaultNow().notNull(),
+}, table => [
+  uniqueIndex('community_thread_likes_uq').on(table.threadId,table.userId),
+  index('community_thread_likes_thread_idx').on(table.threadId,table.createdAt),
+])
+
+export const communityReplyLikes = pgTable('community_reply_likes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  replyId: uuid('reply_id').notNull().references(() => communityReplies.id, { onDelete:'cascade' }),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone:true }).defaultNow().notNull(),
+}, table => [
+  uniqueIndex('community_reply_likes_uq').on(table.replyId,table.userId),
+  index('community_reply_likes_reply_idx').on(table.replyId,table.createdAt),
+])
+
 export const revisions = pgTable('revisions', {
   id: uuid('id').defaultRandom().primaryKey(),
   entityType: varchar('entity_type', { length: 64 }).notNull(),

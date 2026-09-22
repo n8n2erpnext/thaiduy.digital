@@ -3766,4 +3766,26 @@ Important QA limitation:
 
 ---
 
+# About arrow hover polish
+
+Targeted /about interaction polish:
+
+- Contact route arrows (Email / GitHub / CV) now lift upward by 2px on hover.
+- Send message button arrow uses the same 2px upward motion.
+- Only the arrow glyph moves; the row/button itself remains fixed.
+- Disabled submit state does not animate.
+- Transition duration: 180ms ease.
+- Layout, colors, spacing, form behavior and light/dark themes are unchanged.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /about 200
+- public /about 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

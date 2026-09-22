@@ -7438,7 +7438,10 @@ html[data-theme='normal'] .cv-education{
   translate:0 -50%;
   color:var(--signal);
   font:var(--type-title-3)/1 var(--font-terminal),monospace;
+  transition:transform .18s ease;
+  will-change:transform;
 }
+.about-contact-routes>a:hover i{transform:translateY(-2px)}
 
 .about-contact-form{
   padding:36px 34px;
@@ -7524,7 +7527,13 @@ html[data-theme='normal'] .cv-education{
   cursor:pointer;
 }
 .about-contact-submit button:disabled{cursor:wait;opacity:.65}
-.about-contact-submit button span{color:var(--signal)}
+.about-contact-submit button span{
+  display:inline-block;
+  color:var(--signal);
+  transition:transform .18s ease;
+  will-change:transform;
+}
+.about-contact-submit button:not(:disabled):hover span{transform:translateY(-2px)}
 .about-contact-submit p{
   margin:0;
   color:var(--muted);

@@ -12,13 +12,22 @@ import { resolveLocale } from '@/i18n/locale'
 import { messages } from '@/i18n/messages'
 import { auth } from '@/lib/auth'
 
-export default async function GuestbookPage() {
+type Props={searchParams:Promise<{page?:string}>}
+
+function pageNumber(value:string | undefined) {
+  const parsed=Number.parseInt(value ?? '1',10)
+  return Number.isFinite(parsed) && parsed>0 ? parsed : 1
+}
+
+export default async function GuestbookPage({searchParams}:Props) {
   const locale=await resolveLocale()
+  const {page:rawPage}=await searchParams
+  const page=pageNumber(rawPage)
   const t=messages[locale]
   const session=await auth.api.getSession({headers:await headers()})
-  const [section,threads,googleConnected,member]=await Promise.all([
+  const [section,threadPage,googleConnected,member]=await Promise.all([
     resolveManagedSection('section.guestbook',locale,t.sections.guestbook),
-    getPublicCommunityThreads(),
+    getPublicCommunityThreads(page,10),
     session?.user?hasCommunityGoogleAccount(session.user.id):Promise.resolve(false),
     session?.user?getCommunityMemberState(session.user.id):Promise.resolve(null),
   ])
@@ -28,6 +37,7 @@ export default async function GuestbookPage() {
     googleConnected,
     blocked:member?.status==='blocked',
   }:null
+  const threads=threadPage.items
 
   return (
     <SectionPage
@@ -45,11 +55,11 @@ export default async function GuestbookPage() {
               <span>{locale==='vi'?'DIỄN ĐÀN NHỎ':'MINI FORUM'}</span>
               <h2>{locale==='vi'?'Chủ đề gần đây':'Recent topics'}</h2>
             </div>
-            <strong>{threads.length.toLocaleString(locale==='vi'?'vi-VN':'en-US')}</strong>
+            <strong>{threadPage.total.toLocaleString(locale==='vi'?'vi-VN':'en-US')}</strong>
           </header>
           {threads.length===0 && (
             <div className="guestbook-empty">
-              <strong>{locale==='vi'?'Guestbook đang còn trống.':'The Guestbook is quiet for now.'}</strong>
+              <strong>{locale==='vi'?'Discuss đang còn trống.':'Discuss is quiet for now.'}</strong>
               <p>{locale==='vi'?'Bạn có thể là người mở lời đầu tiên.':'You can be the first person to leave a message.'}</p>
             </div>
           )}
@@ -76,6 +86,27 @@ export default async function GuestbookPage() {
               </div>
             </Link>
           ))}
+          {threadPage.pages>1 && (
+            <nav className="guestbook-pagination" aria-label={locale==='vi'?'Phân trang chủ đề':'Topic pagination'}>
+              <Link
+                href={threadPage.page<=2?'/guestbook':'/guestbook?page='+(threadPage.page-1)}
+                aria-disabled={threadPage.page===1}
+                data-disabled={threadPage.page===1 || undefined}
+              >
+                ← {locale==='vi'?'TRƯỚC':'PREV'}
+              </Link>
+              <span>
+                {locale==='vi'?'TRANG':'PAGE'} {threadPage.page} / {threadPage.pages}
+              </span>
+              <Link
+                href={'/guestbook?page='+(threadPage.page+1)}
+                aria-disabled={threadPage.page===threadPage.pages}
+                data-disabled={threadPage.page===threadPage.pages || undefined}
+              >
+                {locale==='vi'?'SAU':'NEXT'} →
+              </Link>
+            </nav>
+          )}
         </section>
       </div>
     </SectionPage>

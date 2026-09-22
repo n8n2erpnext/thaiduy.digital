@@ -2156,4 +2156,75 @@ This section supersedes section 57's 48/48 latest-build count.
 
 ---
 
+# 59. DISCUSS REPLY TARGETING + PUBLIC PAGINATION — 2026-09-22
+
+The public Guestbook label has been refined to Discuss while the stable route remains /guestbook.
+
+Public naming:
+
+- header navigation label: Discuss
+- footer label: Discuss
+- managed section copy: Discuss / Community
+- internal route remains /guestbook for compatibility
+- internal table/component names remain community/guestbook where changing them would add migration risk without user value
+
+Reply semantics:
+
+- a reply with no parent_reply_id responds to the main topic
+- a reply with parent_reply_id responds to one specific approved reply
+- each public reply now has an explicit Reply control beside Like
+- clicking Reply opens an inline composer directly below that reply
+- targeted composer shows “Reply to @name” / “Trả lời @tên”
+- targeted composer includes a short excerpt from the source reply
+- rendered targeted replies show the same ↪ @name + excerpt reference
+- the bottom composer is explicitly labeled Reply to topic / Phản hồi chủ đề
+- public rendering stays a flat chronological timeline; reply relationships are explicit references rather than deeply nested trees
+
+Schema/migration:
+
+- drizzle/0012_discuss_reply_targets.sql
+- community_replies.parent_reply_id is a self reference
+- FK delete behavior is ON DELETE SET NULL so deleting a source reply does not destroy later conversation
+
+Posting limits:
+
+- topic title: 180 characters
+- topic body: 5,000 characters
+- reply body: 3,000 characters
+- editors now show live character counters instead of silently clipping input
+
+Public pagination:
+
+- Discuss topic index: 10 approved topics per page
+- thread replies: 20 approved replies per page
+- Previous/Next controls appear automatically only when multiple pages exist
+- topic index remains ordered by latest approved activity
+- replies remain chronological inside a thread
+
+Acceptance:
+
+- TypeScript PASS
+- ESLint 0 errors; only existing external Google-avatar <img> warnings remain
+- Layout PASS
+- Theme PASS
+- Typography PASS
+- git diff --check PASS
+- production build PASS 49/49
+- QA 12 topics -> 2 pages: 10 + 2
+- QA 21 replies -> 2 pages: 20 + 1
+- page-2 nested reply resolved correct parent author and quote
+- temporary pagination/nesting QA user and all related rows removed by cascade
+- live demo thread contains one approved nested reply for visual review
+- demo thread route returned 200 and rendered nested reply successfully
+
+Current live demo thread:
+
+- /guestbook/1d70cee8-d4ff-4d44-b8ce-9b81914304b1
+- source reply: af31e3a3-cbd3-4dd0-8e88-9ca7e7852404
+- nested demo reply: b0f2f919-68ca-4975-a601-31fcb13782b4
+
+The demo content may be deleted after owner visual review; reply/Like dependencies follow the existing FK/cascade policy.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

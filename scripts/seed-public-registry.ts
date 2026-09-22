@@ -117,8 +117,8 @@ const navRows = [
     enabled:true,
     status:'published',
     sort:50,
-    labelEn:'Guestbook',
-    labelVi:'Guestbook',
+    labelEn:'Discuss',
+    labelVi:'Discuss',
     meta:{href:'/guestbook'},
   },
 ]

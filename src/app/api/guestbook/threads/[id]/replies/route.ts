@@ -1,4 +1,5 @@
 import { NextRequest,NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { submitCommunityReply } from '@/community/data'
 
@@ -11,10 +12,22 @@ export async function POST(request:NextRequest,{params}:Props) {
   }
 
   const {id}=await params
-  const payload=await request.json().catch(()=>null) as {body?:string} | null
+  const raw=await request.json().catch(()=>null)
+  const parsed=z.object({
+    body:z.string().default(''),
+    parentReplyId:z.uuid().nullable().optional(),
+  }).safeParse(raw)
+  if (!parsed.success) {
+    return NextResponse.json({error:'invalid_payload'},{status:400})
+  }
 
   try {
-    const reply=await submitCommunityReply(id,session.user.id,payload?.body ?? '')
+    const reply=await submitCommunityReply(
+      id,
+      session.user.id,
+      parsed.data.body,
+      parsed.data.parentReplyId,
+    )
     return NextResponse.json({reply},{status:201})
   } catch (error) {
     const code=error instanceof Error?error.message:'community_failed'
@@ -22,6 +35,7 @@ export async function POST(request:NextRequest,{params}:Props) {
       code==='google_required'?403:
       code==='community_blocked'?403:
       code==='thread_not_found'?404:
+      code==='parent_reply_not_found'?404:
       code==='community_rate_limited'?429:400
     return NextResponse.json({error:code},{status})
   }

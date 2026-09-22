@@ -8713,6 +8713,45 @@ html[data-theme='normal'] .cv-education{
   letter-spacing: 0.08em;
 }
 
+.guestbook-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.guestbook-field-row small {
+  color: var(--muted-2);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.guestbook-reply-target {
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--signal);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.guestbook-reply-target span,
+.guestbook-reply-reference span {
+  color: var(--signal);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+}
+
+.guestbook-reply-target p,
+.guestbook-reply-reference p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  line-height: 1.45;
+}
+
 .guestbook-composer input,
 .guestbook-composer textarea {
   width: 100%;
@@ -9030,9 +9069,75 @@ html[data-theme='normal'] .cv-education{
   white-space: pre-wrap;
 }
 
+.guestbook-reply-reference {
+  margin: 10px 0 4px;
+  padding: 9px 11px;
+  border-left: 2px solid var(--line-strong);
+  background: var(--panel-2);
+}
+
 .guestbook-reply footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
   margin-top: 10px;
+}
+
+.guestbook-reply-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  cursor: pointer;
+}
+
+.guestbook-reply-button:hover {
+  border-color: rgba(142,232,178,.34);
+  background: var(--signal-soft);
+  color: var(--text);
+}
+
+.guestbook-inline-reply {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.guestbook-inline-reply .guestbook-composer {
+  border-radius: 10px;
+  background: rgba(255,255,255,.012);
+}
+
+.guestbook-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted-2);
+  font-family: var(--font-terminal);
+  font-size: var(--type-meta);
+  letter-spacing: 0.05em;
+}
+
+.guestbook-pagination a {
+  color: var(--muted);
+}
+
+.guestbook-pagination a:hover {
+  color: var(--text);
+}
+
+.guestbook-pagination a[data-disabled] {
+  pointer-events: none;
+  opacity: 0.35;
 }
 
 /* Control / community */

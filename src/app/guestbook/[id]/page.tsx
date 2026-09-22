@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { GuestbookComposer } from '@/components/guestbook/guestbook-composer'
 import { GuestbookLikeButton } from '@/components/guestbook/guestbook-like-button'
+import { GuestbookReplyAction } from '@/components/guestbook/guestbook-reply-action'
 import {
   getCommunityMemberState,
   getPublicCommunityThread,
@@ -12,14 +13,24 @@ import { resolveLocale } from '@/i18n/locale'
 import { auth } from '@/lib/auth'
 import { SiteHeader } from '@/components/site/header'
 
-type Props={params:Promise<{id:string}>}
+type Props={
+  params:Promise<{id:string}>
+  searchParams:Promise<{page?:string}>
+}
 
-export default async function GuestbookThreadPage({params}:Props) {
+function pageNumber(value:string | undefined) {
+  const parsed=Number.parseInt(value ?? '1',10)
+  return Number.isFinite(parsed) && parsed>0 ? parsed : 1
+}
+
+export default async function GuestbookThreadPage({params,searchParams}:Props) {
   const locale=await resolveLocale()
   const {id}=await params
+  const {page:rawPage}=await searchParams
+  const page=pageNumber(rawPage)
   const session=await auth.api.getSession({headers:await headers()})
   const [data,googleConnected,member]=await Promise.all([
-    getPublicCommunityThread(id,session?.user.id),
+    getPublicCommunityThread(id,session?.user.id,page,20),
     session?.user?hasCommunityGoogleAccount(session.user.id):Promise.resolve(false),
     session?.user?getCommunityMemberState(session.user.id):Promise.resolve(null),
   ])
@@ -36,12 +47,12 @@ export default async function GuestbookThreadPage({params}:Props) {
       <SiteHeader locale={locale} />
       <main className="guestbook-thread-page">
         <Link className="text-action" href="/guestbook">
-          ← {locale==='vi'?'Guestbook':'Guestbook'}
+          ← Discuss
         </Link>
 
         <article className="guestbook-thread-detail">
           <header>
-            <span>{locale==='vi'?'GUESTBOOK / CHỦ ĐỀ':'GUESTBOOK / THREAD'}</span>
+            <span>{locale==='vi'?'DISCUSS / CHỦ ĐỀ':'DISCUSS / THREAD'}</span>
             <h1>{data.thread.title}</h1>
             <div className="guestbook-thread-author">
               {data.thread.authorImage
@@ -69,9 +80,9 @@ export default async function GuestbookThreadPage({params}:Props) {
         </article>
 
         <section className="guestbook-replies">
-          <header>
+          <header id="replies">
             <span>{locale==='vi'?'PHẢN HỒI':'REPLIES'}</span>
-            <strong>{data.replies.length}</strong>
+            <strong>{data.replyPagination.total}</strong>
           </header>
           {data.replies.length===0 && (
             <p className="guestbook-replies-empty">
@@ -88,6 +99,17 @@ export default async function GuestbookThreadPage({params}:Props) {
                   <strong>{reply.authorName}</strong>
                   <time>{reply.createdAt.toLocaleString(locale==='vi'?'vi-VN':'en-GB')}</time>
                 </header>
+                {reply.parentReplyId && reply.parentAuthorName && (
+                  <blockquote className="guestbook-reply-reference">
+                    <span>↪ @{reply.parentAuthorName}</span>
+                    {reply.parentBody && (
+                      <p>
+                        {reply.parentBody.trim().replace(/\s+/g,' ').slice(0,180)}
+                        {reply.parentBody.trim().length>180?'…':''}
+                      </p>
+                    )}
+                  </blockquote>
+                )}
                 <p>{reply.body}</p>
                 <footer>
                   <GuestbookLikeButton
@@ -99,10 +121,39 @@ export default async function GuestbookThreadPage({params}:Props) {
                     canLike={googleConnected}
                     blocked={member?.status==='blocked'}
                   />
+                  <GuestbookReplyAction
+                    locale={locale}
+                    viewer={viewer}
+                    threadId={id}
+                    replyId={reply.id}
+                    authorName={reply.authorName}
+                    body={reply.body}
+                  />
                 </footer>
               </div>
             </article>
           ))}
+          {data.replyPagination.pages>1 && (
+            <nav className="guestbook-pagination" aria-label={locale==='vi'?'Phân trang phản hồi':'Reply pagination'}>
+              <Link
+                href={data.replyPagination.page<=2?'/guestbook/'+id+'#replies':'/guestbook/'+id+'?page='+(data.replyPagination.page-1)+'#replies'}
+                aria-disabled={data.replyPagination.page===1}
+                data-disabled={data.replyPagination.page===1 || undefined}
+              >
+                ← {locale==='vi'?'TRƯỚC':'PREV'}
+              </Link>
+              <span>
+                {locale==='vi'?'TRANG':'PAGE'} {data.replyPagination.page} / {data.replyPagination.pages}
+              </span>
+              <Link
+                href={'/guestbook/'+id+'?page='+(data.replyPagination.page+1)+'#replies'}
+                aria-disabled={data.replyPagination.page===data.replyPagination.pages}
+                data-disabled={data.replyPagination.page===data.replyPagination.pages || undefined}
+              >
+                {locale==='vi'?'SAU':'NEXT'} →
+              </Link>
+            </nav>
+          )}
         </section>
 
         <GuestbookComposer locale={locale} viewer={viewer} threadId={id} />

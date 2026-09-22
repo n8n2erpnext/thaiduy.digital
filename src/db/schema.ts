@@ -1,5 +1,6 @@
 import { user as authUser } from './auth-schema'
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   doublePrecision,
@@ -188,6 +189,10 @@ export const communityThreads = pgTable('community_threads', {
 export const communityReplies = pgTable('community_replies', {
   id: uuid('id').defaultRandom().primaryKey(),
   threadId: uuid('thread_id').notNull().references(() => communityThreads.id, { onDelete:'cascade' }),
+  parentReplyId: uuid('parent_reply_id').references(
+    ():AnyPgColumn => communityReplies.id,
+    { onDelete:'set null' },
+  ),
   userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
   body: text('body').notNull(),
   status: varchar('status', { length:16 }).default('pending').notNull(),

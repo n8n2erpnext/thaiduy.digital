@@ -38,9 +38,19 @@ export async function requireCommunityPostingAccess(userId:string) {
     .onConflictDoNothing({target:communityMembers.userId})
 }
 
-export async function getPublicCommunityThreads(limit=40) {
-  const safeLimit=Math.min(80,Math.max(1,limit))
-  return db.select({
+export async function getPublicCommunityThreads(page=1,limit=10) {
+  const safeLimit=Math.min(30,Math.max(1,limit))
+  const safePage=Math.max(1,Number.isFinite(page)?Math.floor(page):1)
+  const publicWhere=and(
+    eq(communityThreads.status,'approved'),
+    isNull(communityThreads.deletedAt),
+  )
+  const [countRow]=await db.select({value:count()}).from(communityThreads).where(publicWhere)
+  const total=Number(countRow?.value ?? 0)
+  const pages=Math.max(1,Math.ceil(total/safeLimit))
+  const currentPage=Math.min(safePage,pages)
+
+  const items=await db.select({
     id:communityThreads.id,
     title:communityThreads.title,
     body:communityThreads.body,
@@ -61,15 +71,22 @@ export async function getPublicCommunityThreads(limit=40) {
   })
     .from(communityThreads)
     .innerJoin(user,eq(communityThreads.userId,user.id))
-    .where(and(
-      eq(communityThreads.status,'approved'),
-      isNull(communityThreads.deletedAt),
-    ))
+    .where(publicWhere)
     .orderBy(desc(communityThreads.lastActivityAt))
     .limit(safeLimit)
+    .offset((currentPage-1)*safeLimit)
+
+  return {items,total,page:currentPage,pages,limit:safeLimit}
 }
 
-export async function getPublicCommunityThread(id:string,userId?:string | null) {
+export async function getPublicCommunityThread(
+  id:string,
+  userId?:string | null,
+  replyPage=1,
+  replyLimit=20,
+) {
+  const safeLimit=Math.min(50,Math.max(1,replyLimit))
+  const safePage=Math.max(1,Number.isFinite(replyPage)?Math.floor(replyPage):1)
   const threadLiked=userId
     ? sql<boolean>`exists(
         select 1 from community_thread_likes l
@@ -101,6 +118,16 @@ export async function getPublicCommunityThread(id:string,userId?:string | null) 
     .limit(1)
   if (!thread) return null
 
+  const replyWhere=and(
+    eq(communityReplies.threadId,id),
+    eq(communityReplies.status,'approved'),
+    isNull(communityReplies.deletedAt),
+  )
+  const [replyCountRow]=await db.select({value:count()}).from(communityReplies).where(replyWhere)
+  const totalReplies=Number(replyCountRow?.value ?? 0)
+  const replyPages=Math.max(1,Math.ceil(totalReplies/safeLimit))
+  const currentReplyPage=Math.min(safePage,replyPages)
+
   const replyLiked=userId
     ? sql<boolean>`exists(
         select 1 from community_reply_likes l
@@ -110,6 +137,7 @@ export async function getPublicCommunityThread(id:string,userId?:string | null) 
 
   const replies=await db.select({
     id:communityReplies.id,
+    parentReplyId:communityReplies.parentReplyId,
     body:communityReplies.body,
     createdAt:communityReplies.createdAt,
     authorName:user.name,
@@ -119,16 +147,41 @@ export async function getPublicCommunityThread(id:string,userId?:string | null) 
       where l.reply_id=${communityReplies.id}
     )`,
     liked:replyLiked,
+    parentAuthorName:sql<string|null>`(
+      select pu.name
+      from community_replies pr
+      join "user" pu on pu.id=pr.user_id
+      where pr.id=${communityReplies.parentReplyId}
+        and pr.status='approved'
+        and pr.deleted_at is null
+      limit 1
+    )`,
+    parentBody:sql<string|null>`(
+      select pr.body
+      from community_replies pr
+      where pr.id=${communityReplies.parentReplyId}
+        and pr.status='approved'
+        and pr.deleted_at is null
+      limit 1
+    )`,
   })
     .from(communityReplies)
     .innerJoin(user,eq(communityReplies.userId,user.id))
-    .where(and(
-      eq(communityReplies.threadId,id),
-      eq(communityReplies.status,'approved'),
-      isNull(communityReplies.deletedAt),
-    ))
+    .where(replyWhere)
     .orderBy(communityReplies.createdAt)
-  return {thread,replies}
+    .limit(safeLimit)
+    .offset((currentReplyPage-1)*safeLimit)
+
+  return {
+    thread,
+    replies,
+    replyPagination:{
+      total:totalReplies,
+      page:currentReplyPage,
+      pages:replyPages,
+      limit:safeLimit,
+    },
+  }
 }
 
 export async function submitCommunityThread(
@@ -159,6 +212,7 @@ export async function submitCommunityReply(
   threadId:string,
   userId:string,
   rawBody:string,
+  parentReplyId?:string | null,
 ) {
   await requireCommunityPostingAccess(userId)
   const body=cleanBody(rawBody,3000)
@@ -170,6 +224,17 @@ export async function submitCommunityReply(
     )).limit(1)
   if (!thread) throw new Error('thread_not_found')
 
+  if (parentReplyId) {
+    const [parent]=await db.select({id:communityReplies.id}).from(communityReplies)
+      .where(and(
+        eq(communityReplies.id,parentReplyId),
+        eq(communityReplies.threadId,threadId),
+        eq(communityReplies.status,'approved'),
+        isNull(communityReplies.deletedAt),
+      )).limit(1)
+    if (!parent) throw new Error('parent_reply_not_found')
+  }
+
   const [last]=await db.select({createdAt:communityReplies.createdAt})
     .from(communityReplies)
     .where(eq(communityReplies.userId,userId))
@@ -179,8 +244,16 @@ export async function submitCommunityReply(
   }
 
   const [created]=await db.insert(communityReplies).values({
-    threadId,userId,body,status:'pending',
-  }).returning({id:communityReplies.id,status:communityReplies.status})
+    threadId,
+    parentReplyId:parentReplyId ?? null,
+    userId,
+    body,
+    status:'pending',
+  }).returning({
+    id:communityReplies.id,
+    status:communityReplies.status,
+    parentReplyId:communityReplies.parentReplyId,
+  })
   return created
 }
 

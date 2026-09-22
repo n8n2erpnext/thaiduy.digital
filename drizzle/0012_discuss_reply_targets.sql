@@ -1,0 +1,2 @@
+ALTER TABLE "community_replies" ADD COLUMN "parent_reply_id" uuid;--> statement-breakpoint
+ALTER TABLE "community_replies" ADD CONSTRAINT "community_replies_parent_reply_id_community_replies_id_fk" FOREIGN KEY ("parent_reply_id") REFERENCES "public"."community_replies"("id") ON DELETE set null ON UPDATE no action;

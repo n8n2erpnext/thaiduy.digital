@@ -3660,4 +3660,29 @@ Validation:
 
 ---
 
+# Writing root dark-mode readability
+
+Targeted /writing root dark/night readability fix:
+
+- Root cause: `.section-page-body` provides muted inherited text, and writing card titles had no explicit dark color, causing titles/excerpts/meta to appear too dim.
+- Dark-mode writing root now mirrors the visual hierarchy of homepage FIELD NOTES:
+  - card title: bright `#f1f2f4`
+  - excerpt/body: `#a9afb7`
+  - meta: `#7f8792`
+  - READ action: `#98a29c`
+- Scope is explicit to `html[data-theme='dark'] .section-page-body .writing-post-card...`.
+- Normal/day mode is unchanged.
+- Card layout, hover, borders, images, tags and typography sizes were not changed.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /writing 200
+- public /writing 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

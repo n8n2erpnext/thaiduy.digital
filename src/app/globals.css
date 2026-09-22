@@ -1602,6 +1602,18 @@ main {
 .writing-post-card h2{margin:28px 0 14px;font:500 31px/1.08 var(--font-google-sans),sans-serif;letter-spacing:-.04em}
 .writing-post-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.65}
 .writing-post-card-body>strong{margin-top:auto;padding-top:26px;color:#91a298}
+html[data-theme='dark'] .section-page-body .writing-post-card h2{
+  color:#f1f2f4;
+}
+html[data-theme='dark'] .section-page-body .writing-post-card p{
+  color:#a9afb7;
+}
+html[data-theme='dark'] .section-page-body .writing-post-card-meta span{
+  color:#7f8792;
+}
+html[data-theme='dark'] .section-page-body .writing-post-card-body>strong{
+  color:#98a29c;
+}
 .writing-detail-page main{width:min(1180px,calc(100% - 40px));margin:0 auto 90px}
 .writing-article{padding-top:70px}
 .writing-article-head{width:min(900px,100%);margin:0 auto 42px}

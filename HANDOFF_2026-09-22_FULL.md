@@ -3810,4 +3810,41 @@ Validation:
 
 ---
 
+# Control brand shortcuts + homepage horizontal overflow fix
+
+Control sidebar:
+
+- Added the current public brand mark (`/brand-mark.svg`) to the `TD / CONTROL` identity block.
+- Brand mark links to the public homepage `/`.
+- Added a compact inline SVG Home icon beside the control identity.
+- Home icon links to the control overview `/control`.
+- Existing `TD / CONTROL` and `living systems operator` identity text remains intact.
+- No control navigation structure or protected-route behavior changed.
+
+Homepage horizontal scrollbar:
+
+- Root cause identified in `.home-public-hero::after`.
+- The hero bottom fade used `width:100vw` centered with `left:50%` + `translateX(-50%)`.
+- On desktop with a vertical scrollbar, `100vw` includes scrollbar width and therefore exceeded the layout viewport, producing the horizontal scrollbar seen in browser QA.
+- Fixed at the source:
+  - `left:50%` -> `left:0`
+  - `width:100vw` -> `width:100%`
+  - removed `translateX(-50%)`
+- No global `overflow-x:hidden` masking was added.
+- Hero/rack layout and fade behavior remain intact within the hero bounds.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- homepage public CSS contains no remaining `100vw` source
+- git diff --check PASS
+- local / 200
+- public / 200
+- local /control/login 200
+- public /control returns expected protected-route 307 when unauthenticated
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

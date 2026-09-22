@@ -2472,88 +2472,24 @@ main {
 
 /* Writing taxonomy, highlight and pagination */
 .writing-highlight-section{
-  margin:0 0 28px;
-  padding:0 0 28px;
-  border-bottom:1px solid var(--line);
+  margin:0 0 22px;padding:0 0 22px;border-bottom:1px solid var(--line);
 }
 .writing-highlight-section>header{
-  display:grid;
-  grid-template-columns:auto minmax(24px,1fr) auto;
-  align-items:center;
-  gap:12px;
-  margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
 }
-.writing-highlight-section>header::after{
-  content:'';
-  height:1px;
-  background:linear-gradient(90deg,color-mix(in srgb,var(--signal) 42%,transparent),var(--line));
+.writing-highlight-section>header span,.writing-highlight-section>header small{
+  font:7px/1 var(--font-terminal),monospace;letter-spacing:.08em;
 }
-.writing-highlight-section>header span,
-.writing-highlight-section>header small{
-  font:7px/1 var(--font-terminal),monospace;
-  letter-spacing:.08em;
-}
-.writing-highlight-section>header span{
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  color:var(--signal);
-}
-.writing-highlight-section>header span::before{
-  content:'';
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:currentColor;
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--signal) 10%,transparent);
-}
-.writing-highlight-section>header small{
-  min-width:42px;
-  padding:4px 7px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  color:#536058;
-  text-align:center;
-}
+.writing-highlight-section>header span{color:var(--signal)}
+.writing-highlight-section>header small{color:#536058}
 .writing-highlight-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:18px;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
 }
 .writing-post-card.is-highlight{
-  position:relative;
-  border-color:color-mix(in srgb,var(--signal) 28%,var(--line));
-  background:linear-gradient(145deg,color-mix(in srgb,var(--signal) 5%,transparent),rgba(255,255,255,.008));
-  box-shadow:0 16px 42px rgba(0,0,0,.1);
-}
-.writing-post-card.is-highlight::before{
-  content:'';
-  position:absolute;
-  z-index:2;
-  top:-1px;
-  left:20px;
-  right:20px;
-  height:2px;
-  border-radius:999px;
-  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--signal) 78%,transparent) 18%,color-mix(in srgb,var(--signal) 78%,transparent) 82%,transparent);
-  pointer-events:none;
-}
-.writing-post-card.is-highlight:hover{
-  border-color:color-mix(in srgb,var(--signal) 42%,var(--line));
-  transform:translateY(-2px);
+  border-color:rgba(142,232,178,.38);
+  background:linear-gradient(145deg,rgba(142,232,178,.025),rgba(255,255,255,.006));
 }
 .writing-post-card.is-highlight .writing-post-card-meta span:last-child{color:#91cda7}
-@media (min-width:801px){
-  .writing-post-card.is-highlight{
-    min-height:330px;
-    grid-template-columns:minmax(210px,.82fr) minmax(0,1.18fr);
-  }
-  .writing-post-card.is-highlight .writing-post-card-body{padding:28px}
-  .writing-post-card.is-highlight h2{
-    margin-top:32px;
-    font-size:34px;
-  }
-}
 .writing-post-tags,.writing-article-tags{
   display:flex;flex-wrap:wrap;gap:6px;
 }
@@ -4856,9 +4792,8 @@ html[data-theme='normal'] .writing-post-card:hover {
   border-color: rgba(22,124,82,.2);
 }
 html[data-theme='normal'] .writing-post-card.is-highlight {
-  border-color: rgba(22,124,82,.24);
-  background: linear-gradient(145deg, rgba(22,124,82,.065), rgba(255,255,255,.54));
-  box-shadow: 0 18px 48px rgba(31,52,40,.08);
+  border-color: rgba(22,124,82,.34);
+  background: linear-gradient(145deg, rgba(22,124,82,.045), rgba(255,255,255,.46));
 }
 
 html[data-theme='normal'] .music-organ-insight,

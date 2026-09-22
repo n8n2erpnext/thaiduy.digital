@@ -1,0 +1,2 @@
+ALTER TABLE "community_reply_likes" ADD COLUMN "reaction" varchar(16) DEFAULT 'like' NOT NULL;--> statement-breakpoint
+ALTER TABLE "community_thread_likes" ADD COLUMN "reaction" varchar(16) DEFAULT 'like' NOT NULL;

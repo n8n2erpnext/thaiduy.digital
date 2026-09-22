@@ -10,6 +10,7 @@ import {
   communityThreads,
 } from '@/db/schema'
 import { account,user } from '@/db/auth-schema'
+import type { CommunityReaction,CommunityReactionSummary } from '@/community/reactions'
 
 export type CommunityStatus='pending'|'approved'|'rejected'|'hidden'
 export type CommunityMemberStatus='active'|'blocked'
@@ -215,12 +216,14 @@ export async function getPublicCommunityThread(
 ) {
   const safeLimit=Math.min(50,Math.max(1,replyLimit))
   const safePage=Math.max(1,Number.isFinite(replyPage)?Math.floor(replyPage):1)
-  const threadLiked=userId
-    ? sql<boolean>`exists(
-        select 1 from community_thread_likes l
+  const threadReaction=userId
+    ? sql<CommunityReaction|null>`(
+        select l.reaction
+        from community_thread_likes l
         where l.thread_id=${communityThreads.id} and l.user_id=${userId}
+        limit 1
       )`
-    : sql<boolean>`false`
+    : sql<CommunityReaction|null>`null`
   const [thread]=await db.select({
     id:communityThreads.id,
     title:communityThreads.title,
@@ -234,11 +237,18 @@ export async function getPublicCommunityThread(
     authorName:user.name,
     authorImage:user.image,
     isAdmin:adminFlag(),
-    likeCount:sql<number>`(
+    reactionCount:sql<number>`(
       select count(*)::int from community_thread_likes l
       where l.thread_id=${communityThreads.id}
     )`,
-    liked:threadLiked,
+    reactionSummary:sql<CommunityReactionSummary>`jsonb_build_object(
+      'like',(select count(*)::int from community_thread_likes l where l.thread_id=${communityThreads.id} and l.reaction='like'),
+      'love',(select count(*)::int from community_thread_likes l where l.thread_id=${communityThreads.id} and l.reaction='love'),
+      'haha',(select count(*)::int from community_thread_likes l where l.thread_id=${communityThreads.id} and l.reaction='haha'),
+      'wow',(select count(*)::int from community_thread_likes l where l.thread_id=${communityThreads.id} and l.reaction='wow'),
+      'sad',(select count(*)::int from community_thread_likes l where l.thread_id=${communityThreads.id} and l.reaction='sad')
+    )`,
+    myReaction:threadReaction,
   })
     .from(communityThreads)
     .innerJoin(user,eq(communityThreads.userId,user.id))
@@ -260,12 +270,14 @@ export async function getPublicCommunityThread(
   const replyPages=Math.max(1,Math.ceil(totalReplies/safeLimit))
   const currentReplyPage=Math.min(safePage,replyPages)
 
-  const replyLiked=userId
-    ? sql<boolean>`exists(
-        select 1 from community_reply_likes l
+  const replyReaction=userId
+    ? sql<CommunityReaction|null>`(
+        select l.reaction
+        from community_reply_likes l
         where l.reply_id=${communityReplies.id} and l.user_id=${userId}
+        limit 1
       )`
-    : sql<boolean>`false`
+    : sql<CommunityReaction|null>`null`
 
   const replies=await db.select({
     id:communityReplies.id,
@@ -276,11 +288,18 @@ export async function getPublicCommunityThread(
     authorName:user.name,
     authorImage:user.image,
     isAdmin:adminFlag(),
-    likeCount:sql<number>`(
+    reactionCount:sql<number>`(
       select count(*)::int from community_reply_likes l
       where l.reply_id=${communityReplies.id}
     )`,
-    liked:replyLiked,
+    reactionSummary:sql<CommunityReactionSummary>`jsonb_build_object(
+      'like',(select count(*)::int from community_reply_likes l where l.reply_id=${communityReplies.id} and l.reaction='like'),
+      'love',(select count(*)::int from community_reply_likes l where l.reply_id=${communityReplies.id} and l.reaction='love'),
+      'haha',(select count(*)::int from community_reply_likes l where l.reply_id=${communityReplies.id} and l.reaction='haha'),
+      'wow',(select count(*)::int from community_reply_likes l where l.reply_id=${communityReplies.id} and l.reaction='wow'),
+      'sad',(select count(*)::int from community_reply_likes l where l.reply_id=${communityReplies.id} and l.reaction='sad')
+    )`,
+    myReaction:replyReaction,
     parentAuthorName:sql<string|null>`(
       select pu.name
       from community_replies pr
@@ -418,10 +437,11 @@ export async function submitCommunityReply(
   return created
 }
 
-export async function toggleCommunityLike(
+export async function setCommunityReaction(
   kind:'thread'|'reply',
   id:string,
   userId:string,
+  reaction:CommunityReaction,
 ) {
   await requireCommunityPostingAccess(userId)
 
@@ -434,21 +454,48 @@ export async function toggleCommunityLike(
       )).limit(1)
     if (!target) throw new Error('community_item_not_found')
 
-    const [existing]=await db.select({id:communityThreadLikes.id}).from(communityThreadLikes)
+    const [existing]=await db.select({
+      id:communityThreadLikes.id,
+      reaction:communityThreadLikes.reaction,
+    }).from(communityThreadLikes)
       .where(and(
         eq(communityThreadLikes.threadId,id),
         eq(communityThreadLikes.userId,userId),
       )).limit(1)
 
-    if (existing) {
+    let nextReaction:CommunityReaction|null=reaction
+    if (existing?.reaction===reaction) {
       await db.delete(communityThreadLikes).where(eq(communityThreadLikes.id,existing.id))
+      nextReaction=null
+    } else if (existing) {
+      await db.update(communityThreadLikes)
+        .set({reaction})
+        .where(eq(communityThreadLikes.id,existing.id))
     } else {
-      await db.insert(communityThreadLikes).values({threadId:id,userId})
+      await db.insert(communityThreadLikes).values({threadId:id,userId,reaction})
     }
 
-    const [row]=await db.select({value:count()}).from(communityThreadLikes)
+    const [row]=await db.select({
+      total:count(),
+      like:sql<number>`count(*) filter (where ${communityThreadLikes.reaction}='like')::int`,
+      love:sql<number>`count(*) filter (where ${communityThreadLikes.reaction}='love')::int`,
+      haha:sql<number>`count(*) filter (where ${communityThreadLikes.reaction}='haha')::int`,
+      wow:sql<number>`count(*) filter (where ${communityThreadLikes.reaction}='wow')::int`,
+      sad:sql<number>`count(*) filter (where ${communityThreadLikes.reaction}='sad')::int`,
+    }).from(communityThreadLikes)
       .where(eq(communityThreadLikes.threadId,id))
-    return {liked:!existing,likeCount:Number(row?.value ?? 0)}
+
+    return {
+      reaction:nextReaction,
+      reactionCount:Number(row?.total ?? 0),
+      reactionSummary:{
+        like:Number(row?.like ?? 0),
+        love:Number(row?.love ?? 0),
+        haha:Number(row?.haha ?? 0),
+        wow:Number(row?.wow ?? 0),
+        sad:Number(row?.sad ?? 0),
+      } satisfies CommunityReactionSummary,
+    }
   }
 
   const [target]=await db.select({id:communityReplies.id}).from(communityReplies)
@@ -459,21 +506,48 @@ export async function toggleCommunityLike(
     )).limit(1)
   if (!target) throw new Error('community_item_not_found')
 
-  const [existing]=await db.select({id:communityReplyLikes.id}).from(communityReplyLikes)
+  const [existing]=await db.select({
+    id:communityReplyLikes.id,
+    reaction:communityReplyLikes.reaction,
+  }).from(communityReplyLikes)
     .where(and(
       eq(communityReplyLikes.replyId,id),
       eq(communityReplyLikes.userId,userId),
     )).limit(1)
 
-  if (existing) {
+  let nextReaction:CommunityReaction|null=reaction
+  if (existing?.reaction===reaction) {
     await db.delete(communityReplyLikes).where(eq(communityReplyLikes.id,existing.id))
+    nextReaction=null
+  } else if (existing) {
+    await db.update(communityReplyLikes)
+      .set({reaction})
+      .where(eq(communityReplyLikes.id,existing.id))
   } else {
-    await db.insert(communityReplyLikes).values({replyId:id,userId})
+    await db.insert(communityReplyLikes).values({replyId:id,userId,reaction})
   }
 
-  const [row]=await db.select({value:count()}).from(communityReplyLikes)
+  const [row]=await db.select({
+    total:count(),
+    like:sql<number>`count(*) filter (where ${communityReplyLikes.reaction}='like')::int`,
+    love:sql<number>`count(*) filter (where ${communityReplyLikes.reaction}='love')::int`,
+    haha:sql<number>`count(*) filter (where ${communityReplyLikes.reaction}='haha')::int`,
+    wow:sql<number>`count(*) filter (where ${communityReplyLikes.reaction}='wow')::int`,
+    sad:sql<number>`count(*) filter (where ${communityReplyLikes.reaction}='sad')::int`,
+  }).from(communityReplyLikes)
     .where(eq(communityReplyLikes.replyId,id))
-  return {liked:!existing,likeCount:Number(row?.value ?? 0)}
+
+  return {
+    reaction:nextReaction,
+    reactionCount:Number(row?.total ?? 0),
+    reactionSummary:{
+      like:Number(row?.like ?? 0),
+      love:Number(row?.love ?? 0),
+      haha:Number(row?.haha ?? 0),
+      wow:Number(row?.wow ?? 0),
+      sad:Number(row?.sad ?? 0),
+    } satisfies CommunityReactionSummary,
+  }
 }
 
 export type CommunityAdminFilterStatus='all'|'attention'|CommunityStatus

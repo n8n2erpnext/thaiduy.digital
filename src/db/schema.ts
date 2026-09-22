@@ -215,6 +215,7 @@ export const communityThreadLikes = pgTable('community_thread_likes', {
   id: uuid('id').defaultRandom().primaryKey(),
   threadId: uuid('thread_id').notNull().references(() => communityThreads.id, { onDelete:'cascade' }),
   userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  reaction: varchar('reaction', { length:16 }).default('like').notNull(),
   createdAt: timestamp('created_at', { withTimezone:true }).defaultNow().notNull(),
 }, table => [
   uniqueIndex('community_thread_likes_uq').on(table.threadId,table.userId),
@@ -225,6 +226,7 @@ export const communityReplyLikes = pgTable('community_reply_likes', {
   id: uuid('id').defaultRandom().primaryKey(),
   replyId: uuid('reply_id').notNull().references(() => communityReplies.id, { onDelete:'cascade' }),
   userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  reaction: varchar('reaction', { length:16 }).default('like').notNull(),
   createdAt: timestamp('created_at', { withTimezone:true }).defaultNow().notNull(),
 }, table => [
   uniqueIndex('community_reply_likes_uq').on(table.replyId,table.userId),

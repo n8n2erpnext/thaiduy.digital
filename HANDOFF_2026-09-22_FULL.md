@@ -2481,4 +2481,86 @@ This section supersedes the earlier handoff statements that treated /guestbook a
 
 ---
 
+# 62. DISCUSS HOLD-TO-REACT — 2026-09-22
+
+Discuss reactions replace the old binary Like behavior while preserving existing rows.
+
+Interaction contract:
+
+- short click/tap on the compact reaction control = 👍 Like
+- hold/long-press for ~450 ms opens the reaction picker
+- supported reactions: 👍 Like, ❤️ Love, 😂 Haha, 😮 Wow, 😢 Sad
+- picker works through pointer events for both mouse and touch
+- Escape/outside pointer closes the picker
+- mobile picker hides labels and keeps the five emoji controls compact
+- one user has at most one reaction per topic/reply
+- selecting a different reaction replaces the existing reaction without increasing the total
+- selecting the same active reaction again removes it
+- blocked Discuss members still cannot react
+- unauthenticated reaction selection follows the existing Google sign-in flow
+
+Persistence:
+
+Migration:
+- drizzle/0015_discuss_reactions.sql
+
+Existing tables are extended rather than replaced:
+- community_thread_likes.reaction varchar(16) default 'like' not null
+- community_reply_likes.reaction varchar(16) default 'like' not null
+
+The migration default means all pre-existing Like rows become reaction='like' without losing counts.
+
+Shared reaction definition:
+- src/community/reactions.ts
+
+Canonical reaction keys:
+- like
+- love
+- haha
+- wow
+- sad
+
+Read model:
+
+- topic/reply detail exposes myReaction
+- topic/reply detail exposes total reactionCount
+- topic/reply detail exposes reactionSummary for all five reaction types
+- compact control shows up to the three most-used reaction emoji plus total count
+- admin/public count labels use REACTIONS / cảm xúc where total count semantics are no longer Like-only
+
+Mutation semantics:
+
+- setCommunityReaction(kind,id,userId,reaction)
+- same reaction => delete row
+- different reaction => update existing row
+- no previous reaction => insert row
+- unique user/item constraints remain unchanged
+
+QA:
+
+- thread Like => total 1, summary like=1
+- thread Like -> Love => total remains 1, summary love=1 and like=0
+- choosing Love again => total 0
+- reply Wow -> Haha => total remains 1 and summary switches to haha
+- temporary QA reaction user/topic/reply removed by cascade; QA user count returned 0
+
+Component naming:
+- discuss-like-button.tsx renamed to discuss-reaction-button.tsx
+- exported component is DiscussReactionButton
+
+Final verification:
+
+- /discuss/[demo-id] -> 200
+- rendered detail contains the reaction menu control
+- unauthenticated POST /api/discuss/likes with reaction=wow -> 401 auth_required
+- TypeScript PASS
+- ESLint 0 errors; only existing external-avatar <img> warnings remain
+- Layout PASS
+- Theme PASS
+- Typography PASS
+- git diff --check PASS
+- production build PASS 52/52
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

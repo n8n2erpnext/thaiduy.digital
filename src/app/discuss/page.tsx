@@ -120,7 +120,7 @@ export default async function DiscussPage({searchParams}:Props) {
               <div className="discuss-thread-meta">
                 {thread.pinned && <span className="discuss-public-flag">PINNED</span>}
                 {thread.locked && <span className="discuss-public-flag">LOCKED</span>}
-                <span>♡ {thread.likeCount} {locale==='vi'?'thích':'likes'}</span>
+                <span>☺ {thread.likeCount} {locale==='vi'?'cảm xúc':'reactions'}</span>
                 <span>↩ {thread.replyCount} {locale==='vi'?'phản hồi':'replies'}</span>
                 <time>{locale==='vi'?'HOẠT ĐỘNG':'ACTIVE'} · {thread.lastActivityAt.toLocaleDateString(locale==='vi'?'vi-VN':'en-GB')}</time>
                 <b>→</b>

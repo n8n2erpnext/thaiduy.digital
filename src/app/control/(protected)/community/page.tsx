@@ -145,7 +145,7 @@ export default async function CommunityControlPage({searchParams}:Props) {
 
             <div className="discuss-topic-admin-metrics">
               <span><strong>{Number(topic.replyCount)}</strong> REPLIES</span>
-              <span><strong>{Number(topic.likeCount)}</strong> LIKES</span>
+              <span><strong>{Number(topic.likeCount)}</strong> REACTIONS</span>
               <time>ACTIVE {new Date(topic.lastActivityAt).toLocaleString('en-GB')}</time>
               <Link href={'/control/community/'+topic.id}>MANAGE →</Link>
             </div>

@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { DiscussComposer } from '@/components/discuss/discuss-composer'
-import { DiscussLikeButton } from '@/components/discuss/discuss-like-button'
+import { DiscussReactionButton } from '@/components/discuss/discuss-reaction-button'
 import { DiscussReplyAction } from '@/components/discuss/discuss-reply-action'
 import {
   getCommunityMemberState,
@@ -84,16 +84,17 @@ export default async function DiscussThreadPage({params,searchParams}:Props) {
             <p className="discuss-thread-message">{data.thread.body}</p>
           )}
           <footer className="discuss-thread-actions">
-            <DiscussLikeButton
+            <DiscussReactionButton
               kind="thread"
               id={data.thread.id}
               locale={locale}
-              initialLiked={Boolean(data.thread.liked)}
-              initialCount={Number(data.thread.likeCount)}
-              canLike={googleConnected}
+              initialReaction={data.thread.myReaction}
+              initialCount={Number(data.thread.reactionCount)}
+              initialSummary={data.thread.reactionSummary}
+              canReact={googleConnected}
               blocked={member?.status==='blocked'}
             />
-            <span>{locale==='vi'?'Thích chủ đề này hoặc kéo xuống để phản hồi.':'Like this topic or continue below with a reply.'}</span>
+            <span>{locale==='vi'?'Bấm để Thích, giữ để chọn cảm xúc hoặc kéo xuống để phản hồi.':'Click to Like, hold for reactions, or continue below with a reply.'}</span>
           </footer>
         </article>
 
@@ -140,13 +141,14 @@ export default async function DiscussThreadPage({params,searchParams}:Props) {
                   <p>{reply.body}</p>
                 )}
                 <footer>
-                  <DiscussLikeButton
+                  <DiscussReactionButton
                     kind="reply"
                     id={reply.id}
                     locale={locale}
-                    initialLiked={Boolean(reply.liked)}
-                    initialCount={Number(reply.likeCount)}
-                    canLike={googleConnected}
+                    initialReaction={reply.myReaction}
+                    initialCount={Number(reply.reactionCount)}
+                    initialSummary={reply.reactionSummary}
+                    canReact={googleConnected}
                     blocked={member?.status==='blocked'}
                   />
                   {!data.thread.locked && (
@@ -192,8 +194,8 @@ export default async function DiscussThreadPage({params,searchParams}:Props) {
             <strong>{locale==='vi'?'CHỦ ĐỀ ĐÃ KHÓA':'TOPIC LOCKED'}</strong>
             <span>
               {locale==='vi'
-                ? 'Chủ đề vẫn đọc và thích được, nhưng không nhận thêm phản hồi.'
-                : 'This topic remains readable and likeable, but no longer accepts replies.'}
+                ? 'Chủ đề vẫn đọc và thả cảm xúc được, nhưng không nhận thêm phản hồi.'
+                : 'This topic remains readable and reactable, but no longer accepts replies.'}
             </span>
           </div>
         ) : (

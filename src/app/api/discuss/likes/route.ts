@@ -1,11 +1,13 @@
 import { NextRequest,NextResponse } from 'next/server'
 import { z } from 'zod'
-import { toggleCommunityLike } from '@/community/data'
+import { setCommunityReaction } from '@/community/data'
+import { COMMUNITY_REACTIONS } from '@/community/reactions'
 import { auth } from '@/lib/auth'
 
 const payloadSchema=z.object({
   kind:z.enum(['thread','reply']),
   id:z.uuid(),
+  reaction:z.enum(COMMUNITY_REACTIONS).default('like'),
 })
 
 export async function POST(request:NextRequest) {
@@ -21,10 +23,11 @@ export async function POST(request:NextRequest) {
   }
 
   try {
-    const result=await toggleCommunityLike(
+    const result=await setCommunityReaction(
       parsed.data.kind,
       parsed.data.id,
       session.user.id,
+      parsed.data.reaction,
     )
     return NextResponse.json(result)
   } catch (error) {

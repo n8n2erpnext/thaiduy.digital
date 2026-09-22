@@ -151,7 +151,7 @@ export default async function DiscussTopicControlPage({params,searchParams}:Prop
             <p>{topic.body}</p>
           )}
           <footer>
-            <span>{Number(topic.likeCount)} LIKES</span>
+            <span>{Number(topic.likeCount)} REACTIONS</span>
             <span>ACTIVE {topic.lastActivityAt.toLocaleString('en-GB')}</span>
           </footer>
         </div>
@@ -245,7 +245,7 @@ export default async function DiscussTopicControlPage({params,searchParams}:Prop
                 ) : (
                   <p>{reply.body}</p>
                 )}
-                <small className="discuss-control-reply-meta">{Number(reply.likeCount)} LIKES</small>
+                <small className="discuss-control-reply-meta">{Number(reply.likeCount)} REACTIONS</small>
               </div>
 
               <ModerationActions

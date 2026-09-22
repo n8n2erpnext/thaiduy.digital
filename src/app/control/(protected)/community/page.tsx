@@ -19,8 +19,8 @@ export default async function CommunityControlPage() {
       <header className="control-page-head control-page-head-row">
         <div>
           <p>CONTROL / COMMUNITY</p>
-          <h1>Guestbook moderation</h1>
-          <span>Review public threads and replies before they become visible.</span>
+          <h1>Discuss moderation</h1>
+          <span>Review public topics and replies before they become visible.</span>
         </div>
         <Link className="control-back" href="/control/community/users">MANAGE USERS →</Link>
       </header>
@@ -35,8 +35,8 @@ export default async function CommunityControlPage() {
       <div className="community-admin-list">
         {items.length===0 && (
           <div className="cms-empty-state">
-            <strong>No Guestbook activity yet.</strong>
-            <p>New Google-authenticated threads and replies will appear here.</p>
+            <strong>No Discuss activity yet.</strong>
+            <p>New Google-authenticated topics and replies will appear here.</p>
           </div>
         )}
         {items.map(item=>(
@@ -58,7 +58,14 @@ export default async function CommunityControlPage() {
                 <time>{item.createdAt.toLocaleString('en-GB')}</time>
               </header>
               <Link href={'/guestbook/'+item.threadId} target="_blank">{item.title} ↗</Link>
-              <p>{item.body}</p>
+              {item.bodyHtml ? (
+                <div
+                  className="community-admin-rich-preview discuss-post-body"
+                  dangerouslySetInnerHTML={{__html:item.bodyHtml}}
+                />
+              ) : (
+                <p>{item.body}</p>
+              )}
             </div>
 
             <div className="control-actions community-admin-actions">

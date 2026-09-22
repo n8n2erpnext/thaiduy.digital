@@ -2299,7 +2299,8 @@ New fields on community_replies:
 Compatibility:
 - existing plain-text posts remain valid when body_html is null
 - body remains the canonical plain-text fallback/search/preview value
-- moderation Control continues to use safe plain text
+- moderation Control renders the same sanitized rich-text preview before approval
+- plain body remains available as the fallback moderation/search value
 - public detail renders body_html only after server sanitization
 
 Server sanitizer allows only:

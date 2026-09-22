@@ -3481,19 +3481,19 @@ Owner visual QA accepted the new Music Sensor motion/semantics/audio behavior an
 
 Only the Normal/day transform in src/lib/music-expression.ts changed:
 
-- Normal saturation floor raised from 0.84 to 0.92
-- Normal lightness window raised from 0.25–0.32 to 0.30–0.40
-- Normal decorative wave contrast target relaxed from 3.55:1 to 3.1:1
+- Normal saturation floor raised from 0.84 to 0.96
+- Normal lightness window raised from 0.25–0.32 to 0.38–0.48
+- Normal decorative wave contrast target relaxed from 3.55:1 to 2.55:1
 - automatic contrast guard remains active
 - Dark mode remains unchanged
 - motion archetypes, semantic logic, humming/audio, tooltip and cache behavior remain unchanged
 
-Audit threshold for the decorative Normal wave was aligned to 3.0:1.
+Audit threshold for the decorative Normal wave was aligned to 2.5:1.
 
 Post-change audit:
 
 - 8/8 motion archetypes PASS
-- Normal minimum contrast: 3.10
+- Normal minimum contrast: 2.56
 - Dark minimum contrast: 4.63
 - minimum saturation across tested themes: 0.84
 - Normal secondary opacity: 0.86

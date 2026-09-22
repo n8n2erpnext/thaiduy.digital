@@ -6468,21 +6468,40 @@ html[data-theme='normal'] .stack-spatial-external-wires path[data-protocol='stor
 .stack-district-head{fill:color-mix(in srgb,var(--room-accent) 8%,#081118)}
 .stack-district-badge{r:15px}
 .stack-district-badge-mark{font-size:var(--type-label)}
+.stack-room-vector-mark{
+  fill:none;
+  stroke:var(--room-accent);
+  stroke-width:1.45;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
 .stack-district-title{font-size:var(--type-label)!important}
 .stack-district-count{font-size:var(--type-diagram-min)!important}
 .stack-node-chips{pointer-events:none}
-.stack-node-chip circle{
-  fill:rgba(255,255,255,.035);
-  stroke:rgba(207,230,219,.14);
-  stroke-width:1
+.stack-node-chip-dot{
+  fill:var(--room-accent);
+  stroke:none;
+  opacity:.72;
 }
-.stack-node-chip circle[data-state='online']{
-  fill:color-mix(in srgb,var(--room-accent) 16%,#0a151a);
-  stroke:color-mix(in srgb,var(--room-accent) 62%,transparent)
+.stack-node-chip-dot[data-state='online']{
+  fill:var(--room-accent);
+  opacity:.96;
 }
-.stack-node-chip text{fill:#d6e3dc;font:700 7px var(--font-terminal),monospace}
-.stack-node-chip-more circle{fill:rgba(255,255,255,.035);stroke:rgba(207,230,219,.1)}
-.stack-node-chip-more text{fill:#7d9086;font-size:var(--type-diagram-min)}
+.stack-node-chip-dot[data-state='degraded']{
+  fill:var(--amber);
+  opacity:1;
+}
+.stack-node-chip-dot[data-state='paused'],
+.stack-node-chip-dot[data-state='private']{opacity:.42}
+.stack-node-chip-dot[data-state='unknown']{
+  fill:#7d9086;
+  opacity:.48;
+}
+.stack-node-chip-more-label{
+  fill:#7d9086;
+  font:700 var(--type-diagram-min) var(--font-terminal),monospace;
+}
 .stack-open-plate{fill:rgba(255,255,255,.018);stroke:rgba(158,191,175,.08);stroke-width:1}
 .stack-open{fill:#b9c9c1;font-size:var(--type-diagram-min)!important;font-weight:650}
 .stack-atlas-district-shell{stroke-width:1.35;filter:drop-shadow(0 13px 24px rgba(0,0,0,.2))}
@@ -6551,21 +6570,9 @@ html[data-theme='normal'] .stack-district-badge{
   fill:color-mix(in srgb,var(--room-accent) 8%,white);
   stroke:color-mix(in srgb,var(--room-accent) 38%,transparent)
 }
-html[data-theme='normal'] .stack-node-chip circle{fill:#f7f9f8;stroke:rgba(38,50,43,.08)}
-html[data-theme='normal'] .stack-node-chip circle[data-state='online']{
-  fill:color-mix(in srgb,var(--room-accent) 8%,white);
-  stroke:color-mix(in srgb,var(--room-accent) 22%,rgba(38,50,43,.06))
-}
-html[data-theme='normal'] .stack-node-chip text{fill:var(--room-accent)}
-html[data-theme='normal'] .stack-node-chip-more text{fill:#7c8881}
 html[data-theme='normal'] .stack-open-plate{fill:#fbfcfb;stroke:rgba(38,50,43,.09)}
 html[data-theme='normal'] .stack-open{fill:#4b5951}
 html[data-theme='normal'] .stack-atlas-room-shell{fill:#fff}
-html[data-theme='normal'] .stack-node-chip-more circle{
-  fill:#f7f9f8;
-  stroke:rgba(38,50,43,.08);
-}
-
 @media(max-width:980px){
   .home-public-trace-grid{grid-template-columns:1fr}
   .home-public-trace-item,

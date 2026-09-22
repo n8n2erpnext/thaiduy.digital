@@ -724,6 +724,62 @@ function WireHoverLabel({ hover }: { hover:HoverWire }) {
   )
 }
 
+function RoomBadgeMark({
+  room,
+  x,
+  y,
+  roomScale=false,
+}:{
+  room:StackGroupKey
+  x:number
+  y:number
+  roomScale?:boolean
+}) {
+  const scale=roomScale?1.2:1
+
+  if(room==='apps'){
+    const size=3*scale
+    const gap=1.8*scale
+    const startX=x-size-gap/2
+    const startY=y-size-gap/2
+    return (
+      <g className="stack-room-vector-mark">
+        <rect x={startX} y={startY} width={size} height={size} rx={.7*scale}/>
+        <rect x={x+gap/2} y={startY} width={size} height={size} rx={.7*scale}/>
+        <rect x={startX} y={y+gap/2} width={size} height={size} rx={.7*scale}/>
+        <rect x={x+gap/2} y={y+gap/2} width={size} height={size} rx={.7*scale}/>
+      </g>
+    )
+  }
+
+  if(room==='observability'){
+    const s=scale
+    return (
+      <g className="stack-room-vector-mark">
+        <path d={
+          'M '+(x-6*s)+' '+y+
+          ' H '+(x-3.2*s)+
+          ' L '+(x-1.2*s)+' '+(y-3.2*s)+
+          ' L '+(x+1.5*s)+' '+(y+3.2*s)+
+          ' L '+(x+3.4*s)+' '+y+
+          ' H '+(x+6*s)
+        }/>
+      </g>
+    )
+  }
+
+  return (
+    <text
+      x={x}
+      y={y+(roomScale?5:4)}
+      textAnchor="middle"
+      className={roomScale?'stack-spatial-room-badge-mark':'stack-district-badge-mark'}
+    >
+      {ROOM_MARK[room] ?? '•'}
+    </text>
+  )
+}
+
 function HouseScene({
   graph,
   groups,
@@ -844,14 +900,11 @@ function HouseScene({
               r="13"
               className="stack-district-badge"
             />
-            <text
+            <RoomBadgeMark
+              room={group.key}
               x={group.x + 24}
-              y={group.y + 26}
-              textAnchor="middle"
-              className="stack-district-badge-mark"
-            >
-              {ROOM_MARK[group.key] ?? '•'}
-            </text>
+              y={group.y + 22}
+            />
             {spec && (
               <text x={group.x + 46} y={group.y + 13} className="stack-spatial-room-index">
                 {spec.id}
@@ -886,23 +939,23 @@ function HouseScene({
             </text>
             <g className="stack-node-chips">
               {nodes.slice(0, 5).map((node, index) => (
-                <g
+                <circle
                   key={node.id}
-                  className="stack-node-chip"
-                  transform={'translate(' + (group.x + 26 + index * 38) + ' ' + (group.y + 112) + ')'}
-                >
-                  <circle r="13" data-state={node.state} />
-                  <text y="3" textAnchor="middle">{textFit(node.label, 1).toUpperCase()}</text>
-                </g>
+                  className="stack-node-chip-dot"
+                  cx={group.x + 26 + index * 18}
+                  cy={group.y + 112}
+                  r="4.5"
+                  data-state={node.state}
+                />
               ))}
               {nodes.length > 5 && (
-                <g
-                  className="stack-node-chip stack-node-chip-more"
-                  transform={'translate(' + (group.x + 26 + 5 * 38) + ' ' + (group.y + 112) + ')'}
+                <text
+                  x={group.x + 26 + 5 * 18 + 3}
+                  y={group.y + 115}
+                  className="stack-node-chip-more-label"
                 >
-                  <circle r="13" />
-                  <text y="3" textAnchor="middle">+{nodes.length - 5}</text>
-                </g>
+                  +{nodes.length - 5}
+                </text>
               )}
             </g>
             <rect
@@ -997,14 +1050,12 @@ function RoomScene({
         className="stack-spatial-room-accent"
       />
       <circle cx={ROOM.x + 31} cy={ROOM.y + 31} r="16" className="stack-spatial-room-badge" />
-      <text
+      <RoomBadgeMark
+        room={room}
         x={ROOM.x + 31}
-        y={ROOM.y + 36}
-        textAnchor="middle"
-        className="stack-spatial-room-badge-mark"
-      >
-        {ROOM_MARK[room] ?? '•'}
-      </text>
+        y={ROOM.y + 31}
+        roomScale
+      />
       <text x={ROOM.x + 58} y={ROOM.y + 27} className="stack-spatial-room-title">
         {meta?.label ?? room.toUpperCase()}
       </text>

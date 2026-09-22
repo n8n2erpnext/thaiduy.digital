@@ -3508,4 +3508,42 @@ No Dark-mode visual parameters were changed.
 
 ---
 
+# Stack house marker polish
+
+Targeted public /stack house-view cleanup:
+
+- APPS / PRODUCTS no longer depends on the faint Unicode `⬡` glyph.
+  - The circular room badge remains.
+  - Its mark is now a deterministic 2x2 SVG application-grid icon.
+- OBSERVABILITY no longer depends on the faint Unicode `▥` glyph.
+  - The circular room badge remains.
+  - Its mark is now a deterministic SVG telemetry/pulse icon.
+- The same vector marks are reused when entering those rooms, so house and room headers stay consistent.
+- Other room badge marks were intentionally left unchanged.
+
+Outside-room service preview:
+
+- Removed one-letter service initials.
+- Removed the large 26px service chip circles.
+- Each visible service is now represented only by a compact 4.5px colored dot.
+- Dot color remains tied to the room accent/state:
+  - online = room accent
+  - degraded = amber
+  - paused/private = reduced opacity
+  - unknown = muted gray
+- The existing `+N` overflow count remains as plain text.
+- Wiring, room layout, navigation, room internals and live discovery behavior were not changed.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- Normal/dark theme contrast audit PASS
+- stale initial-chip selectors removed
+- git diff --check PASS
+- local /stack 200
+- public /stack 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

@@ -53,14 +53,14 @@ const GROUPS: GroupMeta[] = [
 
 const ROOM = { x:76, y:62, width:1048, height:700 }
 
-const ROOM_MARK: Partial<Record<StackGroupKey, string>> = {
-  network:'⌁',
-  security:'◆',
-  automation:'⚙',
-  apps:'⬡',
-  observability:'▥',
-  data:'≡',
-  compute:'▦',
+const ROOM_ICON: Partial<Record<StackGroupKey, string>> = {
+  network:'hub',
+  security:'shield',
+  automation:'account_tree',
+  apps:'apps',
+  observability:'monitoring',
+  data:'database',
+  compute:'memory',
 }
 
 const ROOM_SPEC: Partial<Record<StackGroupKey, {
@@ -735,49 +735,38 @@ function RoomBadgeMark({
   y:number
   roomScale?:boolean
 }) {
-  const scale=roomScale?1.2:1
-
-  if(room==='apps'){
-    const size=3*scale
-    const gap=1.8*scale
-    const startX=x-size-gap/2
-    const startY=y-size-gap/2
-    return (
-      <g className="stack-room-vector-mark">
-        <rect x={startX} y={startY} width={size} height={size} rx={.7*scale}/>
-        <rect x={x+gap/2} y={startY} width={size} height={size} rx={.7*scale}/>
-        <rect x={startX} y={y+gap/2} width={size} height={size} rx={.7*scale}/>
-        <rect x={x+gap/2} y={y+gap/2} width={size} height={size} rx={.7*scale}/>
-      </g>
-    )
-  }
-
-  if(room==='observability'){
-    const s=scale
-    return (
-      <g className="stack-room-vector-mark">
-        <path d={
-          'M '+(x-6*s)+' '+y+
-          ' H '+(x-3.2*s)+
-          ' L '+(x-1.2*s)+' '+(y-3.2*s)+
-          ' L '+(x+1.5*s)+' '+(y+3.2*s)+
-          ' L '+(x+3.4*s)+' '+y+
-          ' H '+(x+6*s)
-        }/>
-      </g>
-    )
-  }
-
   return (
     <text
       x={x}
-      y={y+(roomScale?5:4)}
+      y={y}
       textAnchor="middle"
-      className={roomScale?'stack-spatial-room-badge-mark':'stack-district-badge-mark'}
+      dominantBaseline="central"
+      className="stack-room-material-icon"
+      data-room-scale={roomScale || undefined}
+      aria-hidden="true"
     >
-      {ROOM_MARK[room] ?? '•'}
+      {ROOM_ICON[room] ?? 'circle'}
     </text>
   )
+}
+
+function roomAccentBeamPath(group:GroupMeta) {
+  const left=group.x+16
+  const right=group.x+group.width-16
+  const y=group.y+1
+  const taper=18
+  const half=2.2
+  return [
+    'M',left,y,
+    'L',left+taper,y-half*.35,
+    'Q',left+taper*1.8,y-half,right-taper*1.8,y-half,
+    'L',right-taper,y-half*.35,
+    'L',right,y,
+    'L',right-taper,y+half*.35,
+    'Q',right-taper*1.8,y+half,left+taper*1.8,y+half,
+    'L',left+taper,y+half*.35,
+    'Z',
+  ].join(' ')
 }
 
 function HouseScene({
@@ -887,12 +876,9 @@ function HouseScene({
               rx="18"
               className="stack-district-head"
             />
-            <line
-              x1={group.x + 18}
-              y1={group.y + 1}
-              x2={group.x + group.width - 18}
-              y2={group.y + 1}
-              className="stack-district-accent"
+            <path
+              d={roomAccentBeamPath(group)}
+              className="stack-district-accent-beam"
             />
             <circle
               cx={group.x + 24}

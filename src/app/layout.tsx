@@ -84,6 +84,10 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${googleSans.variable} ${googleSansCode.variable} antialiased`}
     >
       <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,500,0,0"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html:"try{var t=localStorage.getItem('thaiduy-theme');var m=t==='normal'?'normal':'dark';document.documentElement.dataset.theme=m;document.documentElement.style.colorScheme=m==='dark'?'dark':'light'}catch(e){}",

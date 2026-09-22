@@ -3546,4 +3546,41 @@ Validation:
 
 ---
 
+# Stack Material Symbols + tapered room beam
+
+Follow-up visual polish on public /stack:
+
+- Replaced room badge glyphs/custom SVG marks with official Google Material Symbols Rounded.
+- Root layout now loads the Material Symbols Rounded stylesheet from Google Fonts.
+- Room mapping:
+  - Network -> hub
+  - Security -> shield
+  - Automation -> account_tree
+  - Apps / Products -> apps
+  - Observability -> monitoring
+  - Data -> database
+  - Compute -> memory
+- The same Material Symbol is reused in house and room headers.
+
+Room top accent:
+
+- Replaced the flat constant-width top stroke on house room cards with a filled tapered beam.
+- Beam is thickest through the central run and progressively narrows toward both ends.
+- Hover increases glow/visibility without changing card layout.
+- Large entered-room header accent was intentionally left unchanged.
+
+Service overview dots from the previous polish remain unchanged.
+
+Validation:
+
+- Google Material Symbols stylesheet HTTP 200
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /stack 200
+- public /stack 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

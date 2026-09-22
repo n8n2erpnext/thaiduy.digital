@@ -23,7 +23,9 @@ const secondaryLinks = [
 export function ControlNav() {
   const pathname=usePathname()
   const inTraffic=pathname.startsWith('/control/traffic')
+  const inCommunity=pathname.startsWith('/control/community')
   const [trafficOpen,setTrafficOpen]=useState(inTraffic)
+  const [communityOpen,setCommunityOpen]=useState(inCommunity)
 
   return (
     <nav>
@@ -44,6 +46,22 @@ export function ControlNav() {
         <div id="control-traffic-children" hidden={!trafficOpen}>
           <Link aria-current={pathname==='/control/traffic'?'page':undefined} href="/control/traffic">Overview</Link>
           <Link aria-current={pathname==='/control/traffic/cv'?'page':undefined} href="/control/traffic/cv">CV</Link>
+        </div>
+      </div>
+
+      <div className={`control-nav-parent ${communityOpen?'is-open':''}`}>
+        <button
+          aria-expanded={communityOpen}
+          aria-controls="control-community-children"
+          type="button"
+          onClick={()=>setCommunityOpen(open=>!open)}
+        >
+          <span>COMMUNITY</span>
+          <i aria-hidden="true">{communityOpen?'−':'+'}</i>
+        </button>
+        <div id="control-community-children" hidden={!communityOpen}>
+          <Link aria-current={pathname==='/control/community'?'page':undefined} href="/control/community">Moderation</Link>
+          <Link aria-current={pathname==='/control/community/users'?'page':undefined} href="/control/community/users">Users</Link>
         </div>
       </div>
 

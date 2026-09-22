@@ -10,6 +10,7 @@ const sectionRows = [
   ['section.writing', en.sections.writing, vi.sections.writing, 20],
   ['section.stack', en.sections.stack, vi.sections.stack, 30],
   ['section.about', en.sections.about, vi.sections.about, 40],
+  ['section.guestbook', en.sections.guestbook, vi.sections.guestbook, 50],
 ].map(([key, enCopy, viCopy, sort]) => ({
   key: key as string,
   kind: 'section',
@@ -109,7 +110,20 @@ const surfaces = en.home.surfaces.map((surface, index) => ({
   meta: { href: ['/projects', '/writing', '/stack'][index] },
 }))
 
-const rows = [...sectionRows, ...homeRows, ...surfaces]
+const navRows = [
+  {
+    key:'guestbook',
+    kind:'nav',
+    enabled:true,
+    status:'published',
+    sort:50,
+    labelEn:'Guestbook',
+    labelVi:'Guestbook',
+    meta:{href:'/guestbook'},
+  },
+]
+
+const rows = [...sectionRows, ...homeRows, ...surfaces, ...navRows]
 
 await db.insert(siteRegistry)
   .values(rows)

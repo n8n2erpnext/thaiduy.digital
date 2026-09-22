@@ -14,7 +14,7 @@ export const messages = {
     },
     footerMenu: {
       navigate: 'Navigate', elsewhere: 'Elsewhere', legal: 'Legal',
-      home: 'Home', projects: 'Projects', writing: 'Writing', stack: 'Stack', about: 'About', music: 'Music Sensor',
+      home: 'Home', projects: 'Projects', writing: 'Writing', stack: 'Stack', about: 'About', guestbook: 'Guestbook', music: 'Music Sensor',
       terms: 'Terms of Service', privacy: 'Privacy Policy', github: 'GitHub',
     },
     home: {
@@ -97,6 +97,7 @@ export const messages = {
       writing: { eyebrow: 'WRITING / FIELD NOTES', title: 'Long-form thinking', copy: 'Architecture notes, principles and lessons learned will live here without competing with live system state.' },
       stack: { eyebrow: 'STACK / TOPOLOGY', title: 'Infrastructure as a place', copy: 'A safe public projection of nodes, services and relationships — never the private control plane.' },
       about: { eyebrow: 'ABOUT / PRACTICE', title: 'I build systems that have to keep working.', copy: 'thaiduy.digital is the public surface of that practice — projects, infrastructure, experiments and field notes, shown with enough truth to be useful without turning the website into a control plane.' },
+      guestbook: { eyebrow: 'GUESTBOOK / COMMUNITY', title: 'A small place to leave a trace.', copy: 'Say hello, ask a question, share a thought or continue a conversation. Reading is public; posting uses Google sign-in and moderated messages.' },
     },
   },
   vi: {
@@ -112,7 +113,7 @@ export const messages = {
     },
     footerMenu: {
       navigate: 'Điều hướng', elsewhere: 'Liên kết khác', legal: 'Pháp lý',
-      home: 'Trang chủ', projects: 'Dự án', writing: 'Bài viết', stack: 'Hạ tầng', about: 'Giới thiệu', music: 'Music Sensor',
+      home: 'Trang chủ', projects: 'Dự án', writing: 'Bài viết', stack: 'Hạ tầng', about: 'Giới thiệu', guestbook: 'Guestbook', music: 'Music Sensor',
       terms: 'Điều khoản dịch vụ', privacy: 'Chính sách quyền riêng tư', github: 'GitHub',
     },
     home: {
@@ -195,6 +196,7 @@ export const messages = {
       writing: { eyebrow: 'BÀI VIẾT / GHI CHÉP KỸ THUẬT', title: 'Ghi chép chuyên sâu', copy: 'Ghi chú kiến trúc, nguyên tắc và những bài học được lưu lại ở đây, tách khỏi phần trạng thái live của hệ thống.' },
       stack: { eyebrow: 'HẠ TẦNG / TOPOLOGY', title: 'Hạ tầng như một không gian có thể khám phá', copy: 'Một góc nhìn công khai, an toàn về node, service và các mối quan hệ — không phơi bày control plane riêng tư.' },
       about: { eyebrow: 'GIỚI THIỆU / CÁCH LÀM', title: 'Tôi xây những hệ thống phải vận hành bền bỉ.', copy: 'thaiduy.digital là nơi công khai cách tôi làm việc — dự án, hạ tầng, thử nghiệm và ghi chép kỹ thuật, đủ thật để hữu ích nhưng không biến website thành control plane.' },
+      guestbook: { eyebrow: 'GUESTBOOK / TRAO ĐỔI', title: 'Một góc nhỏ để để lại lời nhắn.', copy: 'Có thể chào nhau, đặt câu hỏi, góp một ý hoặc tiếp tục một cuộc trao đổi. Ai cũng đọc được; muốn đăng cần đăng nhập Google và nội dung sẽ được duyệt.' },
     },
   },
 } as const

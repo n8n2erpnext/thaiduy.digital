@@ -71,6 +71,13 @@
       "when": 1789882124931,
       "tag": "0009_contact_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790048311575,
+      "tag": "0010_guestbook_community",
+      "breakpoints": true
     }
   ]
 }

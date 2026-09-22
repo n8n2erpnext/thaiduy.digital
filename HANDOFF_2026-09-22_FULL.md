@@ -1995,4 +1995,98 @@ Do not proactively redesign another major public surface before owner review.
 
 ---
 
+# 57. GUESTBOOK / COMMUNITY — 2026-09-22 CONTINUATION
+
+A lightweight moderated Guestbook / mini-forum was added after the original handoff was written.
+
+Public routes:
+
+- /guestbook
+- /guestbook/[id]
+
+Public contract:
+
+- anyone can read approved threads and replies
+- posting requires an authenticated Google account through the existing Better Auth setup
+- a new thread starts as pending
+- a reply starts as pending
+- pending/rejected/hidden content is never rendered on the public Guestbook
+- thread content and replies are plain text; no user HTML is rendered
+- thread submission rate limit: 60 seconds per user
+- reply submission rate limit: 20 seconds per user
+- blocked community members can still read but cannot post
+- Google identity is used for display name/avatar; the Guestbook does not expose user email publicly
+
+Public APIs:
+
+- POST /api/guestbook/threads
+- POST /api/guestbook/threads/[id]/replies
+
+Unauthenticated posting returns 401.
+
+Database migration:
+
+- drizzle/0010_guestbook_community.sql
+
+New tables:
+
+- community_members
+- community_threads
+- community_replies
+
+community_members is a policy layer beside Better Auth. Blocking a member does not delete or disable the underlying Google account and does not alter Writing comment identity.
+
+Control routes:
+
+- /control/community
+- /control/community/users
+
+/control/community provides one moderation queue for threads and replies with:
+
+- approve
+- reject
+- hide
+- trash
+
+/control/community/users lists Google community members with thread/reply counts and supports:
+
+- block
+- unblock
+
+All moderation/member policy actions use the existing owner-only control boundary and write durable audit log entries.
+
+Control navigation now has a collapsible COMMUNITY parent with:
+
+- Moderation
+- Users
+
+Public navigation/registry:
+
+- Guestbook is seeded as a published nav item
+- section.guestbook is seeded as a managed public section
+- fallback nav also contains Guestbook
+- global footer includes Guestbook
+- EN/VI section copy is present
+
+Latest acceptance after this continuation:
+
+- TypeScript PASS
+- ESLint: 0 errors; Google-avatar <img> warnings only, matching the existing external-avatar pattern
+- layout audit PASS
+- theme contrast audit PASS
+- typography audit PASS
+- git diff --check PASS
+- production build PASS
+- generated static page pass: 48/48
+- /guestbook -> 200
+- missing /guestbook/[id] -> 404
+- logged-out /control/community -> 307
+- logged-out /control/community/users -> 307
+- unauthenticated Guestbook POST -> 401
+- homepage renders Guestbook navigation
+
+This section supersedes the earlier 44/44 route-count statement for the latest build state.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

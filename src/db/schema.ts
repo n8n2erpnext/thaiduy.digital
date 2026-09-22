@@ -157,6 +157,49 @@ export const articleComments = pgTable('article_comments', {
   index('article_comments_user_idx').on(table.userId,table.createdAt),
 ])
 
+export const communityMembers = pgTable('community_members', {
+  userId: text('user_id').primaryKey().references(() => authUser.id, { onDelete:'cascade' }),
+  status: varchar('status', { length:16 }).default('active').notNull(),
+  note: text('note'),
+  blockedBy: text('blocked_by'),
+  blockedAt: timestamp('blocked_at', { withTimezone:true }),
+  ...timestamps,
+}, table => [
+  index('community_members_status_idx').on(table.status,table.updatedAt),
+])
+
+export const communityThreads = pgTable('community_threads', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  title: varchar('title', { length:180 }).notNull(),
+  body: text('body').notNull(),
+  locale: varchar('locale', { length:2 }).default('en').notNull(),
+  status: varchar('status', { length:16 }).default('pending').notNull(),
+  moderatedBy: text('moderated_by'),
+  moderatedAt: timestamp('moderated_at', { withTimezone:true }),
+  lastActivityAt: timestamp('last_activity_at', { withTimezone:true }).defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone:true }),
+  ...timestamps,
+}, table => [
+  index('community_threads_status_idx').on(table.status,table.lastActivityAt),
+  index('community_threads_user_idx').on(table.userId,table.createdAt),
+])
+
+export const communityReplies = pgTable('community_replies', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  threadId: uuid('thread_id').notNull().references(() => communityThreads.id, { onDelete:'cascade' }),
+  userId: text('user_id').notNull().references(() => authUser.id, { onDelete:'cascade' }),
+  body: text('body').notNull(),
+  status: varchar('status', { length:16 }).default('pending').notNull(),
+  moderatedBy: text('moderated_by'),
+  moderatedAt: timestamp('moderated_at', { withTimezone:true }),
+  deletedAt: timestamp('deleted_at', { withTimezone:true }),
+  ...timestamps,
+}, table => [
+  index('community_replies_thread_status_idx').on(table.threadId,table.status,table.createdAt),
+  index('community_replies_user_idx').on(table.userId,table.createdAt),
+])
+
 export const revisions = pgTable('revisions', {
   id: uuid('id').defaultRandom().primaryKey(),
   entityType: varchar('entity_type', { length: 64 }).notNull(),

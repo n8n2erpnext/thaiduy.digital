@@ -3605,4 +3605,35 @@ Validation:
 
 ---
 
+# Writing highlight rail + subtle hover polish
+
+Final public /writing highlight polish after rollback:
+
+- HIGHLIGHT section header now follows the same visual logic as the homepage NOW rail:
+  - HIGHLIGHT label at left
+  - thin inset separator line through the middle
+  - plain 2 / 2 count at right
+- Existing section/card layout remains unchanged.
+- HIGHLIGHT label inside highlighted cards is now amber/gold:
+  - dark mode uses warm amber
+  - Normal/day mode uses a deeper gold for stronger readability
+- Post-card hover behavior is visual only:
+  - slightly brighter border
+  - very subtle glow
+  - no translate
+  - no size change
+  - no title/spacing changes
+- Highlight cards get a slightly warmer amber border/glow on hover while regular cards keep the green signal tone.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /writing 200
+- public /writing 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

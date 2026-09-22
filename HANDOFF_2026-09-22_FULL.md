@@ -4045,4 +4045,41 @@ Validation:
 
 ---
 
+# Header command palette replaces bootstrap status
+
+Public NAV:
+
+- Removed the public `BOOTSTRAP / KHỞI TẠO` status block from the header.
+- Added a compact Command button in the same action cluster, after the language switch.
+- Command button uses the exact Material-style SVG path supplied by the owner.
+- Existing magnifying-glass Site Search remains unchanged.
+
+Command palette:
+
+- Clicking the Command button opens a centered modal/palette over the current page.
+- Palette follows the supplied reference:
+  - search/command input
+  - grouped command rows
+  - subdued full-screen scrim
+- Current commands:
+  - Google Sign in
+  - Copy link
+  - Source code
+  - GitHub
+- Free text can fall through to the existing public `/search?q=` route.
+- ESC and backdrop click close the palette.
+- Light/dark theme coverage is explicit.
+- No duplicate search backend or chart/library dependency was added.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local / 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

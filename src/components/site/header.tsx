@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
+import { HeaderCommand } from '@/components/site/header-command'
 import { LanguageSwitch } from '@/components/site/language-switch'
 import { SiteSearch } from '@/components/site/site-search'
 import { ThemeSwitch } from '@/components/site/theme-switch'
@@ -52,10 +53,7 @@ export async function SiteHeader({ locale }: Props) {
           label={t.language}
           title={t.languageTitle}
         />
-        <div className="header-state" aria-label={t.entityState}>
-          <span className="status-dot" />
-          <span>{t.bootstrap}</span>
-        </div>
+        <HeaderCommand locale={locale} />
       </div>
     </header>
   )

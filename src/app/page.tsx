@@ -338,9 +338,16 @@ export default async function Home() {
 
           <section className="home-public-close">
             <span>{locale==='vi'?'MỘT PHÒNG LAB CÔNG KHAI':'A PUBLIC LAB'}</span>
-            <p>{locale==='vi'
-              ? 'Xây thứ thật. Quan sát trạng thái thật. Viết lại những gì học được.'
-              : 'Build real things. Observe real state. Write down what the systems teach.'}</p>
+            <div className="home-public-close-poster">
+              <div className="home-public-close-words" aria-label={locale==='vi'?'Xây. Quan sát. Ghi lại.':'Build. Observe. Write.'}>
+                <strong>{locale==='vi'?'XÂY.':'BUILD.'}</strong>
+                <strong>{locale==='vi'?'QUAN SÁT.':'OBSERVE.'}</strong>
+                <strong>{locale==='vi'?'GHI LẠI.':'WRITE.'}</strong>
+              </div>
+              <p>{locale==='vi'
+                ? 'Hệ thống thật luôn để lại dấu vết. Tôi ghi lại những gì chúng cho thấy.'
+                : 'Real systems leave evidence. I keep the notes.'}</p>
+            </div>
           </section>
         </main>
       </div>

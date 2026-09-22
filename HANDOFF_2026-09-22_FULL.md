@@ -3928,4 +3928,48 @@ Validation:
 
 ---
 
+# Homepage closing manifesto typography + hero copy cleanup
+
+Homepage hero body copy:
+
+- Removed the awkward calm-language pair from both locales.
+- EN:
+  - before: one calm digital organism
+  - now: one living digital organism
+- VI:
+  - before: một hệ sinh thái số điềm tĩnh
+  - now: một hệ sinh thái số đang vận hành
+- Remaining sentence about motion coming from real state remains aligned across EN/VI.
+
+Closing manifesto:
+
+- Replaced the previous flat sentence with a typographic poster.
+- EN:
+  - BUILD.
+  - OBSERVE.
+  - WRITE.
+  - note: Real systems leave evidence. I keep the notes.
+- VI:
+  - XÂY.
+  - QUAN SÁT.
+  - GHI LẠI.
+  - note: Hệ thống thật luôn để lại dấu vết. Tôi ghi lại những gì chúng cho thấy.
+- Existing A PUBLIC LAB / MỘT PHÒNG LAB CÔNG KHAI label remains.
+- Typography uses progressively different scale/weight and a restrained indent on the middle line.
+- Supporting note is separated by a thin rule.
+- Mobile receives reduced scale and wraps safely.
+- No navigation, rack visual, counters, music, projects, writing, stack, or live-state behavior changed.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- calm copy removal assertion PASS
+- git diff --check PASS
+- local / 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

@@ -5944,12 +5944,45 @@ html[data-theme='normal'] .home-public-page{
   letter-spacing:.06em;
   color:var(--demo-meta);
 }
-.home-public-close>p{
-  margin:0;
-  font-size:var(--type-display-sm);
-  line-height:1.05;
-  letter-spacing:-.04em;
+.home-public-close-poster{
+  display:grid;
+  gap:34px;
+  min-width:0;
+}
+.home-public-close-words{
+  display:grid;
+  gap:0;
   color:var(--demo-text);
+  line-height:.82;
+}
+.home-public-close-words strong{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  font-family:var(--font-sans),sans-serif;
+  font-size:clamp(54px,5.8vw,96px);
+  font-weight:650;
+  letter-spacing:-.065em;
+  white-space:nowrap;
+}
+.home-public-close-words strong:nth-child(2){
+  margin-left:clamp(18px,4vw,58px);
+  font-size:clamp(60px,6.35vw,106px);
+  font-weight:320;
+  letter-spacing:-.07em;
+}
+.home-public-close-words strong:nth-child(3){
+  font-size:clamp(66px,6.8vw,114px);
+  font-weight:720;
+}
+.home-public-close-poster>p{
+  width:min(560px,100%);
+  margin:0;
+  padding-top:16px;
+  border-top:1px solid var(--demo-line);
+  color:var(--demo-copy);
+  font-size:var(--type-body);
+  line-height:1.55;
 }
 
 @media(max-width:980px){
@@ -6008,6 +6041,7 @@ html[data-theme='normal'] .home-public-page{
   .home-github-repos{padding-right:0}
   .home-github-commits{padding-left:0;border-left:0;border-top:1px solid var(--demo-line)}
   .home-public-close{grid-template-columns:1fr}
+  .home-public-close-poster{max-width:860px}
 }
 @media(max-width:680px){
   .home-public-main{padding-top:30px}
@@ -6035,6 +6069,18 @@ html[data-theme='normal'] .home-public-page{
   .home-github-heatmap-week{grid-template-rows:repeat(7,12px);gap:3px}
   .home-github-heatmap-day{width:12px;height:12px}
   .home-public-close{padding:76px 0 100px}
+  .home-public-close-poster{gap:26px}
+  .home-public-close-words strong{
+    font-size:clamp(44px,13vw,68px);
+    white-space:normal;
+  }
+  .home-public-close-words strong:nth-child(2){
+    margin-left:12px;
+    font-size:clamp(48px,14vw,74px);
+  }
+  .home-public-close-words strong:nth-child(3){
+    font-size:clamp(52px,15vw,80px);
+  }
 }
 
 /* ==========================================================================

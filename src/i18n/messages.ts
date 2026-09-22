@@ -20,7 +20,7 @@ export const messages = {
     home: {
       eyebrow: 'THÁI DUY / LIVING SYSTEMS LAB',
       title: 'A public surface for systems that are actually alive.',
-      lede: 'Projects, infrastructure, machine senses and field notes — presented as one calm digital organism. Motion comes from real state, not decorative noise.',
+      lede: 'Projects, infrastructure, machine senses and field notes — presented as one living digital organism. Motion comes from real state, not decorative noise.',
       enter: 'Enter living field', explore: 'Explore surfaces',
       principlesLabel: 'Design principles',
       principles: ['real state over fake motion', 'quiet when idle', 'reactive when alive'],
@@ -119,7 +119,7 @@ export const messages = {
     home: {
       eyebrow: 'THÁI DUY / PHÒNG LAB HỆ THỐNG SỐNG',
       title: 'Một không gian công khai cho những hệ thống đang thực sự vận hành.',
-      lede: 'Dự án, hạ tầng, các cảm biến và ghi chép kỹ thuật — cùng hiện diện trong một hệ sinh thái số điềm tĩnh. Mọi chuyển động đều đến từ trạng thái thật, không phải hiệu ứng trang trí.',
+      lede: 'Dự án, hạ tầng, các cảm biến và ghi chép kỹ thuật — cùng hiện diện trong một hệ sinh thái số đang vận hành. Mọi chuyển động đều đến từ trạng thái thật, không phải hiệu ứng trang trí.',
       enter: 'Đi vào hệ thống', explore: 'Khám phá',
       principlesLabel: 'Nguyên tắc thiết kế',
       principles: ['ưu tiên trạng thái thật, không tạo chuyển động giả', 'im lặng khi không có gì xảy ra', 'phản ứng khi hệ thống hoạt động'],

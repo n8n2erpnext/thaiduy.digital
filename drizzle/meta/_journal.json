@@ -92,6 +92,13 @@
       "when": 1790051502223,
       "tag": "0012_discuss_reply_targets",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790052877257,
+      "tag": "0013_discuss_rich_composer",
+      "breakpoints": true
     }
   ]
 }

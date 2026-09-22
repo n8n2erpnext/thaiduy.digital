@@ -6,6 +6,7 @@ import {
   getCommunityMemberState,
   getPublicCommunityThreads,
   hasCommunityGoogleAccount,
+  isCommunityAdminEmail,
 } from '@/community/data'
 import { resolveManagedSection } from '@/content/presentation'
 import { resolveLocale } from '@/i18n/locale'
@@ -36,6 +37,7 @@ export default async function GuestbookPage({searchParams}:Props) {
     image:session.user.image ?? null,
     googleConnected,
     blocked:member?.status==='blocked',
+    isAdmin:isCommunityAdminEmail(session.user.email),
   }:null
   const threads=threadPage.items
 
@@ -70,7 +72,10 @@ export default async function GuestbookPage({searchParams}:Props) {
                   ? <img src={thread.authorImage} alt="" />
                   : <i>{thread.authorName.slice(0,2).toUpperCase()}</i>}
                 <span>
-                  <strong>{thread.authorName}</strong>
+                  <strong>
+                    {thread.authorName}
+                    {thread.isAdmin && <span className="discuss-admin-badge">ADMIN</span>}
+                  </strong>
                   <small>{thread.createdAt.toLocaleDateString(locale==='vi'?'vi-VN':'en-GB')}</small>
                 </span>
               </div>

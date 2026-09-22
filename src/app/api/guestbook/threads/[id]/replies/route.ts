@@ -15,6 +15,7 @@ export async function POST(request:NextRequest,{params}:Props) {
   const raw=await request.json().catch(()=>null)
   const parsed=z.object({
     body:z.string().default(''),
+    bodyHtml:z.string().optional(),
     parentReplyId:z.uuid().nullable().optional(),
   }).safeParse(raw)
   if (!parsed.success) {
@@ -26,6 +27,7 @@ export async function POST(request:NextRequest,{params}:Props) {
       id,
       session.user.id,
       parsed.data.body,
+      parsed.data.bodyHtml,
       parsed.data.parentReplyId,
     )
     return NextResponse.json({reply},{status:201})
@@ -34,6 +36,7 @@ export async function POST(request:NextRequest,{params}:Props) {
     const status=
       code==='google_required'?403:
       code==='community_blocked'?403:
+      code==='mention_not_allowed'?403:
       code==='thread_not_found'?404:
       code==='parent_reply_not_found'?404:
       code==='community_rate_limited'?429:400

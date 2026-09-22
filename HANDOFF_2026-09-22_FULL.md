@@ -2227,4 +2227,116 @@ The demo content may be deleted after owner visual review; reply/Like dependenci
 
 ---
 
+# 60. DISCUSS RICH COMPOSER / EMOJI / MENTIONS / ADMIN BADGE — 2026-09-22
+
+Discuss was extended toward a lightweight Discourse-like interaction model after owner review.
+
+Reference direction:
+
+- Discourse current rich composer uses a WYSIWYG rich-text mode while keeping Markdown compatibility.
+- Current Discourse rich composer supports basic formatting, emoji, mentions, quotes, links, lists and other structured content.
+- Discourse badges/flair are used to distinguish roles and recognize users.
+- This site intentionally adopts only the lightweight subset useful to thaiduy.digital Discuss.
+
+Public composer:
+
+- reuses the same TipTap engine and core formatting model used by Writing
+- public-safe subset only; it does not expose Control media library, Unsplash or administrative asset upload
+- H2 / H3
+- bold
+- italic
+- strike
+- block quote
+- bullet list
+- numbered list
+- link
+- code block
+- horizontal rule
+- undo / redo
+- selection bubble from the Writing editor
+- rich text is sanitized server-side before storage/rendering
+
+Emoji:
+
+- compact toolbar emoji picker
+- emoji are stored as Unicode inside sanitized rich content
+- no separate emoji database is required
+
+Mentions:
+
+- @ button appears only where a topic already exists
+- typing @ also opens the mention picker
+- candidates are server-derived topic participants only
+- topic author + authors of approved replies are eligible participants
+- users outside the topic are not shown
+- server independently validates all mention user IDs
+- forged outsider mentions fail with mention_not_allowed
+- server canonicalizes mention display names from the real user record
+- a payload using a valid participant ID with a forged display label is rewritten to the canonical name
+- stored mention IDs are retained in community_threads/community_replies.mentions for future notification/inbox work
+- new topics cannot mention arbitrary users because there is no prior topic participant set
+
+Admin badge:
+
+- ADMIN is derived server-side from CONTROL_OWNER_EMAIL
+- users cannot self-assign the badge
+- badge renders beside the owner/admin name on topic list, topic detail, replies, composer identity and mention picker
+- no admin email is exposed publicly
+
+Rich-content persistence:
+
+Migration:
+- drizzle/0013_discuss_rich_composer.sql
+
+New fields on community_threads:
+- body_html text nullable
+- mentions jsonb string[] default []
+
+New fields on community_replies:
+- body_html text nullable
+- mentions jsonb string[] default []
+
+Compatibility:
+- existing plain-text posts remain valid when body_html is null
+- body remains the canonical plain-text fallback/search/preview value
+- moderation Control continues to use safe plain text
+- public detail renders body_html only after server sanitization
+
+Server sanitizer allows only:
+- p
+- h2 / h3
+- strong / em / s
+- blockquote
+- ul / ol / li
+- a
+- hr / br
+- code / pre
+- controlled mention span
+
+Scripts/styles/event attributes and unapproved markup are removed.
+
+Acceptance evidence:
+
+- temporary participant QA topic had only Alpha + Beta in participant list
+- rich HTML preserved strong formatting, emoji and valid mention
+- script tag was removed
+- outsider mention returned mention_not_allowed
+- forged mention label FAKE ADMIN was canonicalized to the real participant name
+- all temporary QA users/content were removed; example.invalid QA user count returned 0
+- live demo thread HTTP 200
+- live demo rendered discuss-admin-badge
+- live demo rendered discuss-mention
+- live demo rendered rich-text content
+- live demo retained targeted Reply control
+
+Live rich demo reply:
+
+- thread: /guestbook/1d70cee8-d4ff-4d44-b8ce-9b81914304b1
+- rich demo reply id: ddaef8be-2477-4b78-8296-d14bf7b77955
+- demonstrates bold, emoji, @mention, quote/list rich formatting and ADMIN badge
+
+The existing demo topic can be removed after owner visual review; reply/Like/mention rows follow existing FK/cascade behavior.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

@@ -6,8 +6,10 @@ import { GuestbookLikeButton } from '@/components/guestbook/guestbook-like-butto
 import { GuestbookReplyAction } from '@/components/guestbook/guestbook-reply-action'
 import {
   getCommunityMemberState,
+  getCommunityParticipants,
   getPublicCommunityThread,
   hasCommunityGoogleAccount,
+  isCommunityAdminEmail,
 } from '@/community/data'
 import { resolveLocale } from '@/i18n/locale'
 import { auth } from '@/lib/auth'
@@ -29,10 +31,11 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
   const {page:rawPage}=await searchParams
   const page=pageNumber(rawPage)
   const session=await auth.api.getSession({headers:await headers()})
-  const [data,googleConnected,member]=await Promise.all([
+  const [data,googleConnected,member,participants]=await Promise.all([
     getPublicCommunityThread(id,session?.user.id,page,20),
     session?.user?hasCommunityGoogleAccount(session.user.id):Promise.resolve(false),
     session?.user?getCommunityMemberState(session.user.id):Promise.resolve(null),
+    getCommunityParticipants(id),
   ])
   if (!data) notFound()
   const viewer=session?.user?{
@@ -40,6 +43,7 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
     image:session.user.image ?? null,
     googleConnected,
     blocked:member?.status==='blocked',
+    isAdmin:isCommunityAdminEmail(session.user.email),
   }:null
 
   return (
@@ -59,12 +63,22 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
                 ? <img src={data.thread.authorImage} alt="" />
                 : <i>{data.thread.authorName.slice(0,2).toUpperCase()}</i>}
               <span>
-                <strong>{data.thread.authorName}</strong>
+                <strong>
+                  {data.thread.authorName}
+                  {data.thread.isAdmin && <span className="discuss-admin-badge">ADMIN</span>}
+                </strong>
                 <small>{data.thread.createdAt.toLocaleString(locale==='vi'?'vi-VN':'en-GB')}</small>
               </span>
             </div>
           </header>
-          <p className="guestbook-thread-message">{data.thread.body}</p>
+          {data.thread.bodyHtml ? (
+            <div
+              className="guestbook-thread-message discuss-post-body"
+              dangerouslySetInnerHTML={{__html:data.thread.bodyHtml}}
+            />
+          ) : (
+            <p className="guestbook-thread-message">{data.thread.body}</p>
+          )}
           <footer className="guestbook-thread-actions">
             <GuestbookLikeButton
               kind="thread"
@@ -96,7 +110,10 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
                 : <i>{reply.authorName.slice(0,2).toUpperCase()}</i>}
               <div>
                 <header>
-                  <strong>{reply.authorName}</strong>
+                  <strong>
+                    {reply.authorName}
+                    {reply.isAdmin && <span className="discuss-admin-badge">ADMIN</span>}
+                  </strong>
                   <time>{reply.createdAt.toLocaleString(locale==='vi'?'vi-VN':'en-GB')}</time>
                 </header>
                 {reply.parentReplyId && reply.parentAuthorName && (
@@ -110,7 +127,14 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
                     )}
                   </blockquote>
                 )}
-                <p>{reply.body}</p>
+                {reply.bodyHtml ? (
+                  <div
+                    className="discuss-post-body discuss-reply-body"
+                    dangerouslySetInnerHTML={{__html:reply.bodyHtml}}
+                  />
+                ) : (
+                  <p>{reply.body}</p>
+                )}
                 <footer>
                   <GuestbookLikeButton
                     kind="reply"
@@ -128,6 +152,7 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
                     replyId={reply.id}
                     authorName={reply.authorName}
                     body={reply.body}
+                    participants={participants}
                   />
                 </footer>
               </div>
@@ -156,7 +181,12 @@ export default async function GuestbookThreadPage({params,searchParams}:Props) {
           )}
         </section>
 
-        <GuestbookComposer locale={locale} viewer={viewer} threadId={id} />
+        <GuestbookComposer
+          locale={locale}
+          viewer={viewer}
+          threadId={id}
+          participants={participants}
+        />
       </main>
     </div>
   )

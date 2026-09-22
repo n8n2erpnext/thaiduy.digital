@@ -1,4 +1,5 @@
 import { and,count,desc,eq,isNull,sql } from 'drizzle-orm'
+import sanitizeHtml from 'sanitize-html'
 import { db } from '@/db/client'
 import {
   auditLogs,
@@ -12,11 +13,99 @@ import { account,user } from '@/db/auth-schema'
 
 export type CommunityStatus='pending'|'approved'|'rejected'|'hidden'
 export type CommunityMemberStatus='active'|'blocked'
+export type CommunityParticipant={
+  id:string
+  name:string
+  image:string | null
+  isAdmin:boolean
+}
+
+const controlOwnerEmail=(process.env.CONTROL_OWNER_EMAIL ?? '').trim().toLowerCase()
+
+const communityHtmlOptions:sanitizeHtml.IOptions={
+  allowedTags:[
+    'p','h2','h3','strong','em','s','blockquote','ul','ol','li',
+    'a','hr','br','code','pre','span',
+  ],
+  allowedAttributes:{
+    a:['href','target','rel'],
+    code:['class'],
+    span:['class','data-mention-user-id','data-mention-label'],
+  },
+  allowedSchemes:['http','https','mailto'],
+  transformTags:{
+    a:(_tag,attrs)=>({
+      tagName:'a',
+      attribs:{...attrs,target:'_blank',rel:'noopener noreferrer'},
+    }),
+  },
+}
+
+export function sanitizeCommunityHtml(value:string) {
+  return sanitizeHtml(value,communityHtmlOptions)
+}
+
+function plainTextFromHtml(value:string) {
+  return sanitizeHtml(value,{allowedTags:[],allowedAttributes:{}})
+    .replace(/\u00a0/g,' ')
+    .replace(/[ \t]+\n/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim()
+}
+
+function mentionIdsFromHtml(value:string) {
+  const ids=[...value.matchAll(/data-mention-user-id="([^"]+)"/g)].map(match=>match[1])
+  return [...new Set(ids)]
+}
 
 function cleanBody(raw:string,max:number) {
   const body=raw.trim().replace(/\r\n/g,'\n')
   if (body.length < 2 || body.length > max) throw new Error('body_length_invalid')
   return body
+}
+
+function escapeHtml(value:string) {
+  return value
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;')
+}
+
+function canonicalizeMentions(html:string,allowedMentions:Map<string,string>) {
+  return html.replace(
+    /<span[^>]*data-mention-user-id="([^"]+)"[^>]*>[\s\S]*?<\/span>/g,
+    (_match,id:string)=>{
+      const label=allowedMentions.get(id)
+      if (!label) return ''
+      return '<span class="discuss-mention" data-mention-user-id="'+escapeHtml(id)+'" data-mention-label="'+escapeHtml(label)+'">@'+escapeHtml(label)+'</span>'
+    },
+  )
+}
+
+async function normalizeCommunityBody(
+  rawBody:string,
+  rawBodyHtml:string | null | undefined,
+  max:number,
+  allowedMentions:Map<string,string>,
+) {
+  const sanitized=rawBodyHtml?.trim()?sanitizeCommunityHtml(rawBodyHtml):''
+  const mentions=sanitized?mentionIdsFromHtml(sanitized):[]
+  if (mentions.some(id=>!allowedMentions.has(id))) throw new Error('mention_not_allowed')
+  const cleanedHtml=sanitized?canonicalizeMentions(sanitized,allowedMentions):''
+  const text=cleanBody(cleanedHtml?plainTextFromHtml(cleanedHtml):rawBody,max)
+  return {body:text,bodyHtml:cleanedHtml || null,mentions}
+}
+
+function adminFlag() {
+  return controlOwnerEmail
+    ? sql<boolean>`lower(${user.email})=${controlOwnerEmail}`
+    : sql<boolean>`false`
+}
+
+export function isCommunityAdminEmail(email:string | null | undefined) {
+  return Boolean(controlOwnerEmail && email?.trim().toLowerCase()===controlOwnerEmail)
 }
 
 export async function hasCommunityGoogleAccount(userId:string) {
@@ -36,6 +125,35 @@ export async function requireCommunityPostingAccess(userId:string) {
   if (member?.status === 'blocked') throw new Error('community_blocked')
   await db.insert(communityMembers).values({userId,status:'active'})
     .onConflictDoNothing({target:communityMembers.userId})
+}
+
+export async function getCommunityParticipants(threadId:string):Promise<CommunityParticipant[]> {
+  const rows=await db.execute(sql`
+    select distinct
+      u.id,
+      u.name,
+      u.image,
+      case
+        when ${controlOwnerEmail} <> '' and lower(u.email)=${controlOwnerEmail} then true
+        else false
+      end as "isAdmin"
+    from "user" u
+    join (
+      select t.user_id
+      from community_threads t
+      where t.id=${threadId}
+        and t.status='approved'
+        and t.deleted_at is null
+      union
+      select r.user_id
+      from community_replies r
+      where r.thread_id=${threadId}
+        and r.status='approved'
+        and r.deleted_at is null
+    ) participant on participant.user_id=u.id
+    order by u.name asc
+  `)
+  return rows as unknown as CommunityParticipant[]
 }
 
 export async function getPublicCommunityThreads(page=1,limit=10) {
@@ -59,6 +177,7 @@ export async function getPublicCommunityThreads(page=1,limit=10) {
     lastActivityAt:communityThreads.lastActivityAt,
     authorName:user.name,
     authorImage:user.image,
+    isAdmin:adminFlag(),
     replyCount:sql<number>`(
       select count(*)::int from community_replies r
       where r.thread_id = ${communityThreads.id}
@@ -97,11 +216,13 @@ export async function getPublicCommunityThread(
     id:communityThreads.id,
     title:communityThreads.title,
     body:communityThreads.body,
+    bodyHtml:communityThreads.bodyHtml,
     locale:communityThreads.locale,
     createdAt:communityThreads.createdAt,
     lastActivityAt:communityThreads.lastActivityAt,
     authorName:user.name,
     authorImage:user.image,
+    isAdmin:adminFlag(),
     likeCount:sql<number>`(
       select count(*)::int from community_thread_likes l
       where l.thread_id=${communityThreads.id}
@@ -139,9 +260,11 @@ export async function getPublicCommunityThread(
     id:communityReplies.id,
     parentReplyId:communityReplies.parentReplyId,
     body:communityReplies.body,
+    bodyHtml:communityReplies.bodyHtml,
     createdAt:communityReplies.createdAt,
     authorName:user.name,
     authorImage:user.image,
+    isAdmin:adminFlag(),
     likeCount:sql<number>`(
       select count(*)::int from community_reply_likes l
       where l.reply_id=${communityReplies.id}
@@ -188,12 +311,18 @@ export async function submitCommunityThread(
   userId:string,
   rawTitle:string,
   rawBody:string,
+  rawBodyHtml:string | null | undefined,
   locale:'en'|'vi',
 ) {
   await requireCommunityPostingAccess(userId)
   const title=rawTitle.trim().replace(/\s+/g,' ')
   if (title.length < 3 || title.length > 180) throw new Error('title_length_invalid')
-  const body=cleanBody(rawBody,5000)
+  const normalized=await normalizeCommunityBody(
+    rawBody,
+    rawBodyHtml,
+    5000,
+    new Map(),
+  )
 
   const [last]=await db.select({createdAt:communityThreads.createdAt})
     .from(communityThreads)
@@ -203,7 +332,13 @@ export async function submitCommunityThread(
     throw new Error('community_rate_limited')
   }
   const [created]=await db.insert(communityThreads).values({
-    userId,title,body,locale,status:'pending',
+    userId,
+    title,
+    body:normalized.body,
+    bodyHtml:normalized.bodyHtml,
+    mentions:normalized.mentions,
+    locale,
+    status:'pending',
   }).returning({id:communityThreads.id,status:communityThreads.status})
   return created
 }
@@ -212,10 +347,10 @@ export async function submitCommunityReply(
   threadId:string,
   userId:string,
   rawBody:string,
+  rawBodyHtml:string | null | undefined,
   parentReplyId?:string | null,
 ) {
   await requireCommunityPostingAccess(userId)
-  const body=cleanBody(rawBody,3000)
   const [thread]=await db.select({id:communityThreads.id}).from(communityThreads)
     .where(and(
       eq(communityThreads.id,threadId),
@@ -223,6 +358,15 @@ export async function submitCommunityReply(
       isNull(communityThreads.deletedAt),
     )).limit(1)
   if (!thread) throw new Error('thread_not_found')
+
+  const participants=await getCommunityParticipants(threadId)
+  const allowedMentions=new Map(participants.map(item=>[item.id,item.name]))
+  const normalized=await normalizeCommunityBody(
+    rawBody,
+    rawBodyHtml,
+    3000,
+    allowedMentions,
+  )
 
   if (parentReplyId) {
     const [parent]=await db.select({id:communityReplies.id}).from(communityReplies)
@@ -247,7 +391,9 @@ export async function submitCommunityReply(
     threadId,
     parentReplyId:parentReplyId ?? null,
     userId,
-    body,
+    body:normalized.body,
+    bodyHtml:normalized.bodyHtml,
+    mentions:normalized.mentions,
     status:'pending',
   }).returning({
     id:communityReplies.id,

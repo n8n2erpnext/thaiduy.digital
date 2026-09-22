@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { CommunityParticipant } from '@/community/data'
 import { GuestbookComposer } from './guestbook-composer'
 
 type Viewer={
@@ -8,6 +9,7 @@ type Viewer={
   image:string | null
   googleConnected:boolean
   blocked:boolean
+  isAdmin:boolean
 }
 
 type Props={
@@ -17,10 +19,11 @@ type Props={
   replyId:string
   authorName:string
   body:string
+  participants:CommunityParticipant[]
 }
 
 export function GuestbookReplyAction({
-  locale,viewer,threadId,replyId,authorName,body,
+  locale,viewer,threadId,replyId,authorName,body,participants,
 }:Props) {
   const vi=locale==='vi'
   const [open,setOpen]=useState(false)
@@ -42,6 +45,7 @@ export function GuestbookReplyAction({
             threadId={threadId}
             parentReplyId={replyId}
             replyTo={{name:authorName,body}}
+            participants={participants}
           />
         </div>
       )}

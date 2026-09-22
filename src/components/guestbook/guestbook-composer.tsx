@@ -1,13 +1,16 @@
 'use client'
 
 import { FormEvent,useState } from 'react'
+import type { CommunityParticipant } from '@/community/data'
 import { authClient } from '@/lib/auth-client'
+import { DiscussRichEditor } from './discuss-rich-editor'
 
 type Viewer={
   name:string
   image:string | null
   googleConnected:boolean
   blocked:boolean
+  isAdmin:boolean
 }
 
 type ReplyTarget={
@@ -21,10 +24,16 @@ type Props={
   threadId?:string
   parentReplyId?:string
   replyTo?:ReplyTarget
+  participants?:CommunityParticipant[]
 }
 
 export function GuestbookComposer({
-  locale,viewer,threadId,parentReplyId,replyTo,
+  locale,
+  viewer,
+  threadId,
+  parentReplyId,
+  replyTo,
+  participants=[],
 }:Props) {
   const vi=locale==='vi'
   const isReply=Boolean(threadId)
@@ -32,6 +41,8 @@ export function GuestbookComposer({
   const [open,setOpen]=useState(isReply && Boolean(viewer?.googleConnected))
   const [title,setTitle]=useState('')
   const [body,setBody]=useState('')
+  const [bodyHtml,setBodyHtml]=useState('')
+  const [editorReset,setEditorReset]=useState(0)
   const [sending,setSending]=useState(false)
   const [message,setMessage]=useState('')
   async function googleLogin() {
@@ -47,6 +58,9 @@ export function GuestbookComposer({
     }
     if (code==='community_blocked') {
       return vi?'Tài khoản này hiện không được phép đăng trong Discuss.':'This account cannot currently post in Discuss.'
+    }
+    if (code==='mention_not_allowed') {
+      return vi?'Chỉ có thể nhắc người đã tham gia chủ đề này.':'You can only mention people who have participated in this topic.'
     }
     if (code==='parent_reply_not_found') {
       return vi?'Phản hồi gốc không còn khả dụng.':'The reply you are responding to is no longer available.'
@@ -64,7 +78,11 @@ export function GuestbookComposer({
     event.preventDefault()
     if (!viewer?.googleConnected) return void googleLogin()
     if (viewer.blocked) return
-    if (!body.trim() || (!isReply && title.trim().length<3)) return
+    if (
+      body.trim().length<2 ||
+      body.length>bodyLimit ||
+      (!isReply && (title.trim().length<3 || title.length>180))
+    ) return
 
     setSending(true)
     setMessage('')
@@ -76,13 +94,15 @@ export function GuestbookComposer({
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(isReply
-          ? {body,parentReplyId:parentReplyId ?? null}
-          : {title,body,locale}),
+          ? {body,bodyHtml,parentReplyId:parentReplyId ?? null}
+          : {title,body,bodyHtml,locale}),
       })
       const payload=await response.json() as {error?:string}
       if (response.ok) {
         setTitle('')
         setBody('')
+        setBodyHtml('')
+        setEditorReset(value=>value+1)
         setMessage(vi
           ? (isReply?'Đã gửi phản hồi. Nội dung sẽ xuất hiện sau khi được duyệt.':'Đã gửi chủ đề. Bài sẽ xuất hiện sau khi được duyệt.')
           : (isReply?'Reply submitted. It will appear after moderation.':'Topic submitted. It will appear after moderation.'))
@@ -121,7 +141,6 @@ export function GuestbookComposer({
                 : (vi?'Tham gia cuộc trao đổi':'Join the conversation')}
           </strong>
         </div>
-
         {!signedIn ? (
           <button className="guestbook-google-login" type="button" onClick={()=>void googleLogin()}>
             <b>G</b>
@@ -154,7 +173,13 @@ export function GuestbookComposer({
             {viewer?.image
               ? <img src={viewer.image} alt="" />
               : <i>{viewer?.name.slice(0,2).toUpperCase()}</i>}
-            <div><strong>{viewer?.name}</strong><small>GOOGLE ACCOUNT</small></div>
+            <div>
+              <strong>
+                {viewer?.name}
+                {viewer?.isAdmin && <span className="discuss-admin-badge">ADMIN</span>}
+              </strong>
+              <small>GOOGLE ACCOUNT</small>
+            </div>
             {viewer?.blocked && <em>{vi?'ĐÃ BỊ KHÓA ĐĂNG':'POSTING BLOCKED'}</em>}
           </div>
 
@@ -175,37 +200,46 @@ export function GuestbookComposer({
               </label>
             )}
             <label>
-              <span className="guestbook-field-row">
-                <span>
-                  {replyTo
-                    ? (vi?'TRẢ LỜI':'REPLY')
-                    : isReply
-                      ? (vi?'PHẢN HỒI CHỦ ĐỀ':'TOPIC REPLY')
-                      : (vi?'NỘI DUNG':'MESSAGE')}
-                </span>
-                <small>{body.length} / {bodyLimit}</small>
+              <span>
+                {replyTo
+                  ? (vi?'TRẢ LỜI':'REPLY')
+                  : isReply
+                    ? (vi?'PHẢN HỒI CHỦ ĐỀ':'TOPIC REPLY')
+                    : (vi?'NỘI DUNG':'MESSAGE')}
               </span>
-              <textarea
-                rows={isReply?4:6}
-                value={body}
+              <DiscussRichEditor
+                key={editorReset}
+                locale={locale}
+                participants={isReply?participants:[]}
                 maxLength={bodyLimit}
-                onChange={event=>setBody(event.target.value)}
+                resetKey={editorReset}
                 placeholder={replyTo
                   ? (vi?`Trả lời @${replyTo.name}…`:`Reply to @${replyTo.name}…`)
                   : isReply
                     ? (vi?'Viết phản hồi cho chủ đề…':'Reply to this topic…')
                     : (vi?'Một lời chào, câu hỏi, góp ý hoặc chủ đề muốn trao đổi…':'A hello, question, thought, or something worth discussing…')}
-                disabled={viewer?.blocked || sending}
+                onChange={value=>{
+                  setBody(value.text)
+                  setBodyHtml(value.html)
+                }}
               />
             </label>
             <footer>
               <small>
                 {viewer?.blocked
                   ? (vi?'Bạn vẫn có thể đọc Discuss nhưng hiện không thể đăng.':'You can still read Discuss, but posting is disabled for this account.')
-                  : (vi?'Nội dung được duyệt trước khi hiển thị công khai.':'Messages are moderated before they become public.')}
+                  : (vi?'Rich text, emoji và @mention được giữ qua bước duyệt.':'Rich text, emoji and @mentions are preserved through moderation.')}
               </small>
               {!viewer?.blocked && (
-                <button type="submit" disabled={sending || body.trim().length<2 || (!isReply && title.trim().length<3)}>
+                <button
+                  type="submit"
+                  disabled={
+                    sending ||
+                    body.trim().length<2 ||
+                    body.length>bodyLimit ||
+                    (!isReply && title.trim().length<3)
+                  }
+                >
                   {sending
                     ? (vi?'ĐANG GỬI…':'SENDING…')
                     : (isReply?(vi?'GỬI PHẢN HỒI':'SUBMIT REPLY'):(vi?'GỬI CHỦ ĐỀ':'SUBMIT TOPIC'))}

@@ -11,6 +11,7 @@ export async function POST(request:NextRequest) {
   const payload=await request.json().catch(()=>null) as {
     title?:string
     body?:string
+    bodyHtml?:string
     locale?:string
   } | null
 
@@ -20,6 +21,7 @@ export async function POST(request:NextRequest) {
       session.user.id,
       payload?.title ?? '',
       payload?.body ?? '',
+      payload?.bodyHtml,
       locale,
     )
     return NextResponse.json({thread},{status:201})
@@ -28,6 +30,7 @@ export async function POST(request:NextRequest) {
     const status=
       code==='google_required'?403:
       code==='community_blocked'?403:
+      code==='mention_not_allowed'?403:
       code==='community_rate_limited'?429:400
     return NextResponse.json({error:code},{status})
   }

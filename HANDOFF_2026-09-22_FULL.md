@@ -3583,4 +3583,26 @@ Validation:
 
 ---
 
+# Stack accent beam slim pass
+
+Follow-up polish after visual QA:
+
+- House room-card accent beam was reduced from roughly 4.4 SVG px total thickness to roughly 2.1 px.
+- Taper remains, with slightly longer taper zones so both ends fade more gracefully.
+- Glow was reduced to keep the beam elegant rather than neon-heavy.
+- The large entered-room header now uses the same tapered filled-beam geometry instead of a flat constant-width line.
+- Large-room beam uses a longer taper appropriate to the wider room canvas.
+- Material Symbols, service dots, room layout, wiring and navigation were not changed.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /stack 200
+- public /stack 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

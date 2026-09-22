@@ -750,23 +750,45 @@ function RoomBadgeMark({
   )
 }
 
-function roomAccentBeamPath(group:GroupMeta) {
-  const left=group.x+16
-  const right=group.x+group.width-16
-  const y=group.y+1
-  const taper=18
-  const half=2.2
+function accentBeamPath({
+  x,
+  width,
+  y,
+  inset,
+  taper,
+  half,
+}:{
+  x:number
+  width:number
+  y:number
+  inset:number
+  taper:number
+  half:number
+}) {
+  const left=x+inset
+  const right=x+width-inset
   return [
     'M',left,y,
-    'L',left+taper,y-half*.35,
-    'Q',left+taper*1.8,y-half,right-taper*1.8,y-half,
-    'L',right-taper,y-half*.35,
+    'L',left+taper,y-half*.28,
+    'Q',left+taper*1.9,y-half,right-taper*1.9,y-half,
+    'L',right-taper,y-half*.28,
     'L',right,y,
-    'L',right-taper,y+half*.35,
-    'Q',right-taper*1.8,y+half,left+taper*1.8,y+half,
-    'L',left+taper,y+half*.35,
+    'L',right-taper,y+half*.28,
+    'Q',right-taper*1.9,y+half,left+taper*1.9,y+half,
+    'L',left+taper,y+half*.28,
     'Z',
   ].join(' ')
+}
+
+function roomAccentBeamPath(group:GroupMeta) {
+  return accentBeamPath({
+    x:group.x,
+    width:group.width,
+    y:group.y+1,
+    inset:18,
+    taper:22,
+    half:1.05,
+  })
 }
 
 function HouseScene({
@@ -1028,12 +1050,16 @@ function RoomScene({
         rx="22"
         className="stack-spatial-room-head"
       />
-      <line
-        x1={ROOM.x + 24}
-        y1={ROOM.y + 1}
-        x2={ROOM.x + ROOM.width - 24}
-        y2={ROOM.y + 1}
-        className="stack-spatial-room-accent"
+      <path
+        d={accentBeamPath({
+          x:ROOM.x,
+          width:ROOM.width,
+          y:ROOM.y+1,
+          inset:26,
+          taper:38,
+          half:1.05,
+        })}
+        className="stack-spatial-room-accent-beam"
       />
       <circle cx={ROOM.x + 31} cy={ROOM.y + 31} r="16" className="stack-spatial-room-badge" />
       <RoomBadgeMark

@@ -6236,10 +6236,11 @@ html[data-theme='normal'] .stack-spatial-room-index-note em{
   filter:drop-shadow(0 14px 26px rgba(0,0,0,.22));
 }
 .stack-district-head{fill:rgba(6,13,18,.94)}
-.stack-district-accent-beam{
+.stack-district-accent-beam,
+.stack-spatial-room-accent-beam{
   fill:var(--room-accent);
-  opacity:.9;
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--room-accent) 35%,transparent));
+  opacity:.88;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--room-accent) 28%,transparent));
   transition:opacity .18s,filter .18s
 }
 .stack-district-badge{
@@ -6315,7 +6316,7 @@ html[data-theme='normal'] .stack-spatial-room-index-note em{
   filter:drop-shadow(0 18px 32px rgba(0,0,0,.16));
 }
 .stack-spatial-room-head{fill:rgba(5,12,16,.97)}
-.stack-spatial-room-accent{stroke:var(--room-accent);stroke-width:2.4;stroke-linecap:round}
+.stack-spatial-room-accent-beam{fill:var(--room-accent)}
 .stack-spatial-room-badge{
   fill:color-mix(in srgb,var(--room-accent) 18%,#0b141b);
   stroke:var(--room-accent);
@@ -6427,7 +6428,7 @@ html[data-theme='normal'] .stack-atlas-room-shell{
   filter:drop-shadow(0 18px 34px rgba(38,50,43,.065));
 }
 html[data-theme='normal'] .stack-spatial-room-head{fill:#fff}
-html[data-theme='normal'] .stack-spatial-room-accent{stroke:var(--room-accent)}
+html[data-theme='normal'] .stack-spatial-room-accent-beam{fill:var(--room-accent)}
 html[data-theme='normal'] .stack-spatial-room-badge{fill:#fff;stroke:var(--room-accent)}
 html[data-theme='normal'] .stack-spatial-room-badge-mark{fill:var(--room-accent)}
 html[data-theme='normal'] .stack-spatial-room-title{fill:#18221c;font-weight:700}

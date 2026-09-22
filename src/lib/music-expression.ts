@@ -2,6 +2,7 @@ import type { MusicCortexState,MusicLayerName } from '@/lib/music-state'
 
 export type MusicTheme='dark'|'normal'
 export type MusicInstrumentFamily='piano'|'electric-piano'|'nylon-pluck'|'glass-fm'|'soft-synth'
+export type MusicWaveArchetype='drift'|'swing'|'drive'|'pulse'|'syncopated'|'swell'|'groove'|'pluck'
 
 export type MusicExpression={
   id:string
@@ -10,6 +11,7 @@ export type MusicExpression={
   seed:number
   valence:number
   arousal:number
+  archetype:MusicWaveArchetype
   colors:Record<MusicLayerName,string>
   baseColor:string
   glowColor:string
@@ -22,6 +24,10 @@ export type MusicExpression={
     secondaryOpacity:number
     dominantOpacity:number
     glow:number
+    density:number
+    sharpness:number
+    asymmetry:number
+    pulse:number
   }
   instrumentHint:MusicInstrumentFamily
 }
@@ -99,12 +105,157 @@ function blendHex(a:string,b:string,amount:number) {
   return '#'+channel(0)+channel(1)+channel(2)
 }
 
+function rgbHsl(hex:string) {
+  const [rr,gg,bb]=hexRgb(hex).map(value=>value/255)
+  const max=Math.max(rr,gg,bb),min=Math.min(rr,gg,bb)
+  const light=(max+min)/2
+  const delta=max-min
+  if(delta===0) return {h:0,s:0,l:light}
+  const saturation=delta/(1-Math.abs(2*light-1))
+  let hue=max===rr ? ((gg-bb)/delta)%6
+    : max===gg ? (bb-rr)/delta+2
+    : (rr-gg)/delta+4
+  hue*=60
+  if(hue<0) hue+=360
+  return {h:hue,s:saturation,l:light}
+}
+
+function hslHex(h:number,s:number,l:number) {
+  const hue=((h%360)+360)%360
+  const saturation=clamp(s)
+  const light=clamp(l)
+  const c=(1-Math.abs(2*light-1))*saturation
+  const x=c*(1-Math.abs((hue/60)%2-1))
+  const m=light-c/2
+  let rgb:[number,number,number]
+  if(hue<60) rgb=[c,x,0]
+  else if(hue<120) rgb=[x,c,0]
+  else if(hue<180) rgb=[0,c,x]
+  else if(hue<240) rgb=[0,x,c]
+  else if(hue<300) rgb=[x,0,c]
+  else rgb=[c,0,x]
+  return '#'+rgb.map(value=>Math.round((value+m)*255).toString(16).padStart(2,'0')).join('')
+}
+
+function relativeLuminance(hex:string) {
+  const [r,g,b]=hexRgb(hex).map(value=>{
+    const channel=value/255
+    return channel<=.03928?channel/12.92:Math.pow((channel+.055)/1.055,2.4)
+  })
+  return r*.2126+g*.7152+b*.0722
+}
+
+function contrastRatio(a:string,b:string) {
+  const left=relativeLuminance(a),right=relativeLuminance(b)
+  const high=Math.max(left,right),low=Math.min(left,right)
+  return (high+.05)/(low+.05)
+}
+
+function contrastSafeColor(h:number,s:number,l:number,theme:MusicTheme) {
+  const background=theme==='normal'?'#f7faf6':'#080c0a'
+  const target=theme==='normal'?3.55:4.6
+  let light=l
+  let color=hslHex(h,s,light)
+  let attempts=0
+  while(contrastRatio(color,background)<target&&attempts<28){
+    light=theme==='normal'
+      ? Math.max(.14,light-.012)
+      : Math.min(.82,light+.012)
+    color=hslHex(h,s,light)
+    attempts+=1
+  }
+  return color
+}
+
+function hueDistance(a:number,b:number) {
+  const diff=Math.abs(a-b)%360
+  return Math.min(diff,360-diff)
+}
+
+function vividPalette(colors:string[],theme:MusicTheme,seed:number) {
+  const source=colors.map(rgbHsl)
+  const anchor=source.find(item=>item.s>=.2)?.h ?? seed%360
+  const fallbackOffsets=[0,32,68,18,205,278]
+  const resolvedHues:number[]=[]
+  return source.map((item,index)=>{
+    let hue=item.s<.18?(anchor+fallbackOffsets[index])%360:item.h
+    let attempts=0
+    while(resolvedHues.some(previous=>hueDistance(previous,hue)<16)&&attempts<6){
+      hue=(hue+19+index*7)%360
+      attempts+=1
+    }
+    resolvedHues.push(hue)
+    const saturation=Math.max(item.s,.84)
+    const light=theme==='normal'
+      ? clamp(item.l,.25,.32)
+      : clamp(item.l,.56,.66)
+    return contrastSafeColor(hue,saturation,light,theme)
+  })
+}
+
 function normalize(value:string|null|undefined) {
   return (value??'').trim().toLowerCase()
 }
 
 function contains(value:string,terms:string[]) {
   return terms.some(term=>value.includes(term))
+}
+
+function semanticEnergy(state:MusicCortexState) {
+  const source=[
+    state.genre,
+    state.style,
+    state.arrangement,
+    state.texture,
+    state.mood,
+  ].filter(Boolean).join(' ').toLowerCase()
+
+  let energy=.34
+  if (contains(source,['metal','punk','hard-rock','garage-rock','drum-and-bass','dubstep','techno'])) energy=.8
+  else if (contains(source,['rock','grunge','electronic','house','trance','synthwave','dance-pop'])) energy=.68
+  else if (contains(source,['latin','salsa','samba','reggae','funk','hip-hop','rap','swing'])) energy=.58
+  else if (contains(source,['pop','jazz','blues','country','folk-rock'])) energy=.48
+  else if (contains(source,['easy-listening','adult-contemporary','soft-rock','singer-songwriter','acoustic','ballad'])) energy=.34
+  else if (contains(source,['ambient','new-age','classical','chamber','minimalism','lofi','chill'])) energy=.24
+
+  if (contains(source,['energetic','upbeat','alive','intense'])) energy+=.16
+  if (contains(source,['calm','dream','intimate','melanch','sad','chill'])) energy-=.1
+  return clamp(energy,.16,.92)
+}
+
+function waveArchetype(state:MusicCortexState):MusicWaveArchetype {
+  const source=[
+    state.genre,
+    state.style,
+    state.arrangement,
+    state.texture,
+  ].filter(Boolean).join(' ').toLowerCase()
+
+  if (contains(source,['shoegaze','dream-pop'])) return 'drift'
+  if (contains(source,['post-rock','cinematic'])) return 'swell'
+  if (contains(source,['soft-rock','pop-rock'])) return 'pulse'
+  if (contains(source,['jazz','swing','blues','bossa-nova'])) return 'swing'
+  if (contains(source,['metal','punk','hard-rock','grunge','garage-rock','post-punk','rock'])) return 'drive'
+  if (contains(source,['electronic','house','techno','trance','synthwave','electropop','synthpop','dance-pop'])) return 'pulse'
+  if (contains(source,['latin','salsa','samba','reggae','dub','funk','bachata'])) return 'syncopated'
+  if (contains(source,['hip-hop','rap','trap','drill','boom-bap','rnb','r&b','soul'])) return 'groove'
+  if (contains(source,['classical','orchestral','chamber','soundtrack','cinematic','neo-classical','minimalism'])) return 'swell'
+  if (contains(source,['acoustic','singer-songwriter','folk','country','guitar','bluegrass'])) return 'pluck'
+  if (contains(source,['ambient','new-age','dream-pop','shoegaze','lofi','downtempo'])) return 'drift'
+  return 'pulse'
+}
+
+function archetypeMotion(archetype:MusicWaveArchetype) {
+  switch(archetype){
+    case 'drift': return {density:.72,sharpness:.12,asymmetry:.18,pulse:.18}
+    case 'swing': return {density:1.08,sharpness:.24,asymmetry:.68,pulse:.42}
+    case 'drive': return {density:1.42,sharpness:.82,asymmetry:.34,pulse:.74}
+    case 'pulse': return {density:1.18,sharpness:.46,asymmetry:.2,pulse:.78}
+    case 'syncopated': return {density:1.3,sharpness:.5,asymmetry:.76,pulse:.9}
+    case 'swell': return {density:.82,sharpness:.18,asymmetry:.28,pulse:.34}
+    case 'groove': return {density:1.14,sharpness:.38,asymmetry:.58,pulse:.82}
+    case 'pluck': return {density:1.02,sharpness:.62,asymmetry:.44,pulse:.56}
+  }
 }
 
 function basePreset(state:MusicCortexState,seed:number) {
@@ -189,8 +340,9 @@ export function resolveMusicExpression(state:MusicCortexState,theme:MusicTheme):
   const palette=theme==='normal'?base.normal:base.dark
   const effectiveMood=mood?.id===base.id?null:mood
   const effectiveMoodColors=effectiveMood?(theme==='normal'?effectiveMood.normal:effectiveMood.dark):null
-  const moodBlend=effectiveMoodColors?clamp(.18+state.confidence*.16,.18,.34):0
-  const colors=palette.map((color,index)=>effectiveMoodColors?blendHex(color,effectiveMoodColors[index],moodBlend):color)
+  const moodBlend=effectiveMoodColors?clamp(.14+state.confidence*.12,.14,.28):0
+  const blended=palette.map((color,index)=>effectiveMoodColors?blendHex(color,effectiveMoodColors[index],moodBlend):color)
+  const colors=vividPalette(blended,theme,seed)
 
   // Seeded improvisation: preserve the palette identity, but occasionally exchange
   // neighbouring upper layers so repeat visits are not perfectly mechanical.
@@ -198,36 +350,52 @@ export function resolveMusicExpression(state:MusicCortexState,theme:MusicTheme):
   if ((seed&7)===3) [colors[1],colors[2]]=[colors[2],colors[1]]
 
   const valence=estimateMusicValence(state.mood)
-  const energy=clamp(state.energy*2.15,0,1)
-  const arousal=clamp(.18+energy*.62+(1-Math.abs(valence-.5)*2)*.08,0,1)
+  const semanticPrior=semanticEnergy(state)
+  const liveEnergy=clamp(state.energy*2.15,0,1)
+  const energy=state.signal==='dsp' || state.mode==='humming'
+    ? liveEnergy
+    : semanticPrior
+  const arousal=clamp(.1+energy*.78+(1-Math.abs(valence-.5)*2)*.06,0,1)
   const calm=contains(normalize(state.mood),['calm','chill','relax','dream','intimate'])
   const intense=contains(normalize(state.mood),['energetic','intense','upbeat','dark'])
   const humming=state.mode==='humming'
+  const archetype=state.mode==='humming'&&state.composition
+    ? state.composition.instrument==='nylon-pluck'?'pluck'
+      : state.composition.instrument==='glass-fm'?'drift'
+      : state.composition.swing>.24?'swing'
+      : 'swell'
+    : waveArchetype(state)
+  const grammar=archetypeMotion(archetype)
 
   const motion={
-    amplitude:clamp(.74+energy*.92+(humming?.16:0)+(intense?.18:0)-(calm?.13:0),.58,1.9),
-    speed:clamp(.64+energy*.78+(intense?.16:0)-(calm?.14:0),.48,1.65),
-    phaseSpread:clamp(.72+energy*.68+(seed%17)/50,.62,1.65),
-    layerSpread:clamp(.82+energy*.46+(humming?.12:0),.75,1.55),
-    stroke:clamp(1.02+state.confidence*.28+energy*.22,1,1.55),
+    amplitude:clamp(.72+energy*1.04+(humming?.14:0)+(intense?.16:0)-(calm?.1:0),.56,2.05),
+    speed:clamp(.58+energy*.94+(intense?.18:0)-(calm?.1:0),.42,1.9),
+    phaseSpread:clamp(.68+energy*.74+(seed%17)/45,.58,1.8),
+    layerSpread:clamp(.86+energy*.54+(humming?.12:0),.8,1.7),
+    stroke:clamp(1.08+state.confidence*.3+energy*.28,1.05,1.7),
     secondaryOpacity:theme==='normal'
-      ? clamp(.7+state.confidence*.08+energy*.08,.68,.88)
-      : clamp(.64+state.confidence*.1+energy*.1,.62,.88),
-    dominantOpacity:.98,
+      ? clamp(.8+state.confidence*.06+energy*.06,.78,.94)
+      : clamp(.74+state.confidence*.08+energy*.08,.72,.94),
+    dominantOpacity:1,
     glow:theme==='normal'
-      ? clamp(.06+energy*.08,.05,.16)
-      : clamp(.13+energy*.17,.12,.32),
+      ? clamp(.08+energy*.12,.08,.22)
+      : clamp(.18+energy*.2,.16,.4),
+    density:grammar.density,
+    sharpness:grammar.sharpness,
+    asymmetry:grammar.asymmetry,
+    pulse:grammar.pulse,
   }
 
   return {
-    id:base.id+(effectiveMood?'+':'')+(effectiveMood?.id??''),
+    id:base.id+(effectiveMood?'+':'')+(effectiveMood?.id??'')+'@'+archetype,
     label:effectiveMood?base.label+' / '+effectiveMood.label:base.label,
     moodLabel:state.mood,
     seed,
     valence,
     arousal,
+    archetype,
     colors:Object.fromEntries(LAYERS.map((layer,index)=>[layer,colors[index]])) as Record<MusicLayerName,string>,
-    baseColor:blendHex(colors[1],colors[2],.55),
+    baseColor:colors[1],
     glowColor:colors[state.dominantLayer==='bass'?0:state.dominantLayer==='lowMid'?1:state.dominantLayer==='mid'?2:state.dominantLayer==='vocal'?3:state.dominantLayer==='presence'?4:5],
     motion,
     instrumentHint:state.composition?.instrument ?? instrumentHint(state,seed),
@@ -246,5 +414,9 @@ export function blendMusicMotion(from:MusicExpression['motion'],to:MusicExpressi
     secondaryOpacity:lerp(from.secondaryOpacity,to.secondaryOpacity),
     dominantOpacity:lerp(from.dominantOpacity,to.dominantOpacity),
     glow:lerp(from.glow,to.glow),
+    density:lerp(from.density,to.density),
+    sharpness:lerp(from.sharpness,to.sharpness),
+    asymmetry:lerp(from.asymmetry,to.asymmetry),
+    pulse:lerp(from.pulse,to.pulse),
   }
 }

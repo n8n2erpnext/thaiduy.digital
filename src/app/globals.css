@@ -549,13 +549,6 @@ main {
     stroke-width 900ms ease,
     filter 1800ms ease;
 }
-.music-layer-bass { stroke: rgba(64,196,172,.42); }
-.music-layer-lowMid { stroke: rgba(79,209,173,.54); }
-.music-layer-mid { stroke: rgba(142,232,178,.72); }
-.music-layer-vocal { stroke: rgba(233,238,235,.62); }
-.music-layer-presence { stroke: rgba(151,180,255,.42); }
-.music-layer-air { stroke: rgba(191,151,255,.35); }
-
 .music-legend { display: flex; flex-wrap: wrap; gap: 9px 14px; padding-top: 14px; }
 .music-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; }
 .music-legend i {
@@ -614,7 +607,7 @@ main {
 .header-wave:hover, .header-wave:focus-visible { border-color: var(--line); background: rgba(255,255,255,.02); outline: none; }
 .header-wave svg { width: 104px; height: 22px; overflow: visible; }
 .header-wave-base, .header-wave-layer { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.header-wave-base { stroke: rgba(142,232,178,.18); stroke-width: .8; }
+.header-wave-base { stroke-width: .8; }
 .header-wave-layer {
   opacity: .68;
   stroke-width: 1;
@@ -625,12 +618,6 @@ main {
     filter 1800ms ease;
 }
 .header-wave-layer.is-dominant { opacity: .92; stroke-width: 1.45; filter: drop-shadow(0 0 3px rgba(220,255,235,.18)); }
-.header-wave-layer-bass { stroke: #4fd1b5; }
-.header-wave-layer-lowMid { stroke: #79c7b1; }
-.header-wave-layer-mid { stroke: #dfe8e2; }
-.header-wave-layer-vocal { stroke: #f0c98b; }
-.header-wave-layer-presence { stroke: #8fb8ff; }
-.header-wave-layer-air { stroke: #c9a6ff; }
 .header-wave-tooltip {
   position: absolute;
   z-index: 30;
@@ -3333,8 +3320,6 @@ html[data-theme='normal'] .music-composer-public h2 {
   color: #172019;
 }
 
-html[data-theme='normal'] .header-wave-layer-mid { stroke: #35433a; }
-html[data-theme='normal'] .header-wave-base { stroke: rgba(22,124,82,.18); }
 
 html[data-theme='normal'] .music-wave-shell::after {
   background: linear-gradient(90deg, var(--panel), transparent 13%, transparent 87%, var(--panel));
@@ -3385,10 +3370,6 @@ html[data-theme='normal'] .surface-card,
 html[data-theme='normal'] .music-organ {
   box-shadow: 0 14px 44px rgba(31,52,40,.035);
 }
-
-html[data-theme='normal'] .music-layer-vocal { stroke: rgba(47,59,51,.6); }
-html[data-theme='normal'] .music-layer-presence { stroke: rgba(67,111,181,.52); }
-html[data-theme='normal'] .music-layer-air { stroke: rgba(125,84,174,.46); }
 
 
 /* Theme control simplification after visual QA */
@@ -4550,14 +4531,7 @@ html[data-theme='normal'] .site-footer-base {
   color: var(--text-meta);
 }
 
-/* Header waveform: preserve signal color in Normal mode; never collapse to black. */
-html[data-theme='normal'] .header-wave-base { stroke: rgba(22,124,82,.2); }
-html[data-theme='normal'] .header-wave-layer-bass { stroke: #2d8f75; }
-html[data-theme='normal'] .header-wave-layer-lowMid { stroke: #579c88; }
-html[data-theme='normal'] .header-wave-layer-mid { stroke: #789487; }
-html[data-theme='normal'] .header-wave-layer-vocal { stroke: #b4873f; }
-html[data-theme='normal'] .header-wave-layer-presence { stroke: #6689bc; }
-html[data-theme='normal'] .header-wave-layer-air { stroke: #8875aa; }
+/* Music Sensor layer color is owned by the runtime expression resolver in both themes. */
 
 /* Wave tapers geometrically in JS and fades optically at both ends. */
 .header-wave svg {

@@ -3186,4 +3186,293 @@ NetBird was not changed, restarted or reconfigured.
 
 ---
 
+# Music Sensor full re-audit — palette, motion grammar, semantic truth, cache
+
+A second full pass was performed after browser QA showed two concrete visual problems:
+
+- Normal-mode waves still looked gray/muted.
+- Different genres changed labels/palettes but the waveform still followed essentially one sine-wave motion.
+
+The audit was expanded beyond the visual component and traced:
+
+- Last.fm semantic tags
+- artist-vs-track evidence weighting
+- Cortex mood/genre/style decisions
+- public state
+- expression resolver
+- header waveform
+- large Music Sensor waveform
+- humming composition/audio
+- runtime polling/cache behavior
+- legacy CSS theme overrides
+
+## Root causes found
+
+1. Motion geometry was effectively shared by all genres.
+
+Both header and large sensor used one sine-based formula. Genre only changed amplitude, speed and phase spread, so rock/jazz/pop still looked like the same wave family.
+
+2. Palette presets were low-chroma.
+
+Many preset hex values were intentionally subdued, but at small header-wave scale this collapsed visually toward gray, especially in Normal mode.
+
+3. Legacy CSS still carried hardcoded per-layer colors.
+
+Those rules were usually overridden by React inline styles, but they were a second source of truth and could reappear during theme/regression states.
+
+4. Semantic-only listening had no useful visual energy prior.
+
+Without local DSP, public energy remains factually zero. The old expression layer therefore rendered many unrelated tracks with near-identical low-motion behavior.
+
+5. Cortex incorrectly defaulted unknown semantic mood to calm.
+
+When there was no mood tag and no DSP, moodFrom() returned calm. This contradicted the existing epistemic rule that unknown evidence stays unknown and caused many songs to inherit chill/ambient modifiers.
+
+6. Artist-level Last.fm metadata leaked into track-level style/arrangement.
+
+Examples found with real tracks used in browser QA:
+- M2M could inherit singer-songwriter.
+- Shane Filan could inherit singer-songwriter/acoustic.
+- Emilia could inherit latin-pop because Last.fm artist metadata can collide across same-name artists.
+
+Artist metadata is now a broad prior rather than proof of the current track's performed style/arrangement.
+
+7. Tag/state cache identity was ASCII-destructive.
+
+The old cache-key cleaner removed non-[a-z0-9] characters. Vietnamese/Korean/Japanese titles could collapse toward the same key. Cache identity now hashes normalized full Unicode artist+title.
+
+8. Tooltip rendered palette metadata twice while listening.
+
+visualDetail was assigned again as subdetail.
+
+## Motion architecture now
+
+New shared module:
+
+- src/lib/music-wave-geometry.ts
+
+Both header wave and large Music Sensor now use the same geometry grammar.
+
+Eight real motion archetypes exist:
+
+- drift
+- swing
+- drive
+- pulse
+- syncopated
+- swell
+- groove
+- pluck
+
+Representative mapping includes:
+
+- jazz / swing / blues -> swing
+- hard rock / rock / metal / punk -> drive
+- pop / electronic / synth -> pulse
+- latin / reggae / funk -> syncopated
+- hip-hop / R&B / soul -> groove
+- classical / chamber / cinematic -> swell
+- acoustic / folk / country / singer-songwriter -> pluck
+- ambient / dream-pop / shoegaze / lo-fi -> drift
+
+The geometries differ in harmonic density, asymmetry, transient sharpness, pulse accents and envelope behavior rather than only speed/amplitude.
+
+## Palette architecture now
+
+src/lib/music-expression.ts now enforces runtime palette quality while preserving preset identity:
+
+- high chroma floor
+- layer hue separation when near-neutral colors would collapse together
+- theme-aware lightness
+- automatic contrast guard
+- mood blending remains secondary to genre/style palette identity
+- theme remains a contrast transform rather than a separate hardcoded palette source
+
+Measured automatic audit:
+
+- representative states: 12
+- archetypes covered: all 8
+- Normal min contrast: 3.58
+- Dark min contrast: 4.63
+- minimum saturation: 0.83
+- Normal secondary opacity: 0.86
+- Dark secondary opacity: 0.82
+- semantic arousal range: 0.28 -> 0.79
+- closest geometry pair: swing/groove, distance 0.191
+
+All per-layer hardcoded stroke colors were removed from globals.css.
+The expression resolver is now the single source of truth for Music Sensor wave color.
+
+## Semantic truth changes
+
+Cortex mood behavior:
+
+- semantic-only with no mood evidence -> unresolved
+- real quiet DSP can -> calm
+- real high-energy DSP can -> intense
+- explicit semantic mood tags remain valid evidence
+
+Artist-prior behavior:
+
+- artist-level genre can remain a broad prior
+- artist-level style does not become current-track style
+- artist-level arrangement does not become current-track arrangement
+- track-level style evidence still resolves normally and outranks artist priors
+
+Real QA using tracks visible in browser screenshots after the fix:
+
+- John Mayer — Slow Dancing in a Burning Room
+  - genre: rock
+  - style fallback: rock
+  - motion: drive
+
+- M2M — The Day You Went Away
+  - genre: pop
+  - style fallback: pop
+  - motion: pulse
+
+- Shane Filan — Beautiful In White
+  - genre: pop
+  - style fallback: pop
+  - motion: pulse
+
+- Frank Sinatra — Fly Me to the Moon
+  - genre: jazz
+  - style fallback: jazz
+  - motion: swing
+
+- Emilia — Big Big World
+  - genre: pop
+  - style fallback: pop
+  - motion: pulse
+
+- Westlife — My Love
+  - genre: pop
+  - style fallback: pop
+  - motion: pulse
+
+The important correction is that Emilia is no longer classified as latin-pop solely from artist metadata, and pop tracks no longer inherit singer-songwriter/acoustic as track facts from the artist profile.
+
+## Semantic-only expression energy
+
+Public state still keeps actual acoustic energy at zero when DSP is absent.
+
+The expression layer now derives a semantic visual-energy prior from genre/style/mood only for animation personality.
+
+This keeps factual sensor state separate from presentation:
+
+- DSP energy remains real acoustic evidence.
+- semantic prior affects only expression motion.
+- DSP immediately takes precedence when available.
+
+## Cache/runtime work
+
+Tag cache:
+
+- Unicode-safe SHA-256 identity of normalized full artist+title
+- key version bumped to music:tags:v3
+- 6 hour TTL
+
+Semantic state cache:
+
+- key version music:semantic-state:v3
+- 6 hour TTL
+- used only for no-DSP repeated polls of the same active track
+- avoids rerunning Last.fm tag fetch + Luna semantic cycle every 12 seconds
+
+Earlier observed repeated /api/music/state requests were often 300–1600 ms and occasionally ~2.1s.
+
+After semantic/tag caching, stable listening requests were observed around 11–13 ms.
+
+Idle/humming requests remain slower because they can legitimately touch Redis/sketchbook/composer state.
+
+## Humming/audio re-check
+
+Recent real sketches remained multi-note and multi-layer:
+
+- 11–17 melody notes in sampled latest sketches
+- electric piano and nylon pluck both observed
+- pad + bass layers observed
+- multi-chord progressions observed
+- storedMelody=false remains enforced
+
+No return to the old single-note path was found.
+
+## Tooltip correction
+
+Header tooltip now separates:
+
+- palette
+- motion archetype + energy + valence
+- humming composition metadata
+
+The previous duplicated palette/energy/valence line was removed.
+
+## Regression audit expansion
+
+scripts/audit-music-expression.ts now tests:
+
+- theme contrast
+- chroma floor
+- palette layer uniqueness
+- secondary layer visibility
+- all representative motion archetypes
+- semantic visual-energy spread
+- actual geometry separation
+- artist-prior source discipline
+- track-level style evidence still working
+
+## Mid-QA origin outage
+
+During final static gates, VPS-ARM's Desktop Commander bridge briefly went offline and the public site returned 502.
+
+Diagnosis after reconnect:
+
+- ARM host itself was healthy.
+- load was low.
+- RAM was healthy.
+- disk was ~71% used.
+- reverse proxy on 80/443 was still listening.
+- Next dev on :3000 was no longer running.
+- the previous dev log ended after normal requests with no clear crash trace.
+
+The site was recovered using the existing canonical dev path only:
+
+- cd /home/ubuntu/n8n2erpnext/thaiduy.digital
+- nohup bun dev >> /tmp/thaiduy-digital-dev.log 2>&1 &
+
+No new service, firewall rule, route or NetBird configuration was created.
+
+After recovery:
+
+- localhost / -> 200
+- localhost /api/music/state -> 200
+- public https://thaiduy.digital/ -> 200
+- public /api/music/state -> 200
+- fresh dev log showed no new runtime exception
+
+NetBird note:
+
+- NetBird was intentionally NOT changed.
+- HOMELAB NetBird remained disconnected from management/signal during the final check.
+- That state was observed only and left untouched per Owner instruction.
+
+## Final gates for the second Music Sensor pass
+
+PASS:
+
+- bun run music:expression-check
+- TypeScript noEmit
+- targeted ESLint
+- layout invariant audit
+- theme contrast audit
+- typography audit
+- git diff --check
+- public HTTP health after recovery
+- artist-prior semantic regression guard
+
+Browser automation was not available on the ARM host in this pass, so no false browser-level visual PASS is claimed. Final human visual QA should be done directly on thaiduy.digital after commit.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

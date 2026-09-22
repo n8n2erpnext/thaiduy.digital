@@ -89,12 +89,18 @@ function buildLayers(acoustic: AcousticEarState | undefined, style: string | nul
 }
 
 function moodFrom(semantic: SemanticEarState | undefined, acoustic: AcousticEarState | undefined, policy: Record<string, number>) {
-  const tagged = semantic ? topVote(semantic.moodVotes)?.[0] : null
-  const energy = acoustic?.energy ?? 0
-  if (energy >= (policy.intenseEnergyMin ?? 0.72)) return 'intense'
-  if (tagged && energy < (policy.intenseEnergyMin ?? 0.72)) return tagged
+  const tagged=semantic?topVote(semantic.moodVotes)?.[0]:null
+  const hasLiveAudio=acoustic?.hasLiveAudio ?? false
+  const energy=acoustic?.energy ?? 0
+
+  if (hasLiveAudio && energy >= (policy.intenseEnergyMin ?? 0.72)) return 'intense'
+  if (tagged) return tagged
+  if (!hasLiveAudio) return 'unresolved'
   if (energy >= (policy.aliveEnergyMin ?? 0.38)) return 'alive'
-  if ((acoustic?.vocalProbability ?? 0) >= (policy.intimateVocalMin ?? 0.68) && energy <= (policy.intimateEnergyMax ?? 0.38)) return 'intimate'
+  if (
+    (acoustic?.vocalProbability ?? 0) >= (policy.intimateVocalMin ?? 0.68)
+    && energy <= (policy.intimateEnergyMax ?? 0.38)
+  ) return 'intimate'
   return 'calm'
 }
 

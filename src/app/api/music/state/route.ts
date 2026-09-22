@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { runMusicSensorLearningCycle } from '@/brains/music-sensor/service'
 import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
@@ -243,17 +244,124 @@ function fallbackTags(title: string) {
   return tags
 }
 
-async function loadTags(artist: string, title: string) {
-  const trackUrl = lastfmUrl('track.getTopTags')
-  trackUrl.searchParams.set('artist', artist)
-  trackUrl.searchParams.set('track', title)
-  const artistUrl = lastfmUrl('artist.getTopTags')
-  artistUrl.searchParams.set('artist', artist)
-  const [track, artistTags] = await Promise.all([
-    getJson<LastfmTopTags>(trackUrl), getJson<LastfmTopTags>(artistUrl),
+function trackCacheIdentity(artist:string,title:string) {
+  return createHash('sha256')
+    .update(artist.trim().normalize('NFC').toLowerCase())
+    .update('\u0000')
+    .update(title.trim().normalize('NFC').toLowerCase())
+    .digest('hex')
+    .slice(0,32)
+}
+
+function tagCacheKey(artist:string,title:string) {
+  return 'music:tags:v3:'+trackCacheIdentity(artist,title)
+}
+
+function semanticStateCacheKey(artist:string,title:string) {
+  return 'music:semantic-state:v3:'+trackCacheIdentity(artist,title)
+}
+
+async function loadTags(artist:string,title:string) {
+  const redis=await ensureRedis()
+  const cacheKey=tagCacheKey(artist,title)
+  const cached=await redis.get(cacheKey)
+  if(cached){
+    try {
+      const parsed=JSON.parse(cached) as Array<{name:string;weight:number;source:MusicTagSource}>
+      if(Array.isArray(parsed)&&parsed.length) return parsed
+    } catch {}
+  }
+
+  const trackUrl=lastfmUrl('track.getTopTags')
+  trackUrl.searchParams.set('artist',artist)
+  trackUrl.searchParams.set('track',title)
+  const artistUrl=lastfmUrl('artist.getTopTags')
+  artistUrl.searchParams.set('artist',artist)
+  const [track,artistTags]=await Promise.all([
+    getJson<LastfmTopTags>(trackUrl),getJson<LastfmTopTags>(artistUrl),
   ])
-  const tags = [...tagsFrom(track, 'lastfm-track'), ...tagsFrom(artistTags, 'lastfm-artist')]
-  return tags.length ? tags : fallbackTags(title)
+  const remoteTags=[...tagsFrom(track,'lastfm-track'),...tagsFrom(artistTags,'lastfm-artist')]
+  const tags=remoteTags.length?remoteTags:fallbackTags(title)
+  if(tags.length) await redis.set(cacheKey,JSON.stringify(tags),'EX',6*60*60)
+  return tags
+}
+
+type SemanticStateSnapshot=Pick<
+  PublicMusicState,
+  'genre'|'style'|'arrangement'|'texture'|'mood'|'reinterpretation'|'dominantLayer'|'confidence'|'layers'
+>
+
+async function loadSemanticState(artist:string,title:string) {
+  const redis=await ensureRedis()
+  const raw=await redis.get(semanticStateCacheKey(artist,title))
+  if(!raw) return null
+  try {
+    return JSON.parse(raw) as SemanticStateSnapshot
+  } catch {
+    return null
+  }
+}
+
+async function cacheSemanticState(artist:string,title:string,state:SemanticStateSnapshot) {
+  const redis=await ensureRedis()
+  await redis.set(
+    semanticStateCacheKey(artist,title),
+    JSON.stringify(state),
+    'EX',
+    6*60*60,
+  )
+}
+
+function semanticListeningState(
+  track:{artist:string;title:string;url:string},
+  snapshot:SemanticStateSnapshot,
+  updatedAt:string,
+):PublicMusicState {
+  return {
+    mode:'listening',
+    connected:true,
+    signal:'semantic',
+    track,
+    genre:snapshot.genre,
+    style:snapshot.style,
+    arrangement:snapshot.arrangement,
+    texture:snapshot.texture,
+    mood:snapshot.mood,
+    reinterpretation:snapshot.reinterpretation,
+    dominantLayer:snapshot.dominantLayer,
+    energy:0,
+    confidence:snapshot.confidence,
+    layers:snapshot.layers,
+    composition:null,
+    updatedAt,
+  }
+}
+
+function semanticSnapshotFromDecision(
+  state:{
+    catalogGenre:string|null
+    performedStyle:string|null
+    catalogStyle:string|null
+    arrangement:string|null
+    texture:string
+    mood:string
+    reinterpretation:boolean
+    dominantLayer:PublicMusicState['dominantLayer']
+    layers:PublicMusicState['layers']
+  },
+  confidence:number,
+):SemanticStateSnapshot {
+  return {
+    genre:state.catalogGenre,
+    style:state.performedStyle ?? state.catalogStyle ?? state.catalogGenre,
+    arrangement:state.arrangement,
+    texture:state.texture,
+    mood:state.mood,
+    reinterpretation:state.reinterpretation,
+    dominantLayer:state.dominantLayer,
+    confidence,
+    layers:state.layers,
+  }
 }
 
 export async function GET() {
@@ -274,6 +382,16 @@ export async function GET() {
     await markRealPlayback()
     const artist = hubPlayback.artist.trim() || 'Unknown Artist'
     const title = hubPlayback.title.trim()
+    if(!live){
+      const cached=await loadSemanticState(artist,title)
+      if(cached){
+        return noStore(semanticListeningState(
+          {artist,title,url:''},
+          cached,
+          hubPlayback.at,
+        ))
+      }
+    }
     const tags = process.env.LASTFM_API_KEY
       ? await loadTags(artist, title)
       : fallbackTags(title)
@@ -298,6 +416,13 @@ export async function GET() {
 
     const state = cycle.decision.state
     const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
+    if(!live){
+      await cacheSemanticState(
+        artist,
+        title,
+        semanticSnapshotFromDecision(state,cycle.decision.confidence),
+      )
+    }
     await rememberAfterglow({
       at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
       dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,
@@ -344,6 +469,16 @@ export async function GET() {
   await markRealPlayback()
   const artist = current.artist?.['#text']?.trim() || 'Unknown Artist'
   const title = current.name.trim()
+  if(!live){
+    const cached=await loadSemanticState(artist,title)
+    if(cached){
+      return noStore(semanticListeningState(
+        {artist,title,url:current.url ?? ''},
+        cached,
+        new Date().toISOString(),
+      ))
+    }
+  }
   const tags = await loadTags(artist, title)
   const cycle = await runMusicSensorLearningCycle({
     artist, title, tags,
@@ -362,6 +497,13 @@ export async function GET() {
 
   const state = cycle.decision.state
   const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
+  if(!live){
+    await cacheSemanticState(
+      artist,
+      title,
+      semanticSnapshotFromDecision(state,cycle.decision.confidence),
+    )
+  }
   await rememberAfterglow({
     at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
     dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,

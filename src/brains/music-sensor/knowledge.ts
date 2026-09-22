@@ -221,14 +221,26 @@ export function classifyMusicTags(tags: NonNullable<MusicSensorInput['tags']>, n
       continue
     }
     if (node.kind === 'ignore' || node.kind === 'context') continue
-    const raw = tag.weight > 1 ? tag.weight / 100 : tag.weight
-    const sourceWeight = sourceWeights[tag.source ?? 'unknown'] ?? sourceWeights.unknown ?? 0.7
-    const vote = Math.max(0, Math.min(1, raw)) * sourceWeight
-    const bucket = node.kind === 'genre' ? genreVotes : node.kind === 'mood' ? moodVotes
-      : node.kind === 'texture' ? textureVotes : node.kind === 'arrangement' ? arrangementVotes : styleVotes
-    bucket[node.id] = Math.max(bucket[node.id] ?? 0, vote)
-    if (node.kind === 'style' && node.family !== 'song-form' && node.family !== 'arrangement') {
-      genreVotes[node.family] = Math.max(genreVotes[node.family] ?? 0, vote * 0.62)
+    const raw=tag.weight>1?tag.weight/100:tag.weight
+    const sourceWeight=sourceWeights[tag.source ?? 'unknown'] ?? sourceWeights.unknown ?? 0.7
+    const vote=Math.max(0,Math.min(1,raw))*sourceWeight
+    const artistPrior=tag.source==='lastfm-artist'
+
+    // Artist metadata is a broad prior, never track-level proof of a specific
+    // performance style or arrangement. This avoids same-name artist collisions
+    // and prevents an artist's general profile from overwriting the current track.
+    if (artistPrior && (node.kind==='style' || node.kind==='arrangement')) {
+      if (node.kind==='style' && node.family!=='song-form' && node.family!=='arrangement') {
+        genreVotes[node.family]=Math.max(genreVotes[node.family] ?? 0,vote*.34)
+      }
+      continue
+    }
+
+    const bucket=node.kind==='genre'?genreVotes:node.kind==='mood'?moodVotes
+      :node.kind==='texture'?textureVotes:node.kind==='arrangement'?arrangementVotes:styleVotes
+    bucket[node.id]=Math.max(bucket[node.id] ?? 0,vote)
+    if (node.kind==='style' && node.family!=='song-form' && node.family!=='arrangement') {
+      genreVotes[node.family]=Math.max(genreVotes[node.family] ?? 0,vote*.62)
     }
   }
   return { genreVotes, styleVotes, moodVotes, textureVotes, arrangementVotes, contextConcepts, unknownTags: unknown }

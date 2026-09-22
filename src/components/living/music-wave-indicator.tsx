@@ -12,6 +12,7 @@ import {
   type MusicTheme,
 } from '@/lib/music-expression'
 import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
+import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
 const layerOrder:MusicLayerName[]=['bass','lowMid','mid','vocal','presence','air']
 const phase:Record<MusicLayerName,number>={bass:.2,lowMid:1.1,mid:2.2,vocal:.7,presence:2.9,air:4.1}
@@ -36,6 +37,7 @@ function pathFor(
   active:boolean,
   composition:HummingComposition|null,
   motion:MusicExpression['motion'],
+  archetype:MusicExpression['archetype'],
   seed:number,
 ) {
   if (!active) return 'M 4 12 L 108 12'
@@ -58,10 +60,18 @@ function pathFor(
     const x=4+r*104
     const env=Math.pow(Math.sin(r*Math.PI),1.65)
     const contour=note?Math.sin(r*Math.PI*2+note.beat*.31)*note.velocity*.7:0
-    const harmonic=Math.sin(r*Math.PI*(frequency*.47+1)+phase[layer]*.61)*amp*.09*env
-    const y=12
-      +Math.sin(r*Math.PI*frequency+clock+phase[layer]*motion.phaseSpread+contour)*amp*env
-      +harmonic
+    const sample=musicWaveSample({
+      archetype,
+      r,
+      clock,
+      phase:phase[layer]*motion.phaseSpread+contour*.18,
+      frequency,
+      layerIndex:layerIndex[layer],
+      seed,
+      motion,
+    })
+    const phraseAccent=note?Math.sin(r*Math.PI*2+note.beat*.31)*note.velocity*.12*amp*env:0
+    const y=12+sample*amp*env+phraseAccent
     path+=' L '+x.toFixed(2)+' '+y.toFixed(2)
   }
   return path
@@ -134,6 +144,7 @@ export function MusicWaveIndicator({locale}:Props) {
   },[composition,modeLabel,state,styleLabel,t,vi])
 
   const visualDetail=(vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
+  const motionDetail=(vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
     +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
     +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
 
@@ -142,9 +153,7 @@ export function MusicWaveIndicator({locale}:Props) {
       +' · '+instrumentLabel(composition,expression).toUpperCase()
       +' · '+String(composition.ensemble?.layers??2)+' '+(vi?'LỚP':'LAYERS')
       +' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
-    : active
-      ? visualDetail
-      : null
+    : null
 
   return (
     <div className="header-wave-cluster">
@@ -154,7 +163,7 @@ export function MusicWaveIndicator({locale}:Props) {
           role="img"
           tabIndex={0}
           data-expression={expression.id}
-          aria-label={title+' · '+detail+' · '+visualDetail+(subdetail?' · '+subdetail:'')}
+          aria-label={title+' · '+detail+' · '+visualDetail+' · '+motionDetail+(subdetail?' · '+subdetail:'')}
         >
           <svg viewBox="0 0 112 24" aria-hidden="true">
             <path
@@ -178,6 +187,7 @@ export function MusicWaveIndicator({locale}:Props) {
                     active,
                     composition,
                     displayMotion,
+                    expression.archetype,
                     expression.seed,
                   )}
                   className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')}
@@ -198,6 +208,7 @@ export function MusicWaveIndicator({locale}:Props) {
           <strong>{title}</strong>
           <span>{detail}</span>
           <span>{visualDetail}</span>
+          <span>{motionDetail}</span>
           {subdetail&&<span>{subdetail}</span>}
         </div>
       </div>

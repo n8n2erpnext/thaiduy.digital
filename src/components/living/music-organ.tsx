@@ -6,6 +6,7 @@ import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 import { resolveMusicExpression,type MusicTheme } from '@/lib/music-expression'
+import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
 const layers=['bass','lowMid','mid','vocal','presence','air'] as const
 type Props={locale:Locale}
@@ -88,13 +89,20 @@ export function MusicOrgan({locale}:Props) {
                 : .4
               let path='M 0 '+y
               for(let i=0;i<=62;i+=1){
+                const r=i/62
                 const x=i*10
-                const envelope=Math.sin((i/62)*Math.PI)
-                const harmonic=Math.sin(i*.17+item.phase*.6+time*.0007)*amp*.08*envelope
-                const yy=y
-                  +Math.sin(i*.34*expression.motion.phaseSpread+item.phase+time*.0015*expression.motion.speed)
-                    *amp*envelope
-                  +harmonic
+                const envelope=Math.pow(Math.sin(r*Math.PI),1.18)
+                const sample=musicWaveSample({
+                  archetype:expression.archetype,
+                  r,
+                  clock:time*.00145*expression.motion.speed,
+                  phase:item.phase*expression.motion.phaseSpread,
+                  frequency:(1.3+row*.42)*expression.motion.phaseSpread,
+                  layerIndex:row,
+                  seed:expression.seed,
+                  motion:expression.motion,
+                })
+                const yy=y+sample*amp*envelope
                 path+=' L '+x+' '+yy.toFixed(2)
               }
               const dominant=state.dominantLayer===item.layer
@@ -147,7 +155,7 @@ export function MusicOrgan({locale}:Props) {
           <span>{t.explorer.semantic}</span><i>→</i><span>{t.explorer.acoustic}</span><i>→</i><span>{t.explorer.cortex}</span><i>→</i><span>{t.explorer.afterglow}</span>
         </div>
         <div className="music-expression-mini">
-          <span>{expression.label}</span>
+          <span>{expression.label} · {musicWaveArchetypeLabel(expression.archetype)}</span>
           <span>{Math.round(expression.valence*100)} V · {Math.round(expression.arousal*100)} E</span>
         </div>
         <Link className="music-inspect-link" href="/music-sensor">{t.explorer.open}<span aria-hidden="true">↗</span></Link>

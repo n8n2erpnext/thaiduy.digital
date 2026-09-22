@@ -3972,4 +3972,56 @@ Validation:
 
 ---
 
+# Homepage public-copy source fix + live signal ticker + manifesto side rails
+
+Managed hero source correction:
+
+- The lingering Vietnamese word `điềm tĩnh` was not coming from the fallback i18n file.
+- Root cause: public homepage resolves `home.hero` from managed `site_registry` first, and that DB row still held the old copy.
+- Authoritative managed `home.hero` was updated transactionally:
+  - EN now says: `presented as one living digital organism`
+  - VI now says: `cùng hiện diện trong một hệ sinh thái số đang vận hành`
+- A `revisions` row and `audit_logs` record were written for the managed-content update.
+- i18n fallback remains aligned with the managed copy.
+- Public-facing `SYSTEM · CALM / ACTIVE / DEGRADED` fallback metadata was also renamed to `SYSTEM · IDLE / ACTIVE / DEGRADED`.
+- Internal music/system mood values such as `calm` were intentionally not touched.
+
+Public GitHub signal ticker:
+
+- Added a slim horizontally moving signal lane directly below the GitHub `PUBLIC DATA · NO SIMULATION` footer.
+- It sits between two existing/added hairlines and uses real current data only:
+  - public repository count
+  - indexed commits / 53 weeks
+  - online nodes
+  - live links
+  - active repositories / 30 days
+  - latest pushed repository
+- Two identical signal sets provide a seamless loop.
+- Motion is slow (36s linear), subtle, clipped with edge fading.
+- `prefers-reduced-motion: reduce` disables the ticker animation.
+- No fake/simulated counters were introduced.
+
+Closing manifesto balance:
+
+- Desktop manifesto now uses three columns:
+  - left metadata rail: PUBLIC LAB / REAL STATE / PUBLIC DATA / NO SIMULATION
+  - center: existing BUILD / OBSERVE / WRITE typographic poster
+  - right metadata rail: BUILD / OBSERVE / WRITE / KEEP THE NOTES
+- Side rails are terminal/meta typography only; no new cards or heavy surfaces.
+- Right rail is visually anchored near the lower poster edge with a single thin divider.
+- On <=980px layouts the right rail is removed and the left metadata rail collapses to a compact horizontal row, preserving mobile readability.
+
+Validation:
+
+- managed `home.hero` DB readback confirms new EN/VI copy
+- public old-copy assertion PASS
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local / 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

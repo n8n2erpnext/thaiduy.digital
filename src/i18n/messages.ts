@@ -34,7 +34,7 @@ export const messages = {
         { kicker: 'STACK', title: 'Infrastructure as a place', copy: 'Topology, nodes and services become an explorable surface while private network details stay private.' },
       ],
       manifesto: 'When the ecosystem is quiet, the site is quiet. When something real happens, the surface responds.',
-      manifestoMeta: ['MB · THINKING', 'SENTINEL · WATCHING', 'MUSIC · LISTENING / HUMMING / RESTING', 'SYSTEM · CALM / ACTIVE / DEGRADED'],
+      manifestoMeta: ['MB · THINKING', 'SENTINEL · WATCHING', 'MUSIC · LISTENING / HUMMING / RESTING', 'SYSTEM · IDLE / ACTIVE / DEGRADED'],
     },
     entity: {
       aria: 'Living organism state console', top: 'ENTITY / ORGANISM LENS', notConnected: 'not connected',

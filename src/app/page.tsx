@@ -334,10 +334,35 @@ export default async function Home() {
               </a>
             </div>
             <GitHubPublicPulseView locale={locale} pulse={githubPulse}/>
+
+            <div className="home-public-signal-ticker" aria-label={locale==='vi'?'Tín hiệu công khai đang chạy':'Live public signals'}>
+              <div className="home-public-signal-track">
+                {[0,1].map(copy=>(
+                  <div className="home-public-signal-set" aria-hidden={copy===1} key={copy}>
+                    <span>{githubPulse.repoCount} {locale==='vi'?'REPO CÔNG KHAI':'PUBLIC REPOS'}</span>
+                    <i/>
+                    <span>{githubPulse.activity.total} {locale==='vi'?'COMMIT / 53 TUẦN':'COMMITS / 53W'}</span>
+                    <i/>
+                    <span>{online}/{organism.nodes.length} {locale==='vi'?'NODE ONLINE':'NODES ONLINE'}</span>
+                    <i/>
+                    <span>{organism.links.length} {locale==='vi'?'LIÊN KẾT LIVE':'LIVE LINKS'}</span>
+                    <i/>
+                    <span>{githubPulse.active30d} {locale==='vi'?'REPO HOẠT ĐỘNG / 30 NGÀY':'ACTIVE REPOS / 30D'}</span>
+                    <i/>
+                    <span>{locale==='vi'?'PUSH GẦN NHẤT':'LATEST PUSH'} · {currentRepo?.name ?? '—'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
 
           <section className="home-public-close">
-            <span>{locale==='vi'?'MỘT PHÒNG LAB CÔNG KHAI':'A PUBLIC LAB'}</span>
+            <aside className="home-public-close-rail home-public-close-rail-left" aria-label={locale==='vi'?'Nguyên tắc phòng lab':'Lab principles'}>
+              <strong>{locale==='vi'?'MỘT PHÒNG LAB CÔNG KHAI':'A PUBLIC LAB'}</strong>
+              <span>{locale==='vi'?'TRẠNG THÁI THẬT':'REAL STATE'}</span>
+              <span>{locale==='vi'?'DỮ LIỆU CÔNG KHAI':'PUBLIC DATA'}</span>
+              <span>{locale==='vi'?'KHÔNG GIẢ LẬP':'NO SIMULATION'}</span>
+            </aside>
             <div className="home-public-close-poster">
               <div className="home-public-close-words" aria-label={locale==='vi'?'Xây. Quan sát. Ghi lại.':'Build. Observe. Write.'}>
                 <strong>{locale==='vi'?'XÂY.':'BUILD.'}</strong>
@@ -348,6 +373,12 @@ export default async function Home() {
                 ? 'Hệ thống thật luôn để lại dấu vết. Tôi ghi lại những gì chúng cho thấy.'
                 : 'Real systems leave evidence. I keep the notes.'}</p>
             </div>
+            <aside className="home-public-close-rail home-public-close-rail-right" aria-label={locale==='vi'?'Nhịp làm việc':'Working rhythm'}>
+              <span>BUILD</span>
+              <span>OBSERVE</span>
+              <span>WRITE</span>
+              <strong>{locale==='vi'?'GIỮ LẠI GHI CHÉP':'KEEP THE NOTES'}</strong>
+            </aside>
           </section>
         </main>
       </div>

@@ -148,21 +148,52 @@ function schedulePiano(
   length:number,
   velocity:number,
 ) {
-  const gain=context.createGain()
-  const end=start+Math.max(.12,length)
-  envelope(gain,start,.105+velocity*.11,.008,start+length*.34,end)
-  gain.connect(destination)
+  const filter=context.createBiquadFilter()
+  filter.type='lowpass'
+  filter.frequency.setValueAtTime(Math.min(7200,Math.max(3200,frequency*9)),start)
+  filter.Q.value=.35
 
-  oscillator(context,gain,'triangle',frequency,start,end)
-  const partial=context.createGain()
-  partial.gain.value=.22
-  partial.connect(gain)
-  oscillator(context,partial,'sine',frequency*2,start,end,-3)
+  const output=context.createGain()
+  output.gain.value=.12+velocity*.12
+  filter.connect(output).connect(destination)
 
-  const high=context.createGain()
-  high.gain.value=.07
-  high.connect(gain)
-  oscillator(context,high,'sine',frequency*3,start,Math.min(end,start+.42),4)
+  const duration=Math.max(.42,Math.min(2.3,length*1.45))
+  const partials=[
+    {ratio:1,amp:1,decay:1},
+    {ratio:2.01,amp:.38,decay:.74},
+    {ratio:3.02,amp:.16,decay:.48},
+    {ratio:4.04,amp:.065,decay:.32},
+  ]
+  partials.forEach(partial=>{
+    const gain=context.createGain()
+    const osc=context.createOscillator()
+    const partialEnd=start+Math.max(.18,duration*partial.decay)
+    gain.gain.setValueAtTime(.0001,start)
+    gain.gain.exponentialRampToValueAtTime(partial.amp,start+.003)
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0001,partial.amp*.32),start+Math.min(.16,duration*.18))
+    gain.gain.exponentialRampToValueAtTime(.0001,partialEnd)
+    osc.type='sine'
+    osc.frequency.setValueAtTime(frequency*partial.ratio,start)
+    osc.connect(gain).connect(filter)
+    osc.start(start)
+    osc.stop(partialEnd+.03)
+  })
+
+  const hammerFrames=Math.max(1,Math.floor(context.sampleRate*.012))
+  const hammerBuffer=context.createBuffer(1,hammerFrames,context.sampleRate)
+  const hammerData=hammerBuffer.getChannelData(0)
+  for(let i=0;i<hammerFrames;i+=1) hammerData[i]=(Math.random()*2-1)*.42
+  const hammer=context.createBufferSource()
+  const hammerFilter=context.createBiquadFilter()
+  const hammerGain=context.createGain()
+  hammer.buffer=hammerBuffer
+  hammerFilter.type='bandpass'
+  hammerFilter.frequency.value=Math.min(4300,Math.max(1700,frequency*4))
+  hammerFilter.Q.value=.9
+  hammerGain.gain.setValueAtTime(.026+velocity*.018,start)
+  hammerGain.gain.exponentialRampToValueAtTime(.0001,start+.018)
+  hammer.connect(hammerFilter).connect(hammerGain).connect(filter)
+  hammer.start(start)
 }
 
 function scheduleElectricPiano(
@@ -173,10 +204,15 @@ function scheduleElectricPiano(
   length:number,
   velocity:number,
 ) {
+  const filter=context.createBiquadFilter()
+  filter.type='lowpass'
+  filter.frequency.value=Math.min(6200,Math.max(2800,frequency*8))
+  filter.Q.value=.3
+
   const gain=context.createGain()
-  const end=start+Math.max(.16,length)
-  envelope(gain,start,.09+velocity*.12,.014,start+length*.5,end)
-  gain.connect(destination)
+  const end=start+Math.max(.32,Math.min(2.1,length*1.2))
+  envelope(gain,start,.1+velocity*.11,.006,start+Math.min(.24,length*.34),end)
+  filter.connect(gain).connect(destination)
 
   const carrier=context.createOscillator()
   const mod=context.createOscillator()
@@ -184,20 +220,21 @@ function scheduleElectricPiano(
   carrier.type='sine'
   carrier.frequency.setValueAtTime(frequency,start)
   mod.type='sine'
-  mod.frequency.setValueAtTime(frequency*2,start)
-  modGain.gain.setValueAtTime(frequency*.24,start)
-  modGain.gain.exponentialRampToValueAtTime(Math.max(2,frequency*.035),Math.min(end,start+.9))
+  mod.frequency.setValueAtTime(frequency,start)
+  modGain.gain.setValueAtTime(frequency*.075,start)
+  modGain.gain.exponentialRampToValueAtTime(Math.max(1.2,frequency*.012),Math.min(end,start+.34))
   mod.connect(modGain).connect(carrier.frequency)
-  carrier.connect(gain)
+  carrier.connect(filter)
   carrier.start(start)
   mod.start(start)
   carrier.stop(end+.04)
   mod.stop(end+.04)
 
   const tine=context.createGain()
-  tine.gain.value=.14
-  tine.connect(gain)
-  oscillator(context,tine,'sine',frequency*4,start,Math.min(end,start+.48),-5)
+  tine.gain.setValueAtTime(.11,start)
+  tine.gain.exponentialRampToValueAtTime(.0001,Math.min(end,start+.48))
+  tine.connect(filter)
+  oscillator(context,tine,'sine',frequency*2,start,Math.min(end,start+.5))
 }
 
 function scheduleNylonPluck(
@@ -208,30 +245,55 @@ function scheduleNylonPluck(
   length:number,
   velocity:number,
 ) {
-  const filter=context.createBiquadFilter()
-  filter.type='lowpass'
-  filter.frequency.setValueAtTime(Math.min(5200,frequency*8),start)
-  filter.frequency.exponentialRampToValueAtTime(Math.max(700,frequency*2.2),start+Math.min(.6,length))
-  filter.Q.value=.65
+  const duration=Math.max(.48,Math.min(2.15,length*1.35))
+  const sampleRate=context.sampleRate
+  const frames=Math.max(1,Math.floor(sampleRate*duration))
+  const period=Math.max(2,Math.round(sampleRate/frequency))
+  const ring=new Float32Array(period)
+  for(let i=0;i<period;i+=1){
+    const pickShape=Math.sin(Math.PI*(i+.5)/period)
+    ring[i]=(Math.random()*2-1)*(.58+.42*pickShape)
+  }
+
+  const buffer=context.createBuffer(1,frames,sampleRate)
+  const data=buffer.getChannelData(0)
+  const damping=Math.min(.9982,Math.max(.9928,.9968-frequency/180000))
+  for(let i=0;i<frames;i+=1){
+    const index=i%period
+    const next=(index+1)%period
+    const current=ring[index]
+    ring[index]=((current+ring[next])*.5)*damping
+    data[i]=current*.34
+  }
+
+  const source=context.createBufferSource()
+  source.buffer=buffer
+
+  const body=context.createBiquadFilter()
+  body.type='lowpass'
+  body.frequency.setValueAtTime(Math.min(5600,Math.max(2300,frequency*7.5)),start)
+  body.Q.value=.42
+
+  const warmth=context.createBiquadFilter()
+  warmth.type='peaking'
+  warmth.frequency.value=220
+  warmth.Q.value=.7
+  warmth.gain.value=2.2
 
   const gain=context.createGain()
-  const end=start+Math.max(.1,Math.min(length,1.8))
-  envelope(gain,start,.13+velocity*.13,.004,start+Math.min(.22,length*.28),end)
-  filter.connect(gain).connect(destination)
-  oscillator(context,filter,'triangle',frequency,start,end,-4)
-  oscillator(context,filter,'sine',frequency*2,start,Math.min(end,start+.44),5)
+  gain.gain.setValueAtTime(.0001,start)
+  gain.gain.exponentialRampToValueAtTime(.18+velocity*.12,start+.002)
+  gain.gain.setValueAtTime(.16+velocity*.1,start+.025)
+  gain.gain.exponentialRampToValueAtTime(.0001,start+duration)
 
-  const frames=Math.max(1,Math.floor(context.sampleRate*.035))
-  const buffer=context.createBuffer(1,frames,context.sampleRate)
-  const data=buffer.getChannelData(0)
-  for(let i=0;i<frames;i+=1) data[i]=(Math.random()*2-1)*.12
-  const noise=context.createBufferSource()
-  const noiseGain=context.createGain()
-  noiseGain.gain.setValueAtTime(.018+velocity*.018,start)
-  noiseGain.gain.exponentialRampToValueAtTime(.0001,start+.035)
-  noise.buffer=buffer
-  noise.connect(noiseGain).connect(filter)
-  noise.start(start)
+  source.connect(body).connect(warmth).connect(gain).connect(destination)
+  source.start(start)
+
+  const fundamental=context.createGain()
+  fundamental.gain.setValueAtTime(.032+velocity*.016,start)
+  fundamental.gain.exponentialRampToValueAtTime(.0001,start+Math.min(.7,duration))
+  fundamental.connect(destination)
+  oscillator(context,fundamental,'sine',frequency,start,start+Math.min(.72,duration))
 }
 
 function scheduleGlassFm(
@@ -282,11 +344,11 @@ function scheduleSoftSynth(
   const end=start+Math.max(.16,length)
   envelope(gain,start,.07+velocity*.1,.045,start+length*.62,end)
   filter.connect(gain).connect(destination)
-  oscillator(context,filter,'triangle',frequency,start,end,-5)
+  oscillator(context,filter,'triangle',frequency,start,end)
   const body=context.createGain()
-  body.gain.value=.22
+  body.gain.value=.17
   body.connect(filter)
-  oscillator(context,body,'sawtooth',frequency,start,end,6)
+  oscillator(context,body,'sawtooth',frequency*2,start,end)
 }
 
 function scheduleMelodyNote(
@@ -351,7 +413,7 @@ function schedulePadChord(
     const voice=context.createGain()
     voice.gain.value=index===0?1:.82
     voice.connect(bus)
-    oscillator(context,voice,airy?'sine':'triangle',midiFrequency(midi),start,end,index===1?-5:index===2?4:0)
+    oscillator(context,voice,airy?'sine':'triangle',midiFrequency(midi),start,end,index===1?-.8:index===2?.8:0)
   })
 }
 
@@ -375,7 +437,7 @@ function scheduleBassNote(
     const body=context.createGain()
     body.gain.value=.15
     body.connect(filter)
-    oscillator(context,body,'triangle',midiFrequency(midi)*2,start,end,-4)
+    oscillator(context,body,'triangle',midiFrequency(midi)*2,start,end)
   }
 }
 

@@ -110,6 +110,23 @@ function weightedPreference(options:string[], counts:Record<string,number>, rand
   return options[0]
 }
 
+function weightedInstrumentDiversity(options:HummingInstrument[], counts:Record<string,number>, random:()=>number) {
+  const maxCount=Math.max(0,...options.map(item=>counts[item] ?? 0))
+  const weights=options.map(item=>{
+    const count=counts[item] ?? 0
+    const novelty=1/(1+count)
+    const underused=maxCount>0 ? (maxCount-count)/(maxCount+1) : 1
+    return 1 + novelty*1.35 + underused*1.7
+  })
+  const total=weights.reduce((a,b)=>a+b,0)
+  let target=random()*total
+  for(let i=0;i<options.length;i+=1){
+    target-=weights[i]
+    if(target<=0) return options[i]
+  }
+  return options[0]
+}
+
 async function loadPersonality():Promise<HummingPersonality> {
   const row=await recallBrainMemory<HummingPersonality>(BRAIN_KEY,'cortex',MEMORY_KEY)
   const value=row?.value
@@ -222,11 +239,11 @@ export async function composeHumming(input:{ seed:number; startedAt:number; dura
   const afterEnergy=clamp((input.afterglow?.energy ?? .16)*afterDecay + .12*(1-afterDecay),0,1)
   let bpm=Math.round(minTempo + random()*(maxTempo-minTempo) + afterEnergy*8)
   if (night) bpm=Math.max(52,bpm-7)
-  const instrument=weightedPreference(
+  const instrument=weightedInstrumentDiversity(
     instrumentPool(input.mood,input.afterglow),
     personality.instruments,
     random,
-  ) as HummingInstrument
+  )
   const ensemble=ensembleFor(instrument,input.mood,afterEnergy,night)
   const voicePool:HummingComposition['voice'][] =
     instrument==='nylon-pluck' ? ['breath','soft-synth']

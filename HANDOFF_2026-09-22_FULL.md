@@ -3685,4 +3685,85 @@ Validation:
 
 ---
 
+# Humming audio timbre + instrument diversity pass
+
+Owner auditory QA reported:
+
+- playback volume is now acceptable
+- generated melody still sounded like a cheap toy piano
+- pitch/timbre felt soft or sagging, "like low battery"
+- guitar was not perceptually recognizable despite guitar-labelled sketches
+
+Root causes found:
+
+1. Nylon guitar renderer was not physically guitar-like.
+   - It used triangle + sine oscillators with a short noise burst.
+   - Recent sketches did contain many `nylon-pluck` selections, so the problem was timbre, not only selection.
+
+2. Piano renderer was a simple triangle oscillator plus fixed harmonics.
+   - This was the main source of the toy-keyboard character.
+
+3. Electric piano FM index/ratio was too bell-like.
+   - It could read as toy mallet rather than Rhodes-like electric piano.
+
+4. Multiple melody/pad/bass paths used small +/- cent detunes.
+   - In combination, this could create slow beating that felt like pitch sag / low battery.
+
+5. Instrument selection reinforced already-common instruments.
+   - `weightedPreference()` uses `1 + log1p(count)`, appropriate for learned mode/voice habit but wrong for instrument diversity.
+   - Recent instrument-bearing sketches were heavily concentrated in electric piano and nylon pluck, with piano absent.
+
+Changes:
+
+- Added a dedicated `weightedInstrumentDiversity()` selector.
+  - mode/voice preference logic remains unchanged
+  - instrument selection now rewards underused instruments instead of self-reinforcing the most common one
+
+- Piano renderer rebuilt:
+  - additive sine partial model
+  - independently decaying harmonics
+  - short band-passed hammer transient
+  - no melody detune
+
+- Electric piano rebuilt:
+  - lighter FM index
+  - fundamental-frequency modulation instead of strong 2x bell modulation
+  - short 2x tine partial
+  - no melodic pitch detune
+
+- Nylon guitar rebuilt with a Karplus-Strong style plucked-string buffer:
+  - noise-excited delay-line simulation performed into an AudioBuffer
+  - frequency-dependent decay/damping
+  - low-pass body shaping
+  - body warmth resonance
+  - short fundamental reinforcement
+  - no fake triangle "guitar" oscillator
+
+- Soft synth:
+  - removed +/- cent detune
+  - second oscillator is now a true harmonic octave rather than a detuned unison
+
+- Pad:
+  - detune reduced from roughly -5/+4 cents to -0.8/+0.8 cents
+
+- Bass harmonic:
+  - detune removed
+
+Validation:
+
+- TypeScript PASS
+- targeted ESLint PASS
+- Music expression audit PASS
+- git diff --check PASS
+- local /writing 200
+- public /writing 200
+- melody oscillator audit shows no remaining multi-cent detune; only pad keeps +/-0.8 cent width
+
+Important QA limitation:
+
+- final timbre quality is intentionally NOT claimed as an audible PASS here because the execution environment does not provide human audio monitoring
+- Owner browser listening remains the acceptance gate for piano/guitar/electric-piano quality
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

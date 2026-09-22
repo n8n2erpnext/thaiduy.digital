@@ -2563,4 +2563,41 @@ Final verification:
 
 ---
 
+# 63. DISCUSS EDITOR STABILITY FIXES — 2026-09-22
+
+Public Discuss rich-editor behavior was hardened after real browser testing exposed toolbar/link state bugs.
+
+Root causes found:
+
+- Discuss public editor was reusing CmsSelectionBubble from the control/Writing editor, creating two formatting surfaces over the same selection.
+- toolbar active state could appear stale because the component was not forced to rerender on every editor transaction.
+- empty editor content was initialized with an empty string rather than an explicit paragraph.
+- TipTap Link 3.31.3 reports its mark as inclusive while autolink is enabled; this caused typing at the end of a link to remain inside the link mark.
+- link action previously allowed setting a link at an empty caret, which made following text easy to capture unintentionally.
+
+Fixes:
+
+- removed CmsSelectionBubble from the public Discuss editor
+- public editor keeps one toolbar only
+- initial document is explicitly <p></p>
+- shouldRerenderOnTransaction=true keeps toolbar state synchronized with the actual selection/block
+- added explicit P / Paragraph toolbar control; Paragraph is the normal default state
+- toolbar buttons preserve the editor selection with pointer-down preventDefault
+- Discuss Link uses an inclusive=false Link extension
+- Discuss autolink is disabled
+- Link button is disabled unless text is selected or the caret is already inside an existing link
+- adding/editing a link collapses the selection to the end afterwards
+- stored marks are cleared after link insertion/removal so following typed text is plain text
+- Cancel/invalid URL restores a normal collapsed caret
+- H2/H3 remain available as explicit block choices and no longer serve as implicit initial state
+
+Verification:
+
+- TypeScript PASS
+- ESLint 0 errors; only the existing external-avatar <img> warning remains
+- git diff --check PASS
+- production build PASS 52/52
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

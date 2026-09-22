@@ -8,7 +8,6 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { EditorContent,useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { common,createLowlight } from 'lowlight'
-import { CmsSelectionBubble } from '@/components/control/cms-editor-menus'
 import type { CommunityParticipant } from '@/community/data'
 
 const lowlight=createLowlight(common)
@@ -78,9 +77,11 @@ function extensions(placeholder:string){
   return [
     StarterKit.configure({link:false,codeBlock:false}),
     CodeBlockLowlight.configure({lowlight,defaultLanguage:null}),
-    TiptapLink.configure({
+    TiptapLink.extend({
+      inclusive:false,
+    }).configure({
       openOnClick:false,
-      autolink:true,
+      autolink:false,
       HTMLAttributes:{target:'_blank',rel:'noopener noreferrer'},
     }),
     Placeholder.configure({placeholder}),
@@ -103,6 +104,7 @@ function ToolbarButton({
       className={active?'is-active':''}
       title={title ?? label}
       disabled={disabled}
+      onPointerDown={event=>event.preventDefault()}
       onClick={onClick}
     >
       {label}
@@ -119,8 +121,9 @@ export function DiscussRichEditor({
 
   const editor=useEditor({
     extensions:extensions(placeholder),
-    content:'',
+    content:'<p></p>',
     immediatelyRender:false,
+    shouldRerenderOnTransaction:true,
     editorProps:{
       attributes:{class:'tiptap discuss-tiptap'},
       handleKeyDown(_view,event){
@@ -155,13 +158,41 @@ export function DiscussRichEditor({
   if (!editor) return null
 
   const link=()=>{
+    const active=editor.isActive('link')
+    const originalSelection=editor.state.selection
+
+    if (originalSelection.empty && !active) return
+
+    if (originalSelection.empty && active) {
+      editor.chain().focus().extendMarkRange('link').run()
+    }
+
+    const selectionEnd=editor.state.selection.to
     const previous=editor.getAttributes('link').href as string | undefined
     const value=window.prompt(vi?'Địa chỉ liên kết':'Link URL',previous ?? 'https://')
-    if (value===null) return
+    if (value===null) {
+      editor.commands.setTextSelection(selectionEnd)
+      return
+    }
+
     const href=value.trim()
-    if (!href) return void editor.chain().focus().unsetLink().run()
-    if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) return
-    editor.chain().focus().extendMarkRange('link').setLink({href}).run()
+    if (!href) {
+      editor.chain().focus().unsetLink().setTextSelection(selectionEnd).run()
+      editor.view.dispatch(editor.state.tr.setStoredMarks([]))
+      return
+    }
+    if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+      editor.commands.setTextSelection(selectionEnd)
+      return
+    }
+
+    editor.chain()
+      .focus()
+      .setLink({href})
+      .setTextSelection(selectionEnd)
+      .run()
+
+    editor.view.dispatch(editor.state.tr.setStoredMarks([]))
   }
 
   const insertEmoji=(emoji:string)=>{
@@ -186,6 +217,12 @@ export function DiscussRichEditor({
   return (
     <div className="discuss-editor" data-over-limit={overLimit || undefined}>
       <div className="discuss-editor-toolbar">
+        <ToolbarButton
+          label="P"
+          title={vi?'Đoạn văn thường':'Paragraph'}
+          active={editor.isActive('paragraph')}
+          onClick={()=>editor.chain().focus().setParagraph().run()}
+        />
         <ToolbarButton label="H2" active={editor.isActive('heading',{level:2})} onClick={()=>editor.chain().focus().toggleHeading({level:2}).run()} />
         <ToolbarButton label="H3" active={editor.isActive('heading',{level:3})} onClick={()=>editor.chain().focus().toggleHeading({level:3}).run()} />
         <ToolbarButton label="B" title="Bold" active={editor.isActive('bold')} onClick={()=>editor.chain().focus().toggleBold().run()} />
@@ -194,7 +231,13 @@ export function DiscussRichEditor({
         <ToolbarButton label="❝" title={vi?'Trích dẫn':'Quote'} active={editor.isActive('blockquote')} onClick={()=>editor.chain().focus().toggleBlockquote().run()} />
         <ToolbarButton label="•" title={vi?'Danh sách':'Bullet list'} active={editor.isActive('bulletList')} onClick={()=>editor.chain().focus().toggleBulletList().run()} />
         <ToolbarButton label="1." title={vi?'Danh sách số':'Numbered list'} active={editor.isActive('orderedList')} onClick={()=>editor.chain().focus().toggleOrderedList().run()} />
-        <ToolbarButton label="↗" title={vi?'Liên kết':'Link'} active={editor.isActive('link')} onClick={link} />
+        <ToolbarButton
+          label="↗"
+          title={vi?'Liên kết':'Link'}
+          active={editor.isActive('link')}
+          disabled={editor.state.selection.empty && !editor.isActive('link')}
+          onClick={link}
+        />
         <ToolbarButton label="</>" title="Code" active={editor.isActive('codeBlock')} onClick={()=>editor.chain().focus().toggleCodeBlock().run()} />
         <ToolbarButton label="—" title={vi?'Đường phân cách':'Divider'} onClick={()=>editor.chain().focus().setHorizontalRule().run()} />
         <span className="discuss-editor-toolbar-gap" />
@@ -261,7 +304,6 @@ export function DiscussRichEditor({
         </div>
       )}
 
-      <CmsSelectionBubble editor={editor} />
       <EditorContent editor={editor} className="discuss-rich-editor" />
 
       <footer>

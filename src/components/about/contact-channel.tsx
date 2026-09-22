@@ -36,6 +36,7 @@ export function ContactChannel({locale,initialChallenge}:{locale:Locale;initialC
   const [form,setForm]=useState<FormState>(initialForm)
   const [challenge,setChallenge]=useState<Challenge|null>(initialChallenge)
   const [mathAnswer,setMathAnswer]=useState('')
+  const [refreshSpin,setRefreshSpin]=useState(0)
   const [state,setState]=useState<'idle'|'sending'|'sent'|'error'|'limited'|'math'>('idle')
 
   const copy=vi?{
@@ -96,6 +97,11 @@ export function ContactChannel({locale,initialChallenge}:{locale:Locale;initialC
 
   async function loadChallenge() {
     setChallenge(await requestChallenge())
+  }
+
+  function refreshChallenge() {
+    setRefreshSpin(value=>value+1)
+    void loadChallenge()
   }
 
   function update(field:keyof FormState,value:string) {
@@ -221,7 +227,9 @@ export function ContactChannel({locale,initialChallenge}:{locale:Locale;initialC
                 required
                 disabled={!challenge}
               />
-              <button type="button" className="about-contact-math-refresh" onClick={()=>void loadChallenge()} aria-label={vi?'Đổi phép tính':'New challenge'}>↻</button>
+              <button type="button" className="about-contact-math-refresh" onClick={refreshChallenge} aria-label={vi?'Đổi phép tính':'New challenge'}>
+                <span key={refreshSpin} className={refreshSpin>0?'is-spinning':undefined} aria-hidden="true">↻</span>
+              </button>
             </div>
           </div>
           <label className="about-contact-honeypot" aria-hidden="true">

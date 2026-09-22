@@ -3788,4 +3788,26 @@ Validation:
 
 ---
 
+# About quick-check refresh spin
+
+Targeted /about captcha interaction polish:
+
+- Clicking the quick-check refresh button now spins only the refresh glyph one full 360° turn.
+- Animation runs once per click and stops.
+- Duration: 340ms ease-in-out.
+- The math challenge refresh logic itself is unchanged.
+- Repeated clicks retrigger the one-turn animation because the glyph is remounted with a new key.
+- `prefers-reduced-motion: reduce` disables the spin.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /about 200
+- public /about 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

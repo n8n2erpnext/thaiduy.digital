@@ -7625,6 +7625,20 @@ html[data-theme='normal'] .cv-education{
   border-color:color-mix(in srgb,var(--signal) 45%,var(--line));
   color:var(--signal);
 }
+.about-contact-math-refresh span{
+  display:inline-block;
+  transform-origin:50% 50%;
+}
+.about-contact-math-refresh span.is-spinning{
+  animation:about-contact-refresh-spin .34s ease-in-out 1;
+}
+@keyframes about-contact-refresh-spin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  .about-contact-math-refresh span.is-spinning{animation:none}
+}
 .about-contact-submit p[data-state='math']{color:var(--amber)}
 @media screen and (max-width:600px){
   .about-contact-math{

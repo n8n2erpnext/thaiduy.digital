@@ -2487,6 +2487,7 @@ main {
 }
 .writing-highlight-section>header::after{
   content:'';
+  grid-column:2;
   height:1px;
   margin-bottom:2px;
   background:var(--line);
@@ -2494,8 +2495,8 @@ main {
 .writing-highlight-section>header span,.writing-highlight-section>header small{
   font:7px/1 var(--font-terminal),monospace;letter-spacing:.08em;
 }
-.writing-highlight-section>header span{color:var(--signal)}
-.writing-highlight-section>header small{color:#536058}
+.writing-highlight-section>header span{grid-column:1;color:var(--signal)}
+.writing-highlight-section>header small{grid-column:3;color:#536058;text-align:right}
 .writing-highlight-grid{
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
 }

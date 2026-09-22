@@ -5604,6 +5604,7 @@ html[data-theme='normal'] .home-public-page{
   padding:96px 0;
   border-bottom:1px solid var(--demo-line);
 }
+.home-public-code{border-bottom:0}
 .home-public-section-head{
   display:grid;
   grid-template-columns:minmax(0,560px) auto;
@@ -5976,7 +5977,7 @@ html[data-theme='normal'] .home-public-page{
   gap:44px;
   justify-content:space-between;
   align-items:start;
-  padding:110px 0 140px;
+  padding:72px 0 88px;
 }
 .home-public-close-rail{
   display:grid;
@@ -6141,7 +6142,7 @@ html[data-theme='normal'] .home-public-page{
   .home-github-heatmap-months,.home-github-heatmap-weeks{grid-template-columns:repeat(53,12px);gap:3px;min-width:0}
   .home-github-heatmap-week{grid-template-rows:repeat(7,12px);gap:3px}
   .home-github-heatmap-day{width:12px;height:12px}
-  .home-public-close{padding:76px 0 100px}
+  .home-public-close{padding:54px 0 72px}
   .home-public-close-poster{gap:26px}
   .home-public-close-words strong{
     font-size:clamp(44px,13vw,68px);

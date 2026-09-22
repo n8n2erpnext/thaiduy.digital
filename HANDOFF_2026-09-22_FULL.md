@@ -4024,4 +4024,25 @@ Validation:
 
 ---
 
+# Homepage manifesto vertical tightening
+
+Targeted layout polish only:
+
+- Kept the current BUILD / OBSERVE / WRITE typography, side rails, ticker content, colors and motion unchanged.
+- Removed the extra divider line below the live signal ticker by disabling only the bottom border on `.home-public-code`.
+- Tightened desktop closing-manifesto vertical padding from `110px 0 140px` to `72px 0 88px`.
+- Tightened <=680px padding from `76px 0 100px` to `54px 0 72px`.
+- No other homepage section dividers were changed.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local / 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

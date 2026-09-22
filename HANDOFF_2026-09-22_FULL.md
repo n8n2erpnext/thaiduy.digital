@@ -3636,4 +3636,28 @@ Validation:
 
 ---
 
+# Home Field Notes hover polish
+
+Targeted homepage interaction polish:
+
+- FIELD NOTES cards now get a very subtle hover treatment only.
+- Hover adds:
+  - faint blue-tinted surface wash
+  - soft inset border
+  - extremely light glow
+- No translate, scale, reflow, typography change or spacing change.
+- Existing numbering, dates, titles, excerpts and tags remain unchanged.
+- Light/dark behavior remains theme-safe through existing demo variables.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local / 200
+- public / 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

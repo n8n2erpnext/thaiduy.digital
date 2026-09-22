@@ -5696,6 +5696,13 @@ html[data-theme='normal'] .home-public-page{
   justify-content:space-between;
   padding:28px 30px 26px 0;
   border-right:1px solid var(--demo-line);
+  transition:background-color .18s ease,box-shadow .18s ease;
+}
+.home-public-note:hover{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--demo-blue) 3.5%,transparent),transparent 72%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--demo-blue) 10%,transparent),
+    0 0 18px color-mix(in srgb,var(--demo-blue) 2.5%,transparent);
 }
 .home-public-note+ .home-public-note{
   padding-left:30px;

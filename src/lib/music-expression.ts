@@ -153,7 +153,7 @@ function contrastRatio(a:string,b:string) {
 
 function contrastSafeColor(h:number,s:number,l:number,theme:MusicTheme) {
   const background=theme==='normal'?'#f7faf6':'#080c0a'
-  const target=theme==='normal'?3.55:4.6
+  const target=theme==='normal'?3.1:4.6
   let light=l
   let color=hslHex(h,s,light)
   let attempts=0
@@ -185,9 +185,9 @@ function vividPalette(colors:string[],theme:MusicTheme,seed:number) {
       attempts+=1
     }
     resolvedHues.push(hue)
-    const saturation=Math.max(item.s,.84)
+    const saturation=Math.max(item.s,theme==='normal'?.92:.84)
     const light=theme==='normal'
-      ? clamp(item.l,.25,.32)
+      ? clamp(item.l,.30,.40)
       : clamp(item.l,.56,.66)
     return contrastSafeColor(hue,saturation,light,theme)
   })

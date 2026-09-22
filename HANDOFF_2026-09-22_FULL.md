@@ -3475,4 +3475,37 @@ Browser automation was not available on the ARM host in this pass, so no false b
 
 ---
 
+# Day-mode Music Sensor palette polish
+
+Owner visual QA accepted the new Music Sensor motion/semantics/audio behavior and requested one final visual-only adjustment: make the Normal/day waveform palette fresher and more colorful.
+
+Only the Normal/day transform in src/lib/music-expression.ts changed:
+
+- Normal saturation floor raised from 0.84 to 0.92
+- Normal lightness window raised from 0.25–0.32 to 0.30–0.40
+- Normal decorative wave contrast target relaxed from 3.55:1 to 3.1:1
+- automatic contrast guard remains active
+- Dark mode remains unchanged
+- motion archetypes, semantic logic, humming/audio, tooltip and cache behavior remain unchanged
+
+Audit threshold for the decorative Normal wave was aligned to 3.0:1.
+
+Post-change audit:
+
+- 8/8 motion archetypes PASS
+- Normal minimum contrast: 3.10
+- Dark minimum contrast: 4.63
+- minimum saturation across tested themes: 0.84
+- Normal secondary opacity: 0.86
+- Dark secondary opacity: 0.82
+- semantic arousal range: 0.28 -> 0.79
+- closest geometry pair remains swing/groove at 0.191
+- artist-prior semantic guard PASS
+- TypeScript PASS
+- local/public HTTP 200
+
+No Dark-mode visual parameters were changed.
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

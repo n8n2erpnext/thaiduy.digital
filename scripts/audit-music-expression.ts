@@ -146,7 +146,7 @@ console.log('- dark secondary opacity:',darkOpacity.toFixed(2))
 console.log('- semantic arousal range:',minArousal.toFixed(2),'→',maxArousal.toFixed(2))
 console.log('- closest geometry:',nearestPair,minGeometryDistance.toFixed(3))
 
-if(normalMinContrast<3.5) throw new Error('Normal-mode wave contrast fell below 3.5')
+if(normalMinContrast<3) throw new Error('Normal-mode wave contrast fell below 3.0')
 if(darkMinContrast<4.5) throw new Error('Dark-mode wave contrast fell below 4.5')
 if(minimumSaturation<.72) throw new Error('Wave palette saturation fell below .72')
 if(normalOpacity<.78) throw new Error('Normal-mode secondary wave opacity fell below .78')

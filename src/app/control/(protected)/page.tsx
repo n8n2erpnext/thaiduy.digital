@@ -171,6 +171,85 @@ export default async function ControlOverviewPage() {
                 </text>
               ))}
             </g>
+
+            <g className="control-line-hover-days">
+              {series.map((row,index)=>{
+                if(row.future) return null
+                const px=x(index)
+                const tooltipWidth=176
+                const tooltipHeight=78
+                const hitLeft=Math.max(CHART.left,index===0?CHART.left:px-step/2)
+                const hitRight=Math.min(
+                  CHART.width-CHART.right,
+                  index===series.length-1?CHART.width-CHART.right:px+step/2,
+                )
+                const topPoint=Math.min(y(row.views),y(row.events))
+                const tooltipX=Math.max(
+                  CHART.left+4,
+                  Math.min(px-tooltipWidth/2,CHART.width-CHART.right-tooltipWidth-4),
+                )
+                const tooltipY=Math.max(CHART.top+4,topPoint-tooltipHeight-14)
+
+                return (
+                  <g className="control-line-hover-day" key={row.label}>
+                    <rect
+                      className="control-line-hover-hit"
+                      x={hitLeft}
+                      y={CHART.top}
+                      width={Math.max(1,hitRight-hitLeft)}
+                      height={plotHeight}
+                    />
+                    <line
+                      className="control-line-hover-guide"
+                      x1={px}
+                      y1={CHART.top}
+                      x2={px}
+                      y2={baseline}
+                    />
+                    <circle
+                      className="control-line-hover-ring"
+                      data-series="views"
+                      cx={px}
+                      cy={y(row.views)}
+                      r="6.5"
+                    />
+                    <circle
+                      className="control-line-hover-ring"
+                      data-series="events"
+                      cx={px}
+                      cy={y(row.events)}
+                      r="6.5"
+                    />
+                    <g
+                      className="control-line-tooltip"
+                      transform={`translate(${tooltipX} ${tooltipY})`}
+                      pointerEvents="none"
+                    >
+                      <rect width={tooltipWidth} height={tooltipHeight} rx="8"/>
+                      <text className="control-line-tooltip-date" x="12" y="17">
+                        {row.weekday.toUpperCase()} · {row.label}
+                      </text>
+
+                      <rect className="control-line-tooltip-dot" data-series="views" x="12" y="28" width="6" height="6" rx="2"/>
+                      <text className="control-line-tooltip-label" x="25" y="34">PAGEVIEWS</text>
+                      <text className="control-line-tooltip-value" x={tooltipWidth-12} y="34" textAnchor="end">
+                        {row.views.toLocaleString('en-US')}
+                      </text>
+
+                      <rect className="control-line-tooltip-dot" data-series="events" x="12" y="44" width="6" height="6" rx="2"/>
+                      <text className="control-line-tooltip-label" x="25" y="50">EVENTS</text>
+                      <text className="control-line-tooltip-value" x={tooltipWidth-12} y="50" textAnchor="end">
+                        {row.events.toLocaleString('en-US')}
+                      </text>
+
+                      <text className="control-line-tooltip-visitors" x="12" y="67">
+                        {row.visitors.toLocaleString('en-US')} VISITORS
+                      </text>
+                    </g>
+                  </g>
+                )
+              })}
+            </g>
           </svg>
         </div>
 

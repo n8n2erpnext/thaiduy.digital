@@ -3896,4 +3896,36 @@ Validation:
 
 ---
 
+# Control weekly chart hover tooltip
+
+Follow-up interaction polish for the SVG weekly traffic chart:
+
+- Each non-future day now has a wide invisible hover target across its X-axis slot.
+- Hover shows:
+  - dashed vertical guide line
+  - emphasized Pageviews point
+  - emphasized Events point
+  - compact in-chart tooltip card
+- Tooltip card contains:
+  - weekday + date
+  - Pageviews
+  - Events
+  - Visitors
+- Tooltip is positioned near the day's highest plotted point and clamped inside chart bounds.
+- Future days do not expose hover data or fake values.
+- Existing Mon→Sun weekly query and line/area rendering remain unchanged.
+- No chart library and no client-side state were added; interaction is SVG + CSS only.
+- Mobile horizontal chart scrolling remains intact.
+
+Validation:
+
+- TypeScript PASS
+- layout invariant audit PASS
+- theme contrast audit PASS
+- git diff --check PASS
+- local /control/login 200
+- public /control/login 200
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

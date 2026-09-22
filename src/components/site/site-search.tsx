@@ -69,7 +69,7 @@ export function SiteSearch({ locale }:Props) {
               name="q"
               type="search"
               autoComplete="off"
-              placeholder={locale === 'vi' ? 'Tìm bài viết, project…' : 'Search writing, projects…'}
+              placeholder={locale === 'vi' ? 'Tìm bài viết, dự án…' : 'Search writing, projects…'}
             />
             <kbd>ESC</kbd>
           </form>

@@ -73,7 +73,7 @@ export async function ProjectGrid({ locale }: Props) {
             </div>
 
             <span className="project-enter">
-              {locale === 'vi' ? 'XEM PROJECT →' : 'VIEW PROJECT →'}
+              {locale === 'vi' ? 'XEM DỰ ÁN →' : 'VIEW PROJECT →'}
             </span>
           </Link>
         )

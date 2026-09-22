@@ -9,7 +9,7 @@ type Props = {
 }
 
 export function LegalPage({ locale, document }: Props) {
-  const back=locale==='vi' ? 'Trở về trang chủ' : 'Back to home'
+  const back=locale==='vi' ? 'Về trang chủ' : 'Back to home'
   return (
     <div className="site-shell">
       <SiteHeader locale={locale}/>

@@ -184,6 +184,35 @@ export const auditLogs = pgTable('audit_logs', {
   index('audit_logs_entity_idx').on(table.entityType, table.entityId),
 ])
 
+export const cvSnapshots = pgTable('cv_snapshots', {
+  id: varchar('id', { length: 40 }).primaryKey(),
+  locale: varchar('locale', { length: 2 }).notNull(),
+  contentVersion: varchar('content_version', { length: 32 }).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }).notNull(),
+  content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+  issuedAt: timestamp('issued_at', { withTimezone: true }).defaultNow().notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revocationReason: text('revocation_reason'),
+}, table => [
+  index('cv_snapshots_issued_idx').on(table.issuedAt),
+  index('cv_snapshots_hash_idx').on(table.contentHash),
+])
+
+export const contactMessages = pgTable('contact_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 160 }).notNull(),
+  email: varchar('email', { length: 320 }).notNull(),
+  phone: varchar('phone', { length: 80 }),
+  message: text('message').notNull(),
+  locale: varchar('locale', { length: 2 }).default('en').notNull(),
+  status: varchar('status', { length: 24 }).default('new').notNull(),
+  sourcePath: varchar('source_path', { length: 160 }).default('/about').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, table => [
+  index('contact_messages_created_idx').on(table.createdAt),
+  index('contact_messages_status_idx').on(table.status, table.createdAt),
+])
+
 export const brainProfiles = pgTable('brain_profiles', {
   id: uuid('id').defaultRandom().primaryKey(),
   brainKey: varchar('brain_key', { length: 128 }).notNull(),

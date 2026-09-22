@@ -55,7 +55,8 @@ export function MusicWaveIndicator({ locale }:Props) {
     return ()=>cancelAnimationFrame(frame)
   },[active])
 
-  const styleLabel=state.style ?? state.genre ?? 'unresolved'
+  const vi=locale==='vi'
+  const styleLabel=state.style ?? state.genre ?? (vi?'chưa xác định':'unresolved')
   const modeLabel=t[state.mode]
   const composition=state.mode==='humming' ? state.composition : null
   const title=state.track
@@ -64,16 +65,16 @@ export function MusicWaveIndicator({ locale }:Props) {
 
   const detail=useMemo(()=>{
     if (!state.connected) return t.resting+' · '+t.notConnected
-    if (state.mode==='resting') return modeLabel+' · LAST.FM READY'
+    if (state.mode==='resting') return modeLabel+' · '+(vi?'LAST.FM SẴN SÀNG':'LAST.FM READY')
     if (composition) {
-      return 'HUMMING · '+composition.key+' '+composition.mode.toUpperCase()+' · '+composition.bpm+' BPM · '+state.mood.toUpperCase()
+      return (vi?'ĐANG NGÂN NGA':'HUMMING')+' · '+composition.key+' '+composition.mode.toUpperCase()+' · '+composition.bpm+' BPM · '+(vi && state.mood==='unresolved'?'CHƯA XÁC ĐỊNH':state.mood.toUpperCase())
     }
     const bits=[styleLabel,state.arrangement,state.texture].filter(Boolean)
-    return modeLabel+' · '+bits.join(' · ')+' · '+(state.signal==='dsp'?'LIVE DSP':'SEMANTIC · LAST.FM')
-  },[composition,modeLabel,state,styleLabel,t])
+    return modeLabel+' · '+bits.join(' · ')+' · '+(state.signal==='dsp'?'LIVE DSP':(vi?'NGỮ NGHĨA · LAST.FM':'SEMANTIC · LAST.FM'))
+  },[composition,modeLabel,state,styleLabel,t,vi])
 
   const subdetail=composition
-    ? composition.meter+' · '+composition.bars+' BARS · '+composition.voice.toUpperCase()+' · GENERATED · NO STORED MELODY'
+    ? composition.meter+' · '+composition.bars+' '+(vi?'Ô NHỊP':'BARS')+' · '+composition.voice.toUpperCase()+' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
     : null
   return (
     <div className="header-wave-cluster">

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { LivingCanvas } from '@/components/living/living-canvas'
+import { GitHubPublicPulseView } from '@/components/home/github-public-pulse'
 import { MusicOrgan } from '@/components/living/music-organ'
 import { RackServerVisual } from '@/components/home/rack-server-visual/rack-server-visual'
 import { TopAtmosphere } from '@/components/home/top-atmosphere'
@@ -11,16 +11,48 @@ import { getRegistry } from '@/content/repository'
 import { textFor } from '@/content/types'
 import { resolveLocale } from '@/i18n/locale'
 import { messages } from '@/i18n/messages'
+import { getGitHubPublicPulse } from '@/server/github/public-pulse'
+import { getPublicApiWall } from '@/server/public/api-wall'
+import { getLatestLunaTelegramMessages } from '@/server/sentinel/telegram-wall'
 import { getPublicOrganismState } from '@/server/stack/organism'
 
 function initials(value:string) {
   return value.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()
 }
 
+function compactDateTime(value:string,locale:'en'|'vi') {
+  return new Intl.DateTimeFormat(locale==='vi'?'vi-VN':'en-GB',{
+    day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',
+    hour12:false,timeZone:'Asia/Ho_Chi_Minh',
+  }).format(new Date(value))
+}
+
+function lunaAlertTitle(kind:string,locale:'en'|'vi') {
+  if (locale!=='vi') return kind==='SUBNET_SCAN' ? 'Subnet scan correlation' : 'Behavioral anomaly'
+  return kind==='SUBNET_SCAN' ? 'Dấu hiệu quét subnet' : 'Hành vi bất thường'
+}
+
+function lunaPattern(pattern:string,locale:'en'|'vi') {
+  const plain=pattern.replace(/_/g,' ')
+  if (locale!=='vi') return plain
+  if (pattern==='targeted_probe') return 'thăm dò có mục tiêu'
+  if (pattern==='distributed_subnet_probe') return 'thăm dò subnet phân tán'
+  if (pattern==='broad_probe') return 'thăm dò diện rộng'
+  return plain
+}
+
+function lunaScanFocus(value:string,locale:'en'|'vi') {
+  if (locale!=='vi') return value
+  return value
+    .replace('distributed subnet probe','thăm dò subnet phân tán')
+    .replace(/(\d+) sources?/g,'$1 nguồn')
+    .replace(/(\d+) probe hits?/g,'$1 lượt probe')
+}
+
 export default async function Home() {
   const locale=await resolveLocale()
   const t=messages[locale].home
-  const [hero,projects,posts,organism]=await Promise.all([
+  const [hero,projects,posts,organism,githubPulse,apiWall,lunaTelegramMessages]=await Promise.all([
     resolveManagedSection('home.hero',locale,{
       eyebrow:t.eyebrow,
       title:t.title,
@@ -29,40 +61,54 @@ export default async function Home() {
     getRegistry('project'),
     getPublishedPosts(),
     getPublicOrganismState(locale),
+    getGitHubPublicPulse(),
+    getPublicApiWall(),
+    getLatestLunaTelegramMessages(),
   ])
 
   const selectedProjects=projects.slice(0,3)
   const selectedPosts=posts.slice(0,3)
-  const online=organism.nodes.filter(node=>node.state==='online').length
+  const onlineNodes=organism.nodes.filter(node=>node.state==='online')
+  const online=onlineNodes.length
   const degraded=organism.nodes.filter(node=>node.state==='degraded').length
+  const liveSystemNames=onlineNodes.filter(node=>node.id!=='entity-core').map(node=>node.label)
+  const liveSystemLine=liveSystemNames.slice(0,3).join(' · ')+(liveSystemNames.length>3?` · +${liveSystemNames.length-3}`:'')
+  const currentRepo=githubPulse.repos[0] ?? null
+  const currentCommit=currentRepo?.latestCommit ?? null
   const nowCopy=locale==='vi'
     ? {
-        index:'PHÒNG LAB CÔNG KHAI',
+        index:'PHÒNG LAB HỆ THỐNG',
         mode:'BUILD · OBSERVE · WRITE · EXPERIMENT',
         now:'HIỆN TẠI',
-        live:'HỆ THỐNG LIVE',
-        work:'ĐANG XÂY',
-        notes:'GHI CHÚ',
-        selected:'SELECTED WORK',
-        selectedCopy:'Một vài hệ thống đang được xây, vận hành và quan sát công khai.',
-        allProjects:'TẤT CẢ DỰ ÁN',
-        fieldNotes:'FIELD NOTES',
-        fieldNotesCopy:'Những gì học được trong lúc xây hệ thống.',
-        allWriting:'TẤT CẢ BÀI VIẾT',
-        instrument:'LIVE INSTRUMENT',
-        instrumentCopy:'Một cảm biến đang nghe, diễn giải và tự ngân nga khi rảnh.',
-        field:'LIVING FIELD',
-        fieldCopy:'Không phải animation trang trí — đây là trạng thái công khai của các hệ đang sống.',
-        openStack:'MỞ STACK',
-        openMusic:'MỞ MUSIC SENSOR',
+        live:'HỆ THỐNG ĐANG CHẠY',
+        work:'ĐANG LÀM GÌ',
+        notes:'BÀI MỚI',
+        trace:'DÒNG TÍN HIỆU',
+        siteLog:'THAIDUY.DIGITAL / API WALL',
+        lunaLog:'LUNA / TELEGRAM',
+        selected:'DỰ ÁN TIÊU BIỂU',
+        selectedCopy:'Một vài hệ thống tôi đang xây, vận hành và quan sát công khai.',
+        allProjects:'XEM TẤT CẢ DỰ ÁN',
+        fieldNotes:'GHI CHÉP KỸ THUẬT',
+        fieldNotesCopy:'Những điều rút ra trong quá trình xây và vận hành hệ thống.',
+        allWriting:'XEM TẤT CẢ BÀI VIẾT',
+        instrument:'CẢM BIẾN ÂM THANH',
+        instrumentCopy:'Một cảm biến đang lắng nghe, diễn giải và đôi khi tự ngân nga.',
+        code:'MÃ NGUỒN CÔNG KHAI',
+        codeCopy:'Nhịp phát triển công khai của n8n2erpnext — repo, commit và tín hiệu thực từ GitHub.',
+        openGithub:'XEM GITHUB',
+        openMusic:'XEM MUSIC SENSOR',
       }
     : {
         index:'PUBLIC SYSTEMS LAB',
         mode:'BUILD · OBSERVE · WRITE · EXPERIMENT',
         now:'NOW',
         live:'LIVE SYSTEMS',
-        work:'CURRENT WORK',
+        work:'CURRENT PUBLIC WORK',
         notes:'FIELD NOTES',
+        trace:'LIVE TRACE',
+        siteLog:'THAIDUY.DIGITAL / API WALL',
+        lunaLog:'LUNA / TELEGRAM',
         selected:'SELECTED WORK',
         selectedCopy:'A few systems being built, operated and observed in public.',
         allProjects:'ALL PROJECTS',
@@ -71,9 +117,9 @@ export default async function Home() {
         allWriting:'ALL WRITING',
         instrument:'LIVE INSTRUMENT',
         instrumentCopy:'A sensor listening, interpreting and occasionally humming to itself.',
-        field:'LIVING FIELD',
-        fieldCopy:'Not decorative motion — this is a public projection of systems that are actually alive.',
-        openStack:'OPEN STACK',
+        code:'PUBLIC CODE',
+        codeCopy:'A live public engineering pulse from n8n2erpnext — repositories, commits and real GitHub signals.',
+        openGithub:'OPEN GITHUB',
         openMusic:'OPEN MUSIC SENSOR',
       }
 
@@ -95,16 +141,61 @@ export default async function Home() {
               <p className="home-public-hero-lede">{hero.copy}</p>
               <div className="home-public-hero-links">
                 <Link href="/projects">{locale==='vi'?'XEM DỰ ÁN':'VIEW PROJECTS'} ↗</Link>
-                <Link href="/writing">{locale==='vi'?'ĐỌC GHI CHÚ':'READ NOTES'} ↗</Link>
+                <Link href="/writing">{locale==='vi'?'ĐỌC BÀI VIẾT':'READ NOTES'} ↗</Link>
               </div>
               <div className="home-public-hero-runtime" aria-label={locale==='vi'?'Trạng thái runtime':'Runtime state'}>
                 <span><i /> {online}/{organism.nodes.length} ONLINE</span>
                 <span>{organism.links.length} LINKS</span>
-                <span>{locale==='vi'?'TÍN HIỆU THẬT':'LIVE SIGNAL'}</span>
+                <span>{locale==='vi'?'TÍN HIỆU THỰC':'LIVE SIGNAL'}</span>
               </div>
             </div>
             <div className="home-public-hero-visual">
               <RackServerVisual />
+            </div>
+          </section>
+
+          <section className="home-public-trace" aria-label={nowCopy.trace}>
+            <header><span>{nowCopy.trace}</span><i /></header>
+            <div className="home-public-trace-grid">
+              <div className="home-public-trace-item home-public-api-wall">
+                <span>{nowCopy.siteLog}</span>
+                {apiWall.length ? (
+                  <div className="home-public-api-list">
+                    {apiWall.map((event,index)=>(
+                      <div className="home-public-api-row" key={event.at+'-'+index}>
+                        <code>{event.method}</code>
+                        <strong>{event.path}</strong>
+                        <small>{event.status} · {event.durationMs} ms · {compactDateTime(event.at,locale)}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <strong>{locale==='vi'?'Chưa có tín hiệu API an toàn để công khai':'No public-safe API signal'}</strong>
+                )}
+                <small>{locale==='vi'?'WALL-SAFE · ĐÃ ẨN IP / HEADER / BODY':'WALL-SAFE · IP / HEADERS / BODY REDACTED'}</small>
+              </div>
+              <div className="home-public-trace-item home-public-trace-luna">
+                <span>{nowCopy.lunaLog}</span>
+                {lunaTelegramMessages.length ? (
+                  <div className="home-public-luna-list">
+                    {lunaTelegramMessages.map((message,index)=>(
+                      <div className="home-public-luna-row" key={message.deliveredAt+'-'+index}>
+                        <div className="home-public-luna-row-head">
+                          <strong>{lunaAlertTitle(message.kind,locale)}</strong>
+                          <small>{message.severity.toUpperCase()} · {compactDateTime(message.deliveredAt,locale)}</small>
+                        </div>
+                        <p>
+                          {lunaPattern(message.pattern,locale)} · {message.observations} {locale==='vi'?'quan sát':'observations'} · {locale==='vi'?'độ tin cậy':'confidence'} {message.confidence.toFixed(2)}
+                        </p>
+                        <code>{locale==='vi'?'MỤC TIÊU QUÉT':'SCAN FOCUS'} · {lunaScanFocus(message.scanFocus,locale)}</code>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <strong>{locale==='vi'?'Chưa có cảnh báo Telegram':'No Telegram alert signal'}</strong>
+                )}
+                <small>{locale==='vi'?'TELEGRAM OUTBOX · BỎ QUA BÁO CÁO HẰNG NGÀY · ĐÃ ẨN IP NGUỒN':'TELEGRAM OUTBOX · DAILY REPORTS EXCLUDED · SOURCE IP HIDDEN'}</small>
+              </div>
             </div>
           </section>
 
@@ -113,16 +204,30 @@ export default async function Home() {
             <div className="home-public-now-grid">
               <Link href="/stack" className="home-public-now-item">
                 <span className="home-public-now-kicker">{nowCopy.live}</span>
-                <strong>{organism.nodes.length} {locale==='vi'?'thực thể':'entities'} · {online} online</strong>
-                <small>{degraded ? degraded+' degraded' : (locale==='vi'?'trạng thái ổn định':'runtime nominal')}</small>
+                <strong>{liveSystemLine || (locale==='vi'?'Chưa có hệ thống công khai nào online':'No public systems online')}</strong>
+                <small>
+                  {online}/{organism.nodes.length} ONLINE · {organism.links.length} LINKS · {compactDateTime(organism.updatedAt,locale)}
+                  {degraded ? ` · ${degraded} DEGRADED` : ''}
+                </small>
                 <em>↗</em>
               </Link>
-              <Link href="/projects" className="home-public-now-item">
+              <a
+                href={currentRepo?.url ?? '/projects'}
+                className="home-public-now-item"
+                target={currentRepo?'_blank':undefined}
+                rel={currentRepo?'noreferrer':undefined}
+              >
                 <span className="home-public-now-kicker">{nowCopy.work}</span>
-                <strong>{selectedProjects[0] ? textFor(selectedProjects[0].label,locale) : '—'}</strong>
-                <small>{selectedProjects[0] ? textFor(selectedProjects[0].title,locale) : '—'}</small>
+                <strong>{currentRepo?.name ?? '—'}</strong>
+                <small>
+                  {currentCommit
+                    ? `${currentCommit.sha} · ${currentCommit.message}`
+                    : currentRepo
+                      ? `${locale==='vi'?'PUSH':'PUSH'} ${compactDateTime(currentRepo.pushedAt,locale)}`
+                      : '—'}
+                </small>
                 <em>↗</em>
-              </Link>
+              </a>
               <Link href="/writing" className="home-public-now-item">
                 <span className="home-public-now-kicker">{nowCopy.notes}</span>
                 <strong>{selectedPosts[0] ? localizedPost(selectedPosts[0],locale).title : '—'}</strong>
@@ -135,7 +240,7 @@ export default async function Home() {
           <section className="home-public-section home-public-projects">
             <div className="home-public-section-head">
               <div>
-                <span>01</span>
+                <span className="home-public-section-index">01</span>
                 <h2>{nowCopy.selected}</h2>
                 <p>{nowCopy.selectedCopy}</p>
               </div>
@@ -170,7 +275,7 @@ export default async function Home() {
           <section className="home-public-section home-public-writing">
             <div className="home-public-section-head">
               <div>
-                <span>02</span>
+                <span className="home-public-section-index">02</span>
                 <h2>{nowCopy.fieldNotes}</h2>
                 <p>{nowCopy.fieldNotesCopy}</p>
               </div>
@@ -206,7 +311,7 @@ export default async function Home() {
           <section className="home-public-section home-public-instrument">
             <div className="home-public-section-head">
               <div>
-                <span>03</span>
+                <span className="home-public-section-index">03</span>
                 <h2>{nowCopy.instrument}</h2>
                 <p>{nowCopy.instrumentCopy}</p>
               </div>
@@ -217,23 +322,18 @@ export default async function Home() {
             </div>
           </section>
 
-          <section className="home-public-section home-public-field">
+          <section className="home-public-section home-public-code">
             <div className="home-public-section-head">
               <div>
-                <span>04</span>
-                <h2>{nowCopy.field}</h2>
-                <p>{nowCopy.fieldCopy}</p>
+                <span className="home-public-section-index">04</span>
+                <h2>{nowCopy.code}</h2>
+                <p>{nowCopy.codeCopy}</p>
               </div>
-              <Link href="/stack">{nowCopy.openStack} ↗</Link>
+              <a href={githubPulse.organizationUrl} target="_blank" rel="noreferrer">
+                {nowCopy.openGithub} ↗
+              </a>
             </div>
-            <div className="home-public-field-frame">
-              <div className="home-public-field-meta">
-                <span>{organism.nodes.length} NODES</span>
-                <span>{organism.links.length} LINKS</span>
-                <span>{organism.mode.toUpperCase()}</span>
-              </div>
-              <LivingCanvas locale={locale} initialState={organism}/>
-            </div>
+            <GitHubPublicPulseView locale={locale} pulse={githubPulse}/>
           </section>
 
           <section className="home-public-close">

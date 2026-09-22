@@ -85,18 +85,18 @@ export default async function ProjectDetailPage({ params }:Props) {
 
   const copy = locale === 'vi'
     ? {
-        back:'← PROJECTS',
+        back:'← DỰ ÁN',
         overview:'TỔNG QUAN',
         highlights:'ĐIỂM NỔI BẬT',
-        runtime:'HỆ ĐANG CHẠY',
+        runtime:'HỆ THỐNG ĐANG CHẠY',
         architecture:'KIẾN TRÚC',
         links:'LIÊN KẾT',
-        stack:'MỞ TRONG STACK →',
-        updated:'RUNTIME CẬP NHẬT',
+        stack:'XEM TRONG STACK →',
+        updated:'CẬP NHẬT RUNTIME',
         nodes:'NODE',
         relations:'LIÊN KẾT',
         live:'LIVE',
-        empty:'Chưa có node runtime nào được bind với project này.',
+        empty:'Chưa có node runtime nào được liên kết với dự án này.',
       }
     : {
         back:'← PROJECTS',

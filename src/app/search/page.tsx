@@ -53,7 +53,7 @@ export default async function SearchPage({ searchParams }:Props) {
     }),
     ...projects.map(project => ({
       key:'project:' + project.id,
-      kind:'PROJECT',
+      kind:locale === 'vi' ? 'DỰ ÁN' : 'PROJECT',
       title:textFor(project.label,locale),
       description:[textFor(project.title,locale),textFor(project.summary,locale)].filter(Boolean).join(' · '),
       href:'/projects/' + project.key,
@@ -99,7 +99,7 @@ export default async function SearchPage({ searchParams }:Props) {
               type="search"
               defaultValue={query}
               autoFocus
-              placeholder={locale === 'vi' ? 'Bài viết, project, trang…' : 'Writing, projects, pages…'}
+              placeholder={locale === 'vi' ? 'Bài viết, dự án, trang…' : 'Writing, projects, pages…'}
             />
             <button type="submit">{locale === 'vi' ? 'TÌM' : 'SEARCH'}</button>
           </form>
@@ -134,14 +134,14 @@ export default async function SearchPage({ searchParams }:Props) {
             ) : (
               <div className="search-empty">
                 <strong>{locale === 'vi' ? 'Không tìm thấy nội dung phù hợp.' : 'No matching public content.'}</strong>
-                <p>{locale === 'vi' ? 'Thử từ khóa ngắn hơn hoặc tên project.' : 'Try a shorter term, tag or project name.'}</p>
+                <p>{locale === 'vi' ? 'Thử từ khóa ngắn hơn, tag hoặc tên dự án.' : 'Try a shorter term, tag or project name.'}</p>
               </div>
             )}
           </section>
         ) : (
           <section className="search-empty">
             <strong>{locale === 'vi' ? 'Nhập từ khóa để bắt đầu.' : 'Type something to start searching.'}</strong>
-            <p>{locale === 'vi' ? 'Search chỉ đọc nội dung public.' : 'Search only reads public site content.'}</p>
+            <p>{locale === 'vi' ? 'Tìm kiếm chỉ đọc nội dung công khai trên website.' : 'Search only reads public site content.'}</p>
           </section>
         )}
       </main>

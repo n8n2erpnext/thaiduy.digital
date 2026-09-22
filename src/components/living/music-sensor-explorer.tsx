@@ -25,42 +25,59 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
   const e=t.explorer
   const vi=locale==='vi'
   const track=state.track ? state.track.title+' — '+state.track.artist : (vi?'Không có bài đang phát':'No active playback')
+  const modeLabel=vi
+    ? (state.mode==='listening'?'ĐANG NGHE':state.mode==='humming'?'ĐANG NGÂN NGA':'ĐANG NGHỈ')
+    : state.mode.toUpperCase()
+  const signalLabel=vi
+    ? (state.signal==='offline'?'OFFLINE':state.signal==='dsp'?'DSP LIVE':'NGỮ NGHĨA')
+    : state.signal.toUpperCase()
+  const displayValue=(value:string|null|undefined) => {
+    const base=valueOrDash(value)
+    if (!vi) return base
+    if (base==='unknown') return 'chưa rõ'
+    if (base==='unresolved') return 'chưa xác định'
+    if (base==='resting') return 'đang nghỉ'
+    if (base==='listening') return 'đang nghe'
+    if (base==='humming') return 'đang ngân nga'
+    if (base==='offline') return 'offline'
+    return base
+  }
   const stages=[
     {
       key:'semantic',
       title:e.semantic,
-      state:state.signal==='offline' ? (vi?'đang chờ':'waiting') : 'ACTIVE',
+      state:state.signal==='offline' ? (vi?'ĐANG CHỜ':'waiting') : (vi?'ĐANG HOẠT ĐỘNG':'ACTIVE'),
       copy:vi
-        ? 'Đọc track/artist tags, context và knowledge graph; track evidence có quyền cao hơn artist prior.'
+        ? 'Đọc tag của bài hát và nghệ sĩ, ngữ cảnh cùng knowledge graph; bằng chứng từ bài đang phát được ưu tiên hơn dữ liệu nền về nghệ sĩ.'
         : 'Reads track/artist tags, context and the knowledge graph; track evidence outranks artist priors.',
-      facts:[['genre',valueOrDash(state.genre)],['style',valueOrDash(state.style)]],
+      facts:[['genre',displayValue(state.genre)],['style',displayValue(state.style)]],
     },
     {
       key:'acoustic',
       title:e.acoustic,
-      state:state.signal==='dsp' ? 'LIVE DSP' : (vi?'SEMANTIC ONLY':'SEMANTIC ONLY'),
+      state:state.signal==='dsp' ? 'LIVE DSP' : (vi?'CHỈ DÙNG NGỮ NGHĨA':'SEMANTIC ONLY'),
       copy:vi
-        ? 'Phân tách bass, low-mid, mid, vocal, presence và air. Khi DSP offline, organ không giả vờ có tín hiệu âm thanh.'
+        ? 'Tách các dải bass, low-mid, mid, vocal, presence và air. Khi DSP offline, bộ cảm biến không giả lập tín hiệu âm thanh.'
         : 'Separates bass, low-mid, mid, vocal, presence and air. When DSP is offline, the organ does not fake acoustic input.',
-      facts:[['dominant',state.dominantLayer],['signal',state.signal]],
+      facts:[[vi?'dải nổi bật':'dominant',displayValue(state.dominantLayer)],[vi?'tín hiệu':'signal',displayValue(state.signal)]],
     },
     {
       key:'cortex',
       title:e.cortex,
-      state:'GOVERNED',
+      state:vi?'ĐƯỢC QUẢN TRỊ':'GOVERNED',
       copy:vi
-        ? 'Hợp nhất semantic và acoustic evidence rồi tách riêng genre, style, arrangement, texture và mood.'
+        ? 'Kết hợp bằng chứng ngữ nghĩa và âm học, đồng thời giữ riêng genre, style, arrangement, texture và mood.'
         : 'Combines semantic and acoustic evidence while keeping genre, style, arrangement, texture and mood separate.',
-      facts:[['mood',valueOrDash(state.mood)],['texture',valueOrDash(state.texture)]],
+      facts:[[vi?'tâm trạng':'mood',displayValue(state.mood)],[vi?'chất âm':'texture',displayValue(state.texture)]],
     },
     {
       key:'afterglow',
       title:e.afterglow,
-      state:state.mode==='humming' ? 'COMPOSING' : 'MEMORY',
+      state:state.mode==='humming' ? (vi?'ĐANG SÁNG TÁC':'COMPOSING') : (vi?'KÝ ỨC':'MEMORY'),
       copy:vi
-        ? 'Chỉ giữ dư âm trừu tượng như energy, meter, swing, mode-family và thói quen sáng tác; không giữ melody đã nghe.'
+        ? 'Chỉ giữ lại các đặc trưng trừu tượng như energy, meter, swing, mode-family và thói quen sáng tác; không lưu giai điệu đã nghe.'
         : 'Keeps only abstract residue such as energy, meter, swing, mode-family and composing habits; heard melodies are not retained.',
-      facts:[['mode',state.mode],['confidence',String(Math.round(state.confidence*100))+'%']],
+      facts:[[vi?'trạng thái':'mode',displayValue(state.mode)],[vi?'độ tin cậy':'confidence',String(Math.round(state.confidence*100))+'%']],
     },
   ]
   return (
@@ -73,7 +90,7 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
             <p>{e.lede}</p>
           </div>
           <div className="music-live-badge">
-            <span>{state.mode.toUpperCase()} · {state.signal.toUpperCase()}</span>
+            <span>{modeLabel} · {signalLabel}</span>
             <strong>{track}</strong>
           </div>
         </div>
@@ -82,14 +99,14 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
       <section className="music-lab-section">
         <div className="music-lab-section-head">
           <span>{e.live}</span>
-          <strong>{Math.round(state.confidence*100)}% CONFIDENCE</strong>
+          <strong>{Math.round(state.confidence*100)}% {vi?'ĐỘ TIN CẬY':'CONFIDENCE'}</strong>
         </div>
         <div className="music-live-grid">
           <div className="music-live-primary">
             <span>{vi?'BÀI HIỆN TẠI':'CURRENT TRACK'}</span>
             <h2>{track}</h2>
             <div className="music-live-tags">
-              {[state.genre,state.style,state.arrangement,state.texture,state.mood].filter(Boolean).map(item=><span key={item}>{item}</span>)}
+              {[state.genre,state.style,state.arrangement,state.texture,state.mood].filter(Boolean).map(item=><span key={item}>{displayValue(item)}</span>)}
             </div>
           </div>
           <div className="music-layer-meter">
@@ -104,7 +121,7 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
         </div>
       </section>
       <section className="music-lab-section">
-        <div className="music-lab-section-head"><span>{e.pipeline}</span><strong>LEFT → RIGHT → CORTEX → MEMORY</strong></div>
+        <div className="music-lab-section-head"><span>{e.pipeline}</span><strong>{vi?'NGỮ NGHĨA → ÂM HỌC → CORTEX → KÝ ỨC':'LEFT → RIGHT → CORTEX → MEMORY'}</strong></div>
         <div className="music-pipeline-grid">
           {stages.map((stage,index)=>(
             <article className="music-pipeline-card" key={stage.key}>
@@ -122,46 +139,46 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
       <section className="music-lab-section music-knowledge-section">
         <div className="music-lab-section-head"><span>{e.knowledge}</span><strong>{knowledgeVersion.toUpperCase()}</strong></div>
         <div className="music-knowledge-grid">
-          <div><strong>{concepts.toLocaleString()}</strong><span>{vi?'concept âm nhạc':'music concepts'}</span></div>
-          <div><strong>{relations.toLocaleString()}</strong><span>{vi?'quan hệ knowledge graph':'knowledge relations'}</span></div>
-          <div><strong>{semanticNodes.toLocaleString()}</strong><span>{vi?'node genre/style semantic':'semantic genre/style nodes'}</span></div>
+          <div><strong>{concepts.toLocaleString()}</strong><span>{vi?'khái niệm âm nhạc':'music concepts'}</span></div>
+          <div><strong>{relations.toLocaleString()}</strong><span>{vi?'quan hệ trong knowledge graph':'knowledge relations'}</span></div>
+          <div><strong>{semanticNodes.toLocaleString()}</strong><span>{vi?'node ngữ nghĩa genre/style':'semantic genre/style nodes'}</span></div>
           <div><strong>11</strong><span>{vi?'miền tri thức':'knowledge domains'}</span></div>
         </div>
         <p className="music-knowledge-note">{vi
-          ? 'Nhạc lý, rhythm, form, nhạc cụ, vocal, production, psychoacoustics, lịch sử, recording identity, world/regional music và genre/style cùng sống trong một graph có cấu trúc.'
+          ? 'Nhạc lý, rhythm, form, nhạc cụ, vocal, production, psychoacoustics, lịch sử, recording identity, âm nhạc vùng miền và genre/style cùng nằm trong một knowledge graph có cấu trúc.'
           : 'Theory, rhythm, form, instruments, vocal, production, psychoacoustics, history, recording identity, world/regional music and genre/style live in one structured graph.'}</p>
       </section>
       <section className="music-lab-section">
-        <div className="music-lab-section-head"><span>{e.composition}</span><strong>{state.composition?'LIVE SCORE':'IDLE'}</strong></div>
+        <div className="music-lab-section-head"><span>{e.composition}</span><strong>{state.composition?(vi?'BẢN NHẠC LIVE':'LIVE SCORE'):(vi?'ĐANG NGHỈ':'IDLE')}</strong></div>
         <div className="music-composer-public">
           {state.composition ? (
             <>
               <div className="music-composer-copy">
                 <span>{state.composition.title}</span>
                 <h2>{state.composition.key} {state.composition.mode.toUpperCase()}</h2>
-                <p>{state.composition.bpm} BPM · {state.composition.meter} · {state.composition.bars} BARS · {state.composition.voice.toUpperCase()}</p>
+                <p>{state.composition.bpm} BPM · {state.composition.meter} · {state.composition.bars} {vi?'Ô NHỊP':'BARS'} · {state.composition.voice.toUpperCase()}</p>
                 <p>{state.composition.chordProgression.join(' → ')}</p>
               </div>
               <div className="music-composer-sketch">
                 <div className="music-composer-sketch-head">
-                  <span>{vi?'SKETCH HIỆN TẠI':'CURRENT SKETCH'}</span>
+                  <span>{vi?'BẢN PHÁC HIỆN TẠI':'CURRENT SKETCH'}</span>
                   <HummingPlayer composition={state.composition} locale={locale} showPanel={false}/>
                 </div>
                 <HummingScore composition={state.composition}/>
                 <div className="music-composer-sketch-meta">
                   <span>{vi?'câu hỏi':'question'} → {vi?'trả lời':'answer'}</span>
-                  <span>{state.composition.notes.length} NOTES · {state.composition.chordProgression.join(' / ')}</span>
+                  <span>{state.composition.notes.length} {vi?'NỐT':'NOTES'} · {state.composition.chordProgression.join(' / ')}</span>
                 </div>
               </div>
             </>
           ) : (
             <div className="music-composer-idle">
-              <span>{vi?'COMPOSER ĐANG NGHỈ':'COMPOSER RESTING'}</span>
+              <span>{vi?'BỘ SÁNG TÁC ĐANG NGHỈ':'COMPOSER RESTING'}</span>
               <p>{e.noComposition}</p>
             </div>
           )}
         </div>
-        <div className="music-memory-rule"><span>ORIGINALITY / MEMORY BOUNDARY</span><p>{e.privacy}</p></div>
+        <div className="music-memory-rule"><span>{vi?'TÍNH NGUYÊN BẢN / RANH GIỚI KÝ ỨC':'ORIGINALITY / MEMORY BOUNDARY'}</span><p>{e.privacy}</p></div>
       </section>
     </main>
   )

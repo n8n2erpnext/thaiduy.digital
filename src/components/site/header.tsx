@@ -29,7 +29,7 @@ export async function SiteHeader({ locale }: Props) {
     <header className="site-header">
       <Link className="brand" href="/" aria-label={homeLabel}>
         <span className="brand-mark">
-          <Image src="/brand-mark.svg" width={22} height={22} alt="" priority />
+          <Image src="/brand-mark.svg" width={32} height={32} alt="" priority />
         </span>
         <span className="brand-copy">
           <strong>{brandName}</strong>

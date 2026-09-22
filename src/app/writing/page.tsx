@@ -37,11 +37,11 @@ function PostCard({
           </Link>
           {copy.coverSource === 'unsplash' && copy.coverCreditName && (
             <div className="writing-photo-credit">
-              Photo by{' '}
+              {locale === 'vi' ? 'Ảnh của ' : 'Photo by '}
               <a href={copy.coverCreditUrl ?? '#'} target="_blank" rel="noopener noreferrer">
                 {copy.coverCreditName}
               </a>{' '}
-              on{' '}
+              {locale === 'vi' ? 'trên ' : 'on '}
               <a href={copy.coverSourceUrl ?? 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">
                 Unsplash
               </a>
@@ -52,7 +52,7 @@ function PostCard({
       <Link className="writing-post-card-body" href={'/writing/' + post.slug}>
         <div className="writing-post-card-meta">
           <span>{post.publishedAt?.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-GB')}</span>
-          <span>{highlight ? 'HIGHLIGHT' : (locale === 'vi' ? 'BÀI VIẾT' : 'POST')}</span>
+          <span>{highlight ? (locale === 'vi' ? 'NỔI BẬT' : 'HIGHLIGHT') : (locale === 'vi' ? 'BÀI VIẾT' : 'POST')}</span>
         </div>
         <h2>{copy.title}</h2>
         {copy.excerpt && <p>{copy.excerpt}</p>}

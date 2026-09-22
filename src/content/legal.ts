@@ -75,19 +75,19 @@ const termsVi: LegalDocument = {
   eyebrow: 'PHÁP LÝ / ĐIỀU KHOẢN',
   title: 'Điều khoản dịch vụ',
   updated: 'Cập nhật lần cuối: 18 tháng 9 năm 2026',
-  intro: 'Các điều khoản này áp dụng khi bạn sử dụng thaiduy.digital — một phòng lab hệ thống công khai và bề mặt xuất bản cá nhân do Thái Duy vận hành.',
+  intro: 'Các điều khoản này áp dụng khi bạn sử dụng thaiduy.digital — một phòng lab hệ thống công khai kiêm không gian xuất bản cá nhân do Thái Duy vận hành.',
   sections: [
     {
       title: '1. Sử dụng website',
       paragraphs: [
-        'Bạn có thể truy cập các trang công khai, đọc nội dung đã xuất bản và sử dụng các bề mặt tương tác công khai cho mục đích tham khảo cá nhân hoặc công việc thông thường.',
-        'Không được tìm cách vượt qua kiểm soát truy cập, gây gián đoạn dịch vụ, dò quét hạ tầng riêng, lạm dụng endpoint tương tác hoặc sử dụng website theo cách gây hại cho người dùng hay hệ thống được kết nối.',
+        'Bạn có thể truy cập các trang công khai, đọc nội dung đã xuất bản và sử dụng các khu vực tương tác công khai cho mục đích tham khảo cá nhân hoặc công việc thông thường.',
+        'Không được tìm cách vượt qua kiểm soát truy cập, gây gián đoạn dịch vụ, quét dò hạ tầng riêng tư, lạm dụng endpoint tương tác hoặc sử dụng website theo cách gây hại cho người dùng hay hệ thống được kết nối.',
       ],
     },
     {
       title: '2. Thông tin công khai và trạng thái hệ thống',
       paragraphs: [
-        'Một số trang hiển thị trạng thái hệ thống trực tiếp hoặc gần thời gian thực, telemetry, trạng thái dự án, đầu ra của machine sense và phân tích được tạo tự động. Các dữ liệu công khai này đã được làm sạch và có thể trễ, thiếu hoặc tạm thời không khả dụng.',
+        'Một số trang hiển thị trạng thái hệ thống trực tiếp hoặc gần thời gian thực, telemetry, trạng thái dự án, tín hiệu từ các cảm biến và phân tích tự động. Dữ liệu công khai đã được lược bỏ phần nhạy cảm và có thể bị trễ, thiếu hoặc tạm thời không khả dụng.',
         'Trạng thái vận hành, diễn giải tự động và các tính năng thử nghiệm chỉ nhằm mục đích cung cấp thông tin, không phải cam kết mức dịch vụ hay lời khuyên chuyên môn.',
       ],
     },
@@ -102,7 +102,7 @@ const termsVi: LegalDocument = {
       title: '4. Quyền sở hữu trí tuệ',
       paragraphs: [
         'Trừ khi có ghi chú khác, thiết kế website, bài viết gốc, trực quan hóa gốc và tài liệu dự án gốc trên thaiduy.digital thuộc về chủ sở hữu hoặc tác giả tương ứng.',
-        'Tên, logo, repository, thư viện, dataset và dịch vụ của bên thứ ba vẫn tuân theo giấy phép và điều khoản riêng của họ. Việc liên kết hoặc nhắc tới không đồng nghĩa với sở hữu hay chứng thực.',
+        'Tên, logo, repository, thư viện, dataset và dịch vụ của bên thứ ba vẫn tuân theo giấy phép và điều khoản riêng của họ. Việc liên kết hoặc nhắc tới không đồng nghĩa với quyền sở hữu hay sự ủng hộ.',
       ],
     },
     {
@@ -115,7 +115,7 @@ const termsVi: LegalDocument = {
     {
       title: '6. Khả dụng và thay đổi',
       paragraphs: [
-        'Đây là một systems lab đang được phát triển liên tục. Tính năng, route, thử nghiệm và các hình chiếu công khai có thể thay đổi, tạm dừng hoặc bị gỡ mà không cần báo trước.',
+        'Đây là một phòng lab hệ thống đang được phát triển liên tục. Tính năng, route, thử nghiệm và các góc nhìn công khai có thể thay đổi, tạm dừng hoặc bị gỡ mà không cần báo trước.',
         'Trong phạm vi pháp luật cho phép, website được cung cấp theo trạng thái “như hiện có” và “theo khả năng sẵn có”.',
       ],
     },
@@ -213,7 +213,7 @@ const privacyVi: LegalDocument = {
     {
       title: '1. Dữ liệu được xử lý tự động',
       paragraphs: [
-        'Website có thể xử lý thông tin request và analytics thông thường cần thiết để vận hành, bảo vệ và hiểu cách dịch vụ công khai được sử dụng.',
+        'Website có thể xử lý dữ liệu request và analytics thông thường cần thiết để vận hành, bảo vệ và hiểu cách dịch vụ công khai được sử dụng.',
       ],
       bullets: [
         'Thông tin lượt truy cập và lượt xem như path, referrer domain và tham số chiến dịch.',
@@ -225,8 +225,8 @@ const privacyVi: LegalDocument = {
     {
       title: '2. Dữ liệu bạn chủ động cung cấp',
       paragraphs: [
-        'Nếu bạn dùng tính năng có tài khoản như reaction hoặc bình luận, website có thể xử lý định danh tài khoản cần thiết cho tính năng đó cùng nội dung hoặc hành động bạn gửi.',
-        'Nếu bạn chủ động đưa dữ liệu cá nhân vào bình luận công khai, dữ liệu đó có thể hiển thị cùng bình luận. Không đăng secret, credential hoặc thông tin bạn không muốn công khai.',
+        'Nếu bạn dùng tính năng cần tài khoản như lượt thích hoặc bình luận, website có thể xử lý định danh tài khoản cần thiết cùng nội dung hoặc hành động bạn gửi.',
+        'Nếu bạn chủ động đưa dữ liệu cá nhân vào bình luận công khai, dữ liệu đó có thể hiển thị cùng bình luận. Không đăng secret, credential hoặc thông tin mà bạn không muốn công khai.',
       ],
     },
     {
@@ -239,21 +239,21 @@ const privacyVi: LegalDocument = {
     {
       title: '4. Mục đích sử dụng dữ liệu',
       paragraphs: [
-        'Dữ liệu được dùng để cung cấp trang, ghi nhớ tùy chọn, đo độ ổn định và hiệu năng, hiểu usage ở mức tổng hợp, kiểm duyệt tính năng cộng đồng, chẩn đoán lỗi và bảo vệ website cùng hệ thống kết nối.',
+        'Dữ liệu được dùng để cung cấp trang, ghi nhớ tùy chọn, đo độ ổn định và hiệu năng, hiểu mức sử dụng ở dạng tổng hợp, kiểm duyệt tính năng cộng đồng, chẩn đoán lỗi và bảo vệ website cùng các hệ thống kết nối.',
         'Dữ liệu không được bán cho nhà quảng cáo.',
       ],
     },
     {
-      title: '5. Runtime công khai và machine sense',
+      title: '5. Runtime công khai và dữ liệu cảm biến',
       paragraphs: [
-        'Các góc nhìn runtime, topology và machine sense công khai được làm sạch trước khi hiển thị. Địa chỉ riêng, credential và đường điều khiển nhạy cảm không được chủ đích đưa lên website công khai.',
-        'Đối với Sentinel Music Sensor, giai điệu đã nghe không được lưu hoặc phát lại bởi hệ humming công khai. Các thuộc tính âm nhạc trừu tượng có thể được giữ để hỗ trợ diễn giải hoặc hình thành cá tính sáng tác sinh tự động.',
+        'Các góc nhìn runtime, topology và dữ liệu cảm biến đều được lược bỏ phần nhạy cảm trước khi hiển thị. Địa chỉ riêng, credential và đường điều khiển nhạy cảm không được đưa lên website công khai.',
+        'Đối với Sentinel Music Sensor, giai điệu đã nghe không được lưu hoặc phát lại qua chức năng ngân nga công khai. Các thuộc tính âm nhạc trừu tượng có thể được giữ lại để hỗ trợ diễn giải hoặc định hình phong cách sáng tác do hệ thống tạo ra.',
       ],
     },
     {
       title: '6. Nhà cung cấp dịch vụ và liên kết bên ngoài',
       paragraphs: [
-        'Hạ tầng hosting, delivery, authentication, code hosting, storage hoặc analytics có thể xử lý một lượng dữ liệu kỹ thuật giới hạn khi cung cấp dịch vụ, theo điều khoản của từng nhà cung cấp.',
+        'Các dịch vụ hosting, delivery, authentication, code hosting, storage hoặc analytics có thể xử lý một lượng dữ liệu kỹ thuật giới hạn trong quá trình cung cấp dịch vụ, theo điều khoản của từng nhà cung cấp.',
         'Liên kết tới website bên thứ ba như GitHub sẽ rời thaiduy.digital và chịu chính sách quyền riêng tư của điểm đến đó.',
       ],
     },
@@ -261,7 +261,7 @@ const privacyVi: LegalDocument = {
       title: '7. Lưu giữ và bảo mật',
       paragraphs: [
         'Dữ liệu vận hành, analytics và cộng đồng chỉ được lưu trong khoảng thời gian còn cần thiết cho chức năng, độ ổn định, bảo mật, kiểm duyệt hoặc mục đích lưu vết tương ứng.',
-        'Website áp dụng các biện pháp kỹ thuật và tổ chức hợp lý, nhưng không dịch vụ Internet nào có thể cam kết an toàn tuyệt đối.',
+        'Website áp dụng các biện pháp kỹ thuật và tổ chức hợp lý, nhưng không có dịch vụ Internet nào có thể cam kết an toàn tuyệt đối.',
       ],
     },
     {

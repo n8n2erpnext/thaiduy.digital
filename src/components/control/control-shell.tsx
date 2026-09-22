@@ -1,31 +1,17 @@
-import Link from 'next/link'
 import { SignOutButton } from './sign-out-button'
+import { ControlNav } from './control-nav'
 
 type Props = {
   email: string
   children: React.ReactNode
 }
 
-const links = [
-  ['OVERVIEW', '/control'],
-  ['CONTENT', '/control/content'],
-  ['MEDIA', '/control/assets'],
-  ['RUNTIME', '/control/runtime'],
-  ['STACK', '/control/stack'],
-  ['MUSIC SENSOR', '/control/music-sensor'],
-  ['TRAFFIC', '/control/traffic'],
-  ['BRAINS', '/control/brains'],
-  ['SETTINGS', '/control/settings'],
-  ['ACCOUNT', '/control/account'],
-  ['AUDIT', '/control/audit'],
-] as const
-
 export function ControlShell({ email, children }: Props) {
   return (
     <div className="control-root">
       <aside className="control-sidebar">
         <div className="control-brand"><strong>TD / CONTROL</strong><small>living systems operator</small></div>
-        <nav>{links.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</nav>
+        <ControlNav />
         <div className="control-user">
           <span>OWNER SESSION</span>
           <small>{email}</small>

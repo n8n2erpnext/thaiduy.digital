@@ -140,7 +140,7 @@ export function ArticleEngagement({
           <small>
             {viewer?.googleConnected
               ? (vi ? 'Bình luận được duyệt trước khi hiển thị.' : 'Comments are moderated before publication.')
-              : (vi ? 'Google account được dùng cho tên và ảnh đại diện.' : 'Your Google account provides your name and avatar.')}
+              : (vi ? 'Tài khoản Google chỉ được dùng để lấy tên và ảnh đại diện.' : 'Your Google account provides your name and avatar.')}
           </small>
           {viewer?.googleConnected && (
             <button type="submit" disabled={sending || body.trim().length < 2}>

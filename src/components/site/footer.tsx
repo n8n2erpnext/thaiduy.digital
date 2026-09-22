@@ -30,6 +30,8 @@ export function SiteFooter({ locale }: Props) {
         </nav>
         <nav aria-label={t.elsewhere}>
           <span className="site-footer-heading">{t.elsewhere}</span>
+          <Link href="/cv" prefetch={false}>CV</Link>
+          <Link href="/verify">{locale==='vi'?'Xác thực tài liệu':'Verify document'}</Link>
           <a href="https://github.com/n8n2erpnext" target="_blank" rel="noreferrer">{t.github}</a>
         </nav>
         <nav aria-label={t.legal}>

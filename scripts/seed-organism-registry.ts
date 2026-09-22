@@ -12,13 +12,13 @@ type OrganismMeta = {
 }
 
 const positions: Record<string, OrganismMeta> = {
-  'entity-core': { x:.5, y:.5, roleEn:'living surface core', roleVi:'lõi bề mặt sống', importance:1, linksTo:[] },
-  mb: { x:.5, y:.15, roleEn:'semantic brain', roleVi:'não ngữ nghĩa', importance:.9, linksTo:['entity-core'] },
-  lightbi: { x:.18, y:.34, roleEn:'data cognition', roleVi:'nhận thức dữ liệu', importance:.82, linksTo:['entity-core'] },
-  'light-remote': { x:.16, y:.7, roleEn:'remote nerve', roleVi:'dây thần kinh từ xa', importance:.8, linksTo:['entity-core'] },
-  sentinel: { x:.82, y:.34, roleEn:'security sense', roleVi:'giác quan an ninh', importance:.82, linksTo:['entity-core'] },
-  'sentinel-music': { x:.84, y:.7, roleEn:'acoustic sense', roleVi:'giác quan âm nhạc', importance:.76, linksTo:['entity-core'] },
-  n8n2erpnext: { x:.5, y:.82, roleEn:'workflow circulation', roleVi:'tuần hoàn workflow', importance:.78, linksTo:['entity-core'] },
+  'entity-core': { x:.5, y:.5, roleEn:'living surface core', roleVi:'lõi giao diện công khai', importance:1, linksTo:[] },
+  mb: { x:.5, y:.15, roleEn:'semantic brain', roleVi:'bộ não ngữ nghĩa', importance:.9, linksTo:['entity-core'] },
+  lightbi: { x:.18, y:.34, roleEn:'data cognition', roleVi:'hiểu dữ liệu', importance:.82, linksTo:['entity-core'] },
+  'light-remote': { x:.16, y:.7, roleEn:'remote nerve', roleVi:'kết nối từ xa', importance:.8, linksTo:['entity-core'] },
+  sentinel: { x:.82, y:.34, roleEn:'security sense', roleVi:'cảm biến an ninh', importance:.82, linksTo:['entity-core'] },
+  'sentinel-music': { x:.84, y:.7, roleEn:'acoustic sense', roleVi:'cảm biến âm thanh', importance:.76, linksTo:['entity-core'] },
+  n8n2erpnext: { x:.5, y:.82, roleEn:'workflow circulation', roleVi:'luồng workflow', importance:.78, linksTo:['entity-core'] },
 }
 
 const inserts = [
@@ -31,9 +31,9 @@ const inserts = [
     labelEn:'ENTITY',
     labelVi:'ENTITY',
     titleEn:'Living surface core',
-    titleVi:'Lõi bề mặt sống',
+    titleVi:'Lõi giao diện công khai',
     summaryEn:'The public organism surface that binds sanitized runtime signals into one coherent view.',
-    summaryVi:'Bề mặt hệ sống công khai gắn các tín hiệu runtime đã làm sạch thành một góc nhìn thống nhất.',
+    summaryVi:'Giao diện công khai gom các tín hiệu runtime đã lược bỏ dữ liệu nhạy cảm thành một góc nhìn thống nhất.',
     runtimeKey:'entity-core',
   },
   {

@@ -14,18 +14,50 @@ export default async function ControlLoginPage() {
   const ownerEmail = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase() ?? ''
   const existing = await db.select({ id: user.id }).from(user).limit(1)
   const initialized = existing.length > 0
+
   return (
     <main className="control-login">
       <Link className="control-login-mark" href="/">← THAIDUY.DIGITAL</Link>
-      <section className="control-login-panel">
-        <p>CONTROL PLANE / OWNER GATE</p>
-        <h1>Operate the living surface.</h1>
-        <span>Google OAuth is primary. Password access is an owner-only fallback.</span>
-        {identity.state === 'locked' && <strong>OWNER IDENTITY NOT CONFIGURED</strong>}
-        {identity.state === 'forbidden' && <strong>THIS IDENTITY IS NOT AUTHORIZED</strong>}
-        <ControlLoginButton />
-        {ownerEmail && !initialized && <><div className="control-login-divider">ONE-TIME OWNER BOOTSTRAP</div><OwnerBootstrap email={ownerEmail} /></>}
-        {ownerEmail && initialized && <><div className="control-login-divider">OR OWNER FALLBACK</div><CredentialLogin email={ownerEmail} /></>}
+
+      <section className="control-login-shell">
+        <div className="control-login-hero">
+          <div className="control-card-kicker">
+            <span>CONTROL PLANE / OWNER GATE</span>
+            <em>PRIVATE</em>
+          </div>
+          <h1>Owner access to the living systems.</h1>
+          <p>Authenticate before entering the operator surface. Google is primary; password access exists only as a bounded fallback.</p>
+          <div className="control-login-trace">
+            <span>IDENTITY</span>
+            <strong>{ownerEmail || 'OWNER NOT CONFIGURED'}</strong>
+          </div>
+          {identity.state === 'locked' && <strong className="control-login-alert">OWNER IDENTITY NOT CONFIGURED</strong>}
+          {identity.state === 'forbidden' && <strong className="control-login-alert">THIS IDENTITY IS NOT AUTHORIZED</strong>}
+        </div>
+
+        <div className="control-auth-methods">
+          <section className="control-auth-method is-primary">
+            <header><span>01 / PRIMARY</span><strong>Google OAuth</strong></header>
+            <p>Use the configured owner Google identity for normal access.</p>
+            <ControlLoginButton />
+          </section>
+
+          {ownerEmail && !initialized && (
+            <section className="control-auth-method">
+              <header><span>02 / BOOTSTRAP</span><strong>Initialize owner</strong></header>
+              <p>One-time credential bootstrap for the configured owner identity.</p>
+              <OwnerBootstrap email={ownerEmail} />
+            </section>
+          )}
+
+          {ownerEmail && initialized && (
+            <section className="control-auth-method">
+              <header><span>02 / FALLBACK</span><strong>Password recovery path</strong></header>
+              <p>Use only when the primary Google identity path is unavailable.</p>
+              <CredentialLogin email={ownerEmail} />
+            </section>
+          )}
+        </div>
       </section>
     </main>
   )

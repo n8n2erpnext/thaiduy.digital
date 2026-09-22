@@ -28,14 +28,26 @@ export function MusicOrgan({ locale }: Props) {
   }, [active])
 
   const status = !state.connected ? (locale==='vi' ? 'CHƯA KẾT NỐI' : 'NOT CONNECTED')
-    : state.mode==='listening' ? (state.signal==='dsp' ? 'LISTENING · LIVE DSP' : 'LISTENING · SEMANTIC')
-    : state.mode==='humming' ? 'HUMMING · SELF-COMPOSING' : 'RESTING · LAST.FM READY'
+    : state.mode==='listening'
+      ? (locale==='vi'
+          ? (state.signal==='dsp' ? 'ĐANG NGHE · DSP LIVE' : 'ĐANG NGHE · NGỮ NGHĨA')
+          : (state.signal==='dsp' ? 'LISTENING · LIVE DSP' : 'LISTENING · SEMANTIC'))
+    : state.mode==='humming'
+      ? (locale==='vi' ? 'ĐANG NGÂN NGA · TỰ SÁNG TÁC' : 'HUMMING · SELF-COMPOSING')
+      : (locale==='vi' ? 'ĐANG NGHỈ · LAST.FM SẴN SÀNG' : 'RESTING · LAST.FM READY')
   const note = state.track ? state.track.title+' — '+state.track.artist : t.note
+  const displayValue=(value:string|null|undefined) => {
+    if (!value) return '—'
+    if (locale!=='vi') return value
+    if (value==='unresolved') return 'chưa xác định'
+    if (value==='unknown') return 'chưa rõ'
+    return value
+  }
   const interpretation = [
-    { label:'genre', value:state.genre ?? '—' },
-    { label:'style', value:state.style ?? '—' },
-    { label:locale==='vi'?'tâm trạng':'mood', value:state.mood ?? '—' },
-    { label:locale==='vi'?'kết cấu':'texture', value:state.texture ?? '—' },
+    { label:'genre', value:displayValue(state.genre) },
+    { label:'style', value:displayValue(state.style) },
+    { label:locale==='vi'?'tâm trạng':'mood', value:displayValue(state.mood) },
+    { label:locale==='vi'?'kết cấu':'texture', value:displayValue(state.texture) },
   ]
 
   return (

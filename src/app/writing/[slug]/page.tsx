@@ -59,7 +59,7 @@ export default async function WritingPostPage({ params }: Props) {
         toc:'Trong bài này',
         end:'HẾT BÀI',
         all:'← TẤT CẢ BÀI VIẾT',
-        projects:'XEM PROJECTS →',
+        projects:'XEM DỰ ÁN →',
       }
     : {
         back:'← WRITING',
@@ -124,11 +124,11 @@ export default async function WritingPostPage({ params }: Props) {
               <img src={post.coverUrl} alt={copy.coverAlt ?? ''} />
               {copy.coverSource === 'unsplash' && copy.coverCreditName && (
                 <figcaption className="writing-photo-credit">
-                  Photo by{' '}
+                  {locale === 'vi' ? 'Ảnh của ' : 'Photo by '}
                   <a href={copy.coverCreditUrl ?? '#'} target="_blank" rel="noopener noreferrer">
                     {copy.coverCreditName}
                   </a>{' '}
-                  on{' '}
+                  {locale === 'vi' ? 'trên ' : 'on '}
                   <a href={copy.coverSourceUrl ?? 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">
                     Unsplash
                   </a>

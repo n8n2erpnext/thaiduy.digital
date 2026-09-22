@@ -1,15 +1,22 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect,useMemo,useRef,useState } from 'react'
 import { HummingPlayer } from '@/components/living/humming-player'
 import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
-import type { HummingComposition, MusicLayerName } from '@/lib/music-state'
+import {
+  blendMusicMotion,
+  resolveMusicExpression,
+  type MusicExpression,
+  type MusicTheme,
+} from '@/lib/music-expression'
+import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
 
-const layerOrder: MusicLayerName[] = ['bass','lowMid','mid','vocal','presence','air']
-const phase: Record<MusicLayerName, number> = { bass:0.2, lowMid:1.1, mid:2.2, vocal:0.7, presence:2.9, air:4.1 }
-const freq: Record<MusicLayerName, number> = { bass:1.2, lowMid:1.8, mid:2.6, vocal:1.6, presence:3.4, air:4.4 }
+const layerOrder:MusicLayerName[]=['bass','lowMid','mid','vocal','presence','air']
+const phase:Record<MusicLayerName,number>={bass:.2,lowMid:1.1,mid:2.2,vocal:.7,presence:2.9,air:4.1}
+const freq:Record<MusicLayerName,number>={bass:1.2,lowMid:1.8,mid:2.6,vocal:1.6,presence:3.4,air:4.4}
+const layerIndex:Record<MusicLayerName,number>={bass:0,lowMid:1,mid:2,vocal:3,presence:4,air:5}
 
 function phraseAt(composition:HummingComposition|null,time:number) {
   if (!composition || !composition.notes.length || !time) return null
@@ -21,61 +28,124 @@ function phraseAt(composition:HummingComposition|null,time:number) {
     ?? composition.notes.slice().reverse().find(note=>note.beat<=cursor)
     ?? composition.notes[0]
 }
-function pathFor(layer:MusicLayerName,weight:number,time:number,active:boolean,composition:HummingComposition|null) {
+
+function pathFor(
+  layer:MusicLayerName,
+  weight:number,
+  time:number,
+  active:boolean,
+  composition:HummingComposition|null,
+  motion:MusicExpression['motion'],
+  seed:number,
+) {
   if (!active) return 'M 4 12 L 108 12'
   const note=phraseAt(composition,time)
   const points=42
-  const pitchMotion=note ? (note.midi-64)*.045 : 0
-  const phraseLift=note ? note.velocity*(note.phrase==='answer'?1.12:1) : 1
-  const amp=(1.2+weight*(layer==='vocal'?7:5.2))*phraseLift
-  const motion=freq[layer]+pitchMotion
-  const clock=(time%100000)*.0038
+  const pitchMotion=note?(note.midi-64)*.045:0
+  const phraseLift=note?note.velocity*(note.phrase==='answer'?1.12:1):1
+  const layerCharacter=1+(layerIndex[layer]-.5)*.025
+  const amp=(1.15+weight*(layer==='vocal'?7.2:5.4))
+    *phraseLift
+    *motion.amplitude
+    *motion.layerSpread
+    *layerCharacter
+  const seeded=((seed>>>((layerIndex[layer]*3)%24))&7)/28
+  const frequency=(freq[layer]+pitchMotion+seeded)*motion.phaseSpread
+  const clock=(time%100000)*.0038*motion.speed
   let path='M 4 12'
   for(let i=0;i<=points;i+=1) {
-    const r=i/points, x=4+r*104, env=Math.pow(Math.sin(r*Math.PI),1.65)
-    const contour=note ? Math.sin(r*Math.PI*2 + note.beat*.31)*note.velocity*.7 : 0
-    const y=12 + Math.sin(r*Math.PI*motion + clock + phase[layer] + contour)*amp*env
-    path += ' L '+x.toFixed(2)+' '+y.toFixed(2)
+    const r=i/points
+    const x=4+r*104
+    const env=Math.pow(Math.sin(r*Math.PI),1.65)
+    const contour=note?Math.sin(r*Math.PI*2+note.beat*.31)*note.velocity*.7:0
+    const harmonic=Math.sin(r*Math.PI*(frequency*.47+1)+phase[layer]*.61)*amp*.09*env
+    const y=12
+      +Math.sin(r*Math.PI*frequency+clock+phase[layer]*motion.phaseSpread+contour)*amp*env
+      +harmonic
+    path+=' L '+x.toFixed(2)+' '+y.toFixed(2)
   }
   return path
 }
 
-type Props={ locale:Locale }
+function readTheme():MusicTheme {
+  if (typeof document==='undefined') return 'dark'
+  return document.documentElement.dataset.theme==='normal'?'normal':'dark'
+}
 
-export function MusicWaveIndicator({ locale }:Props) {
+function instrumentLabel(composition:HummingComposition|null,expression:MusicExpression) {
+  return (composition?.instrument??expression.instrumentHint).replaceAll('-',' ')
+}
+
+type Props={locale:Locale}
+export function MusicWaveIndicator({locale}:Props) {
   const [time,setTime]=useState(0)
+  const [theme,setTheme]=useState<MusicTheme>('dark')
   const state=useMusicState()
   const t=messages[locale].music.indicator
-  const active=state.mode==='listening' || state.mode==='humming'
+  const active=state.mode==='listening'||state.mode==='humming'
+  const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
+  const [displayMotion,setDisplayMotion]=useState(expression.motion)
+  const targetMotionRef=useRef(expression.motion)
+
+  useEffect(()=>{
+    const sync=()=>setTheme(readTheme())
+    sync()
+    const observer=new MutationObserver(sync)
+    observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})
+    return ()=>observer.disconnect()
+  },[])
+
+  useEffect(()=>{
+    targetMotionRef.current=expression.motion
+  },[expression.motion])
+
   useEffect(()=>{
     if (!active) return
     let frame=0
-    const tick=()=>{ setTime(Date.now()); frame=requestAnimationFrame(tick) }
+    const tick=()=>{
+      setDisplayMotion(current=>blendMusicMotion(current,targetMotionRef.current,.045))
+      setTime(Date.now())
+      frame=requestAnimationFrame(tick)
+    }
     frame=requestAnimationFrame(tick)
     return ()=>cancelAnimationFrame(frame)
   },[active])
 
   const vi=locale==='vi'
-  const styleLabel=state.style ?? state.genre ?? (vi?'chưa xác định':'unresolved')
+  const styleLabel=state.style??state.genre??(vi?'chưa xác định':'unresolved')
   const modeLabel=t[state.mode]
-  const composition=state.mode==='humming' ? state.composition : null
+  const composition=state.mode==='humming'?state.composition:null
   const title=state.track
     ? state.track.title+' — '+state.track.artist
-    : composition ? composition.title : state.mode==='humming' ? t.hummingTitle : t.title
+    : composition?composition.title:state.mode==='humming'?t.hummingTitle:t.title
 
   const detail=useMemo(()=>{
     if (!state.connected) return t.resting+' · '+t.notConnected
     if (state.mode==='resting') return modeLabel+' · '+(vi?'LAST.FM SẴN SÀNG':'LAST.FM READY')
     if (composition) {
-      return (vi?'ĐANG NGÂN NGA':'HUMMING')+' · '+composition.key+' '+composition.mode.toUpperCase()+' · '+composition.bpm+' BPM · '+(vi && state.mood==='unresolved'?'CHƯA XÁC ĐỊNH':state.mood.toUpperCase())
+      return (vi?'ĐANG NGÂN NGA':'HUMMING')
+        +' · '+composition.key+' '+composition.mode.toUpperCase()
+        +' · '+composition.bpm+' BPM'
+        +' · '+(vi&&state.mood==='unresolved'?'CHƯA XÁC ĐỊNH':state.mood.toUpperCase())
     }
     const bits=[styleLabel,state.arrangement,state.texture].filter(Boolean)
-    return modeLabel+' · '+bits.join(' · ')+' · '+(state.signal==='dsp'?'LIVE DSP':(vi?'NGỮ NGHĨA · LAST.FM':'SEMANTIC · LAST.FM'))
+    return modeLabel+' · '+bits.join(' · ')
+      +' · '+(state.signal==='dsp'?'LIVE DSP':(vi?'NGỮ NGHĨA · LAST.FM':'SEMANTIC · LAST.FM'))
   },[composition,modeLabel,state,styleLabel,t,vi])
 
+  const visualDetail=(vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
+    +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
+    +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
+
   const subdetail=composition
-    ? composition.meter+' · '+composition.bars+' '+(vi?'Ô NHỊP':'BARS')+' · '+composition.voice.toUpperCase()+' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
-    : null
+    ? composition.meter+' · '+composition.bars+' '+(vi?'Ô NHỊP':'BARS')
+      +' · '+instrumentLabel(composition,expression).toUpperCase()
+      +' · '+String(composition.ensemble?.layers??2)+' '+(vi?'LỚP':'LAYERS')
+      +' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
+    : active
+      ? visualDetail
+      : null
+
   return (
     <div className="header-wave-cluster">
       <div className="header-wave-wrap">
@@ -83,23 +153,55 @@ export function MusicWaveIndicator({ locale }:Props) {
           className="header-wave"
           role="img"
           tabIndex={0}
-          aria-label={title+' · '+detail+(subdetail?' · '+subdetail:'')}
+          data-expression={expression.id}
+          aria-label={title+' · '+detail+' · '+visualDetail+(subdetail?' · '+subdetail:'')}
         >
           <svg viewBox="0 0 112 24" aria-hidden="true">
-            <path d="M 4 12 L 108 12" className="header-wave-base"/>
-            {layerOrder.map(layer=>(
-              <path key={layer} d={pathFor(layer,state.layers[layer].weight,time,active,composition)}
-                className={'header-wave-layer header-wave-layer-'+layer+(state.dominantLayer===layer?' is-dominant':'')}/>
-            ))}
+            <path
+              d="M 4 12 L 108 12"
+              className="header-wave-base"
+              style={{stroke:expression.baseColor}}
+            />
+            {layerOrder.map(layer=>{
+              const dominant=state.dominantLayer===layer
+              const opacity=dominant
+                ? displayMotion.dominantOpacity
+                : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
+              const width=(dominant?1.42:1.02)*displayMotion.stroke
+              return (
+                <path
+                  key={layer}
+                  d={pathFor(
+                    layer,
+                    state.layers[layer].weight,
+                    time,
+                    active,
+                    composition,
+                    displayMotion,
+                    expression.seed,
+                  )}
+                  className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')}
+                  style={{
+                    stroke:expression.colors[layer],
+                    opacity,
+                    strokeWidth:width,
+                    filter:dominant
+                      ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
+                      : 'none',
+                  }}
+                />
+              )
+            })}
           </svg>
         </div>
         <div className="header-wave-tooltip" role="tooltip">
           <strong>{title}</strong>
           <span>{detail}</span>
-          {subdetail && <span>{subdetail}</span>}
+          <span>{visualDetail}</span>
+          {subdetail&&<span>{subdetail}</span>}
         </div>
       </div>
-      {composition && <HummingPlayer composition={composition} locale={locale}/>}
+      {composition&&<HummingPlayer composition={composition} locale={locale}/>}
     </div>
   )
 }

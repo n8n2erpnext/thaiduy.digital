@@ -1,6 +1,6 @@
 import { recallBrainMemory, rememberBrainMemory } from '@/brains/core/memory-store'
 import { persistHummingSketch } from './sketchbook'
-import type { HummingComposition, HummingNote } from '@/lib/music-state'
+import type { HummingComposition, HummingInstrument, HummingNote } from '@/lib/music-state'
 
 export type HummingAfterglow = {
   at: number
@@ -19,6 +19,7 @@ type HummingPersonality = {
   generatedCount: number
   modes: Record<string, number>
   voices: Record<string, number>
+  instruments: Record<string, number>
   intervals: Record<string, number>
   cadences: Record<string, number>
   swingMean: number
@@ -62,6 +63,42 @@ function modePool(mood:string, afterglow?:HummingAfterglow|null) {
   return ['dorian','major-pentatonic','minor-pentatonic']
 }
 
+function instrumentPool(mood:string,afterglow?:HummingAfterglow|null):HummingInstrument[] {
+  const source=[
+    mood,
+    afterglow?.mood,
+    afterglow?.genre,
+    afterglow?.style,
+    afterglow?.texture,
+  ].filter(Boolean).join(' ').toLowerCase()
+
+  if (/acoustic|guitar|folk|country|bossa|singer-songwriter/.test(source)) {
+    return ['nylon-pluck','piano','electric-piano']
+  }
+  if (/jazz|soul|rnb|r&b|easy-listening|adult-contemporary/.test(source)) {
+    return ['electric-piano','piano','glass-fm']
+  }
+  if (/classical|piano|ballad|sentimental/.test(source)) {
+    return ['piano','electric-piano','nylon-pluck']
+  }
+  if (/ambient|dream|ethereal|electronic|synth|new-age/.test(source)) {
+    return ['glass-fm','soft-synth','electric-piano']
+  }
+  if (/warm|intimate|calm|chill/.test(source)) {
+    return ['electric-piano','nylon-pluck','soft-synth']
+  }
+  return ['soft-synth','electric-piano','nylon-pluck','glass-fm','piano']
+}
+
+function ensembleFor(instrument:HummingInstrument,mood:string,energy:number,night:boolean):NonNullable<HummingComposition['ensemble']> {
+  const calm=/calm|chill|intimate|dream|ambient/.test(mood.toLowerCase())
+  const pad = /glass|synth/.test(instrument) || calm ? 'air-pad' : 'warm-pad'
+  const layers:2|3 = energy>.14 && !night ? 3 : 2
+  const bass:NonNullable<HummingComposition['ensemble']>['bass']=
+    layers===2 ? 'none' : energy>.2 ? 'sub-bass' : 'soft-bass'
+  return {pad,bass,layers}
+}
+
 function weightedPreference(options:string[], counts:Record<string,number>, random:()=>number) {
   const weights=options.map(item => 1 + Math.log1p(counts[item] ?? 0))
   const total=weights.reduce((a,b)=>a+b,0)
@@ -75,7 +112,17 @@ function weightedPreference(options:string[], counts:Record<string,number>, rand
 
 async function loadPersonality():Promise<HummingPersonality> {
   const row=await recallBrainMemory<HummingPersonality>(BRAIN_KEY,'cortex',MEMORY_KEY)
-  return row?.value ?? { generatedCount:0,modes:{},voices:{},intervals:{},cadences:{},swingMean:.12,updatedAt:new Date(0).toISOString() }
+  const value=row?.value
+  return {
+    generatedCount:value?.generatedCount ?? 0,
+    modes:value?.modes ?? {},
+    voices:value?.voices ?? {},
+    instruments:value?.instruments ?? {},
+    intervals:value?.intervals ?? {},
+    cadences:value?.cadences ?? {},
+    swingMean:value?.swingMean ?? .12,
+    updatedAt:value?.updatedAt ?? new Date(0).toISOString(),
+  }
 }
 
 function strongest(record:Record<string,number>,fallback:string) {
@@ -110,6 +157,7 @@ function buildNotes(seed:number, root:number, scale:number[], bars:number, beats
     const velocity=clamp(.42 + random()*.22 + (phrase==='answer'?.02:0),.35,.72)
     notes.push({ midi,name:noteName(midi),beat,duration,velocity,phrase })
     beat+=duration
+    if (beat<totalBeats-.51 && random()>.88) beat+=.5
   }
   if (notes.length>1) {
     const cadence=strongest(personality.cadences,'resolve-tonic')
@@ -143,15 +191,17 @@ function summarizeIntervals(notes:HummingNote[]) {
 
 async function rememberPersonality(previous:HummingPersonality, composition:HummingComposition) {
   const decay=(record:Record<string,number>) => Object.fromEntries(Object.entries(record).map(([k,v])=>[k,v*.97]))
-  const modes=decay(previous.modes), voices=decay(previous.voices), intervals=decay(previous.intervals), cadences=decay(previous.cadences)
+  const modes=decay(previous.modes), voices=decay(previous.voices), instruments=decay(previous.instruments)
+  const intervals=decay(previous.intervals), cadences=decay(previous.cadences)
   modes[composition.mode]=(modes[composition.mode]??0)+1
   voices[composition.voice]=(voices[composition.voice]??0)+1
+  if (composition.instrument) instruments[composition.instrument]=(instruments[composition.instrument]??0)+1
   for (const [key,value] of Object.entries(summarizeIntervals(composition.notes))) intervals[key]=(intervals[key]??0)+value
   const tail=composition.notes.slice(-2)
   const cadenceDistance=tail.length===2 ? tail[0].midi-tail[1].midi : 0
   const cadence=cadenceDistance===3 || cadenceDistance===4 ? 'descending-third' : 'resolve-tonic'
   cadences[cadence]=(cadences[cadence]??0)+1
-  const next:HummingPersonality={ generatedCount:previous.generatedCount+1,modes,voices,intervals,cadences,
+  const next:HummingPersonality={ generatedCount:previous.generatedCount+1,modes,voices,instruments,intervals,cadences,
     swingMean:previous.swingMean*.92+composition.swing*.08,updatedAt:new Date().toISOString() }
   await rememberBrainMemory({ brainKey:BRAIN_KEY,hemisphere:'cortex',memoryKey:MEMORY_KEY,value:next,confidence:.82 })
 }
@@ -172,14 +222,24 @@ export async function composeHumming(input:{ seed:number; startedAt:number; dura
   const afterEnergy=clamp((input.afterglow?.energy ?? .16)*afterDecay + .12*(1-afterDecay),0,1)
   let bpm=Math.round(minTempo + random()*(maxTempo-minTempo) + afterEnergy*8)
   if (night) bpm=Math.max(52,bpm-7)
-  const voicePool:HummingComposition['voice'][] = night ? ['hum','breath','soft-synth'] : ['hum','whistle','soft-synth','breath']
+  const instrument=weightedPreference(
+    instrumentPool(input.mood,input.afterglow),
+    personality.instruments,
+    random,
+  ) as HummingInstrument
+  const ensemble=ensembleFor(instrument,input.mood,afterEnergy,night)
+  const voicePool:HummingComposition['voice'][] =
+    instrument==='nylon-pluck' ? ['breath','soft-synth']
+    : instrument==='glass-fm' ? ['whistle','soft-synth']
+    : instrument==='piano' || instrument==='electric-piano' ? ['hum','soft-synth']
+    : night ? ['hum','breath','soft-synth'] : ['hum','whistle','soft-synth','breath']
   const voice=weightedPreference(voicePool,personality.voices,random) as HummingComposition['voice']
   const inheritedSwing=(input.afterglow?.swingness ?? personality.swingMean)*afterDecay + personality.swingMean*(1-afterDecay)
   const swing=clamp((input.swing[0]+input.swing[1])/2*.55 + inheritedSwing*.45,0,.55)
   const composition:HummingComposition={
     id:'hum-'+input.startedAt.toString(36)+'-'+input.seed.toString(36),
     title:'Idle sketch',
-    seed:input.seed,bpm,meter,key:ROOT_LABELS[rootIndex],mode,bars,voice,swing,
+    seed:input.seed,bpm,meter,key:ROOT_LABELS[rootIndex],mode,bars,voice,instrument,ensemble,swing,
     chordProgression:progression(mode,bars),notes:buildNotes(input.seed,root,MODES[mode]??MODES.dorian,bars,beatsPerBar,personality),
     startedAt:input.startedAt,generated:true,storedMelody:false,
   }

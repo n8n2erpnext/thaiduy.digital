@@ -88,7 +88,9 @@ function hummingState(cycle: HummingCycle): PublicMusicState {
   return {
     mode:'humming', connected:true, signal:'semantic', track:null,
     genre:null, style:null, arrangement:null,
-    texture:cycle.composition ? `generated-${cycle.composition.voice}` : 'generated-motion-grammar',
+    texture:cycle.composition
+      ? 'generated-'+(cycle.composition.instrument ?? cycle.composition.voice)
+      : 'generated-motion-grammar',
     mood:grammar.mood, reinterpretation:false, dominantLayer, energy, confidence:.78,
     layers:hummingLayers(grammar.dominant), composition:cycle.composition ?? null,
     updatedAt:new Date().toISOString(),

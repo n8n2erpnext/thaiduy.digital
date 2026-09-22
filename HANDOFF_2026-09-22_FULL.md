@@ -2764,4 +2764,426 @@ Docker build cache was approximately 4.0 GB during this audit. This is not runti
 
 ---
 
+# 66. MUSIC SENSOR EXPRESSION + GENERATIVE AUDIO UPGRADE — 2026-09-22
+
+This change combines the visual-wave and autonomous-humming upgrades into one Music Sensor expression system.
+
+## Architecture preserved
+
+The existing Music Sensor architecture remains authoritative:
+
+- semantic ear: track/artist tags + music knowledge graph
+- acoustic ear: live DSP bands / vocal probability / energy
+- cortex: genre/style/arrangement/texture/mood separation
+- afterglow memory: abstract energy/meter/swing/mode residue
+- composer: original generated note phrases only; heard melodies are never stored/replayed
+
+No disconnected "visual AI" or separate music classifier was added.
+
+The new layers consume the existing public MusicCortexState.
+
+## Music Expression Resolver
+
+New shared module:
+
+- src/lib/music-expression.ts
+
+Input:
+
+- mode
+- genre
+- style
+- texture
+- mood
+- energy
+- confidence
+- dominant layer
+- track identity or composition seed
+
+Output:
+
+- deterministic expression seed
+- music-aware palette family
+- six per-layer colors:
+  - bass
+  - lowMid
+  - mid
+  - vocal
+  - presence
+  - air
+- base color
+- glow color
+- estimated valence
+- arousal
+- motion profile:
+  - amplitude
+  - speed
+  - phase spread
+  - layer spread
+  - stroke weight
+  - secondary opacity
+  - dominant opacity
+  - glow
+- instrument hint
+
+Theme is a rendering constraint, not the musical identity.
+
+Each palette has:
+
+- dark-theme colors
+- Normal/light-theme transformed colors
+
+The palette identity remains musically consistent across themes, while luminance/contrast is adjusted for the surface.
+
+## Palette library
+
+The resolver now contains many reusable musical palette families rather than hardcoding light=black / dark=white.
+
+Representative families include:
+
+- Verdant signal
+- Ivory chamber
+- Chamber burgundy
+- Smoky blue jazz
+- Burgundy brass
+- Indigo blues
+- Ember rock
+- Electric rock
+- Iron violet
+- Prismatic pop
+- Pastel sunset
+- Neon circuit
+- Synthwave dusk
+- Aurora ambient
+- Lo-fi dust
+- Night pulse
+- Velvet soul
+- Earth & string
+- Open-road gold
+- Coral rhythm
+- Sunlit dub
+- Cinematic horizon
+- Opal drift
+- Silk & amber
+- Acoustic wood
+- Easy pastel
+- Dream haze
+- Melancholy blue
+- Rose glow
+- Kinetic cyan
+- Nocturne violet
+- Warm sage
+- Chill mist
+- Playful citrus
+
+Genre/style chooses a base family.
+
+Mood can add a modifier family.
+
+If genre and mood resolve to the same family, the duplicate modifier is removed.
+
+## Musical selection examples
+
+Examples of base mapping:
+
+- classical / chamber / orchestral -> ivory/chamber palettes
+- jazz / swing / bebop -> smoky/burgundy palettes
+- rock -> ember/electric
+- metal -> iron/violet
+- ambient / new-age -> aurora/opal
+- lofi / trip-hop -> dust/mist
+- electronic / synthwave -> neon/dusk
+- hip-hop -> night pulse
+- soul / R&B -> velvet/burgundy
+- folk / singer-songwriter -> earth/acoustic
+- country -> open-road gold
+- latin / bossa / bolero -> coral/acoustic
+- reggae / dub -> sunlit/sage
+- soundtrack / cinematic -> cinematic/chamber
+- Vietnamese semantic families -> silk/sage
+- easy-listening / adult-contemporary / ballad -> pastel/sage
+- dream-pop / shoegaze -> haze/aurora
+
+Mood modifiers include:
+
+- melancholy / sad
+- romantic / intimate
+- dreamy / ethereal
+- energetic / upbeat
+- dark / brooding
+- warm
+- chill / calm / peaceful
+- playful / bright / happy
+
+## Seeded improvisation
+
+A stable hash is generated from:
+
+- active track artist/title
+- or humming composition seed
+- or current abstract Music Sensor state when no track exists
+
+The seed can vary upper-layer ordering and motion phase without breaking the underlying palette identity.
+
+This creates controlled improvisation rather than unrestricted random color.
+
+## Wave performer upgrade
+
+Updated:
+
+- src/components/living/music-wave-indicator.tsx
+- src/components/living/music-organ.tsx
+
+Both header wave and main Music Sensor wave now use the same expression resolver.
+
+Wave behavior is driven by music, not only theme:
+
+- per-layer colors
+- dominant-layer glow
+- secondary opacity
+- stroke width
+- amplitude
+- animation speed
+- phase spread
+- layer spread
+- seeded harmonic motion
+
+Secondary layers were deliberately raised in visibility.
+
+Color/stroke/glow transitions are eased over time.
+
+Motion parameters interpolate gradually during animation rather than jumping immediately.
+
+The header tooltip now includes:
+
+- detected/listening state
+- palette name
+- energy/arousal
+- estimated valence
+- humming instrument
+- ensemble layer count
+- key/mode/BPM/meter/bars
+
+## Light/Dark contrast QA
+
+A persistent audit was added:
+
+- scripts/audit-music-expression.ts
+- package script: bun run music:expression-check
+
+Representative QA states:
+
+- soft rock / warm
+- easy listening / calm
+- smooth jazz / lively-warm
+- ambient / dreamy
+- shoegaze / melancholy
+- synthwave / energetic
+- singer-songwriter / intimate
+- chamber classical / calm
+- metal / dark
+- neo-soul / romantic
+- dub / chill
+- bossa nova / warm
+
+Measured against representative site surfaces:
+
+- Normal/light background: #f7faf6
+- Dark background: #080c0a
+
+Observed before closeout:
+
+- Normal-mode minimum per-layer contrast: ~3.73:1
+- Dark-mode minimum per-layer contrast: ~4.82:1
+- Normal secondary opacity stayed >= ~0.70
+- Dark secondary opacity stayed >= ~0.64
+- all tested palettes retained six distinct layer colors
+
+The audit fails if future palette changes drop below safe thresholds.
+
+## Composer upgrade
+
+The existing composer already generated multi-note question/answer motifs, scales, chord progressions, swing and original-memory behavior.
+
+That architecture was preserved and extended.
+
+Updated:
+
+- src/brains/music-sensor/composer.ts
+- src/lib/music-state.ts
+
+New composition properties:
+
+- instrument
+- ensemble.pad
+- ensemble.bass
+- ensemble.layers
+
+Supported synthetic instrument families:
+
+- piano
+- electric-piano
+- nylon-pluck
+- glass-fm
+- soft-synth
+
+Instrument selection is constrained by mood/afterglow genre/style/texture.
+
+Examples:
+
+- acoustic / folk / country / bossa -> nylon-pluck / piano / electric piano
+- jazz / soul / R&B / easy-listening -> electric piano / piano / glass FM
+- classical / piano / ballad -> piano / electric piano / nylon pluck
+- ambient / dreamy / electronic -> glass FM / soft synth / electric piano
+- warm / intimate / calm -> electric piano / nylon pluck / soft synth
+
+The existing composing personality memory now also tracks generated instrument preferences.
+
+Motifs now allow small rests between note groups so phrases breathe instead of sounding continuously machine-triggered.
+
+## Layered Web Audio engine
+
+New:
+
+- src/lib/humming-audio.ts
+
+The old player generated each note primarily from one sine/triangle oscillator.
+
+The new playback engine uses the composition's MIDI-note data and chord progression to schedule a multi-layer synthetic arrangement.
+
+Melody synthesis profiles:
+
+- Piano
+  - triangle/sine body
+  - higher partial transient
+  - fast piano-like decay
+
+- Electric piano
+  - sine FM carrier/modulator
+  - decaying modulation index
+  - tine partial
+
+- Nylon guitar / pluck
+  - triangle+sine body
+  - dynamic low-pass decay
+  - short noise transient
+
+- Glass FM
+  - higher-ratio FM modulation
+  - glassy decaying spectrum
+
+- Soft synth
+  - triangle+saw blend
+  - moving low-pass filter
+  - slower envelope
+
+Harmony layer:
+
+- generated directly from composition.chordProgression
+- triads scheduled per bar
+- warm-pad or air-pad profile
+
+Optional bass layer:
+
+- generated from chord roots
+- soft-bass or sub-bass
+- activated on 3-layer ensembles
+
+No sample packs were added.
+
+Standalone/browser footprint remains lightweight.
+
+## Gain staging / dynamics
+
+The new playback graph contains:
+
+- melody bus
+- pad bus
+- bass bus
+- mix bus
+- dynamics compressor
+- limiter
+- master gain
+
+This replaces the much quieter single-note path.
+
+The new engine intentionally raises perceived default loudness while retaining compressor/limiter protection against multi-layer clipping.
+
+## Runtime evidence
+
+After hot reload, the live Music Sensor generated real new-format compositions.
+
+Observed live examples during this work included:
+
+- Idle sketch 381
+  - C major-pentatonic
+  - 79 BPM
+  - electric-piano
+  - air-pad
+  - soft-bass
+  - 3 layers
+
+- Idle sketch 382
+  - electric-piano
+  - air-pad
+  - soft-bass
+  - 3 layers
+  - 8 melody notes
+  - I -> IV chord progression
+
+This proves the new composer shape was emitted by the live API rather than only compiling statically.
+
+## Public metadata
+
+Updated:
+
+- src/components/living/humming-player.tsx
+- src/components/living/music-sensor-explorer.tsx
+- src/app/api/music/state/route.ts
+
+Public humming metadata now reports the actual generated instrument and ensemble layer count instead of only the legacy voice field.
+
+Generated texture now uses:
+
+- generated-<instrument>
+
+when instrument metadata exists.
+
+Old stored sketches remain compatible because instrument/ensemble are optional and the audio engine has fallback mappings from the legacy voice value.
+
+## Runtime / browser validation
+
+During intermediate hot reload, the browser log contained stale Fast Refresh errors from a removed motionRef reference.
+
+The source and build artifacts were checked and contained no motionRef.
+
+The Next development runtime was then restarted cleanly only for thaiduy.digital.
+
+Post-restart:
+
+- / -> 200
+- /music-sensor -> 200
+- /api/music/state -> 200
+- browser automatically reconnected to /discuss and /api/music/stream
+- fresh runtime log showed no ReferenceError
+- no hydration error
+- no uncaught browser exception
+- no server exception
+
+NetBird was not changed, restarted or reconfigured.
+
+## Final gates for this change
+
+- targeted ESLint PASS
+- TypeScript PASS
+- Layout invariant audit PASS
+- Theme contrast audit PASS
+- Typography audit PASS
+- git diff --check PASS
+- Next production build PASS
+- 52/52 static-generation pages PASS
+- Music Expression contrast audit PASS
+
+---
+
 # END — 2026-09-22 FULL HANDOFF

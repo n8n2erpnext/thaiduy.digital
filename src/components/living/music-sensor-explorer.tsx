@@ -156,7 +156,11 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
               <div className="music-composer-copy">
                 <span>{state.composition.title}</span>
                 <h2>{state.composition.key} {state.composition.mode.toUpperCase()}</h2>
-                <p>{state.composition.bpm} BPM · {state.composition.meter} · {state.composition.bars} {vi?'Ô NHỊP':'BARS'} · {state.composition.voice.toUpperCase()}</p>
+                <p>
+                  {state.composition.bpm} BPM · {state.composition.meter} · {state.composition.bars} {vi?'Ô NHỊP':'BARS'}
+                  {' · '}{(state.composition.instrument ?? state.composition.voice).replaceAll('-',' ').toUpperCase()}
+                  {' · '}{state.composition.ensemble?.layers ?? 2} {vi?'LỚP':'LAYERS'}
+                </p>
                 <p>{state.composition.chordProgression.join(' → ')}</p>
               </div>
               <div className="music-composer-sketch">

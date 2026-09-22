@@ -10,6 +10,7 @@
     "typography:check": "bun scripts/audit-typography.ts",
     "theme:check": "bun scripts/audit-theme-contrast.ts",
     "layout:check": "bun scripts/audit-layout-invariants.ts",
+    "music:expression-check": "bun scripts/audit-music-expression.ts",
     "stack:refresh": "bun scripts/stack-refresh.ts",
     "stack:refresh:requested": "bun scripts/stack-refresh.ts --if-requested",
     "stack:units:install": "sh scripts/install-stack-refresh-user-units.sh",

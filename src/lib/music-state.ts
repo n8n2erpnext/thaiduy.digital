@@ -12,6 +12,8 @@ export type HummingNote = {
   phrase: 'question' | 'answer'
 }
 
+export type HummingInstrument='piano'|'electric-piano'|'nylon-pluck'|'glass-fm'|'soft-synth'
+
 export type HummingComposition = {
   id: string
   title: string
@@ -22,6 +24,12 @@ export type HummingComposition = {
   mode: string
   bars: number
   voice: 'hum' | 'whistle' | 'soft-synth' | 'breath'
+  instrument?: HummingInstrument
+  ensemble?: {
+    pad: 'warm-pad' | 'air-pad'
+    bass: 'sub-bass' | 'soft-bass' | 'none'
+    layers: 2 | 3
+  }
   swing: number
   chordProgression: string[]
   notes: HummingNote[]

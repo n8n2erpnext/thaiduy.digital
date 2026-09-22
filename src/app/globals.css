@@ -538,7 +538,17 @@ main {
 }
 
 .music-wave-shell svg { width: 100%; height: 128px; overflow: visible; }
-.music-layer { fill: none; stroke-width: 1; stroke-linecap: round; opacity: .48; }
+.music-layer {
+  fill: none;
+  stroke-width: 1;
+  stroke-linecap: round;
+  opacity: .68;
+  transition:
+    stroke 2800ms ease,
+    opacity 900ms ease,
+    stroke-width 900ms ease,
+    filter 1800ms ease;
+}
 .music-layer-bass { stroke: rgba(64,196,172,.42); }
 .music-layer-lowMid { stroke: rgba(79,209,173,.54); }
 .music-layer-mid { stroke: rgba(142,232,178,.72); }
@@ -548,7 +558,14 @@ main {
 
 .music-legend { display: flex; flex-wrap: wrap; gap: 9px 14px; padding-top: 14px; }
 .music-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-2); font: 8px/1.4 var(--font-terminal), monospace; }
-.music-legend i { width: 14px; height: 1px; background: currentColor; opacity: .55; }
+.music-legend i {
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: .82;
+  transition: background 2800ms ease;
+}
 .music-note { margin: 14px 0 0; color: var(--muted-2); font-size: 11px; line-height: 1.6; }
 .music-track-line { min-height: 18px; }
 .music-organ-insight { display: grid; gap: 14px; padding: 17px 18px 18px; border-top: 1px solid var(--line); background: rgba(255,255,255,.012); }
@@ -598,7 +615,15 @@ main {
 .header-wave svg { width: 104px; height: 22px; overflow: visible; }
 .header-wave-base, .header-wave-layer { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .header-wave-base { stroke: rgba(142,232,178,.18); stroke-width: .8; }
-.header-wave-layer { opacity: .42; stroke-width: .78; transition: opacity 180ms ease, stroke-width 180ms ease; }
+.header-wave-layer {
+  opacity: .68;
+  stroke-width: 1;
+  transition:
+    stroke 2800ms ease,
+    opacity 900ms ease,
+    stroke-width 900ms ease,
+    filter 1800ms ease;
+}
 .header-wave-layer.is-dominant { opacity: .92; stroke-width: 1.45; filter: drop-shadow(0 0 3px rgba(220,255,235,.18)); }
 .header-wave-layer-bass { stroke: #4fd1b5; }
 .header-wave-layer-lowMid { stroke: #79c7b1; }
@@ -10356,4 +10381,25 @@ html[data-theme='normal'] .cv-education{
   .discuss-link-dialog > footer > div {
     justify-content: flex-end;
   }
+}
+
+.music-expression-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted-2);
+  font: var(--type-meta)/1.4 var(--font-terminal), monospace;
+  text-transform: uppercase;
+}
+
+.music-expression-mini span:first-child {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme='normal'] .music-expression-mini span:first-child {
+  color: var(--text-secondary);
 }

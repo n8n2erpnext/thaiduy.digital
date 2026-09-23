@@ -553,7 +553,19 @@ class DspEngine(
         meterAccent2 = accentPeriodicity(energy, chosenLag, 2)
         meterAccent3 = accentPeriodicity(energy, chosenLag, 3)
         meterAccent4 = accentPeriodicity(energy, chosenLag, 4)
+
+        // corr4 can dominate a real 2-beat pattern simply because four beats are
+        // a harmonic multiple of two. Only override that harmonic when the
+        // beat-accent pattern itself gives clear 2-beat evidence. This keeps the
+        // existing 3/4 and 4/4 rules intact when accent evidence is ambiguous.
+        val clearTwoBeatAccent =
+            corr2 >= 0.36f &&
+                meterAccent2 >= 0.22f &&
+                meterAccent2 >= meterAccent3 + 0.10f &&
+                meterAccent2 >= meterAccent4 + 0.12f
+
         meter = when {
+            clearTwoBeatAccent -> "2/4"
             corr2 >= 0.24f && corr2 >= corr3 + 0.07f && corr2 >= corr4 * 0.90f -> "2/4"
             corr3 >= 0.24f && corr3 >= corr4 + 0.10f -> "3/4"
             corr4 >= 0.24f && corr4 >= corr3 + 0.08f -> "4/4"

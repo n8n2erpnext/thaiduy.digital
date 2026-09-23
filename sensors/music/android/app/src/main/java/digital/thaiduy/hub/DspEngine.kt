@@ -38,6 +38,10 @@ class DspEngine(
     private val previousSpectrum = FloatArray(fftSize / 2 + 1)
     private val onsetHistory = FloatArray(160)
     private val energyHistory = FloatArray(160)
+    private val processIntervalHistory = FloatArray(64)
+    private var processIntervalCount = 0
+    private var processIntervalIndex = 0
+    private var lastProcessNs = 0L
     private var historyCount = 0
     private var historyIndex = 0
     private var fluxBaseline = 0f
@@ -49,6 +53,7 @@ class DspEngine(
     private var swingness = 0f
 
     fun process(interleaved: ShortArray, count: Int, channels: Int = 2): DspFeatures {
+        recordProcessInterval()
         val re = FloatArray(fftSize)
         val im = FloatArray(fftSize)
         val frames = minOf(count / channels, fftSize)
@@ -185,6 +190,35 @@ class DspEngine(
         )
     }
 
+    private fun recordProcessInterval() {
+        val now = System.nanoTime()
+        if (lastProcessNs != 0L) {
+            val seconds = (now - lastProcessNs) / 1_000_000_000f
+            if (seconds in 0.03f..0.25f) {
+                processIntervalHistory[processIntervalIndex] = seconds
+                processIntervalIndex = (processIntervalIndex + 1) % processIntervalHistory.size
+                processIntervalCount = minOf(processIntervalCount + 1, processIntervalHistory.size)
+            }
+        }
+        lastProcessNs = now
+    }
+
+    private fun measuredProcessIntervalSeconds(): Double {
+        if (processIntervalCount < 8) return fftSize.toDouble() / sampleRate.toDouble()
+        val values = FloatArray(processIntervalCount)
+        val start = if (processIntervalCount < processIntervalHistory.size) 0 else processIntervalIndex
+        for (i in 0 until processIntervalCount) {
+            values[i] = processIntervalHistory[(start + i) % processIntervalHistory.size]
+        }
+        values.sort()
+        val mid = values.size / 2
+        return if (values.size % 2 == 0) {
+            ((values[mid - 1] + values[mid]) * 0.5f).toDouble()
+        } else {
+            values[mid].toDouble()
+        }
+    }
+
     private fun appendHistory(onset: Float, energy: Float) {
         onsetHistory[historyIndex] = onset
         energyHistory[historyIndex] = energy
@@ -233,7 +267,7 @@ class DspEngine(
         val onset = chronological(onsetHistory)
         if (onset.size < 40) return
 
-        val secondsPerWindow = fftSize.toDouble() / sampleRate.toDouble()
+        val secondsPerWindow = measuredProcessIntervalSeconds()
         val minLag = maxOf(3, (60.0 / (190.0 * secondsPerWindow)).roundToInt())
         val maxLag = minOf(
             onset.size / 3,
@@ -310,13 +344,14 @@ class DspEngine(
         }
 
         val energy = chronological(energyHistory)
-        val corr3 = correlation(energy, bestLag * 3)
-        val corr4 = correlation(energy, bestLag * 4)
-        val meterMargin = kotlin.math.abs(corr3 - corr4)
-        meter = if (meterMargin >= 0.12f) {
-            if (corr3 > corr4) "3/4" else "4/4"
-        } else {
-            "unknown"
+        val corr2 = correlation(energy, chosenLag * 2)
+        val corr3 = correlation(energy, chosenLag * 3)
+        val corr4 = correlation(energy, chosenLag * 4)
+        meter = when {
+            corr2 >= 0.24f && corr2 >= corr3 + 0.07f && corr2 >= corr4 * 0.90f -> "2/4"
+            corr3 >= 0.24f && corr3 >= corr4 + 0.10f -> "3/4"
+            corr4 >= 0.24f && corr4 >= corr3 + 0.08f -> "4/4"
+            else -> "unknown"
         }
 
         val straightSubdivision = correlation(onset, maxOf(1, bestLag / 2))

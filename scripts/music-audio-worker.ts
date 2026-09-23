@@ -205,8 +205,17 @@ class DeviceSession {
           ? confidence>=.78
           : false
 
+    const pulseBpm=
+      agreement==='direct'
+        ? oracle.bpm
+        : agreement==='octave'&&typeof top==='number'&&top>0
+          ? top
+          : agreement==='none'
+            ? oracle.bpm
+            : undefined
+
     return {
-      pulseBpm:oracle.bpm,
+      pulseBpm,
       pulseConfidence:confidence,
       pulseReliable,
       tempoFamilyAgreement:agreement,

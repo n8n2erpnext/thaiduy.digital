@@ -816,3 +816,11 @@ This is the authoritative continuation point.
 - FSLD benchmark for music-tempo over the existing discovery/holdout previews: discovery exact 16/30 (53.3%), family 24/30 (80.0%); holdout exact 11/26 (42.3%), family 19/26 (73.1%), about 0.43 s per 30 s sample on ARM.
 - Continuous worker integration regression at 120 BPM: core tempo ~121.5, oracle pulse 120, pulseConfidence 1, pulseReliable true, agreement direct, oracle analysis ~223 ms.
 - No Android rebuild is required.
+
+### Pulse oracle octave representative follow-up
+- Holdout fusion audit on 26 samples where both DSP and oracle completed: 5 direct agreements, 9 octave agreements, 12 conflicts.
+- The original witness code returned oracle BPM even for octave agreement. That contradicted the intended semantics because the oracle is not authority for choosing 60 vs 120 / 90 vs 180.
+- In the 9 octave-agreement holdout cases, the DSP top family representative was exact in 5 cases while the oracle representative was exact in 2; two cases remained wrong either way.
+- Policy changed: direct agreement -> oracle BPM; octave agreement -> keep DSP top-family BPM and set tempoOctaveAmbiguous=true; conflict -> do not expose oracle pulse; no-family high-confidence fallback remains oracle-only.
+- On the same reliable holdout subset this changes exact pulse representatives from 5 to 8, harmonic from 7 to 4, with fail count unchanged at 2; family agreement itself is unchanged.
+- Continuous 120 BPM AAC worker regression after the change: core tempo ~121.45, oracle 120, pulseBpm 120, pulseConfidence 1, pulseReliable true, direct agreement, oracle analysis ~222 ms.

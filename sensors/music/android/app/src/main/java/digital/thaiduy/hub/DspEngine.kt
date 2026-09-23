@@ -436,12 +436,25 @@ class DspEngine(
         tempoOnsetBpm = peakBpm
         if (peakBpm > 0f && peakConfidence >= 0.58f) {
             val disagreement = kotlin.math.abs(peakBpm - candidateBpm)
-            if (disagreement >= 14f && peakConfidence >= confidence * 0.92f) {
-                candidateBpm = peakBpm
-                confidence = maxOf(confidence * 0.78f, peakConfidence)
-            } else if (disagreement < 14f) {
-                candidateBpm = candidateBpm * 0.58f + peakBpm * 0.42f
-                confidence = maxOf(confidence, peakConfidence * 0.92f)
+            val ratio = peakBpm / candidateBpm.coerceAtLeast(1f)
+            val octaveRelated = ratio in 1.88f..2.12f || ratio in 0.47f..0.53f
+
+            when {
+                disagreement < 12f -> {
+                    candidateBpm = candidateBpm * 0.72f + peakBpm * 0.28f
+                    confidence = maxOf(confidence, peakConfidence * 0.90f)
+                }
+                octaveRelated && peakConfidence > confidence + 0.12f -> {
+                    val normalizedPeak = when {
+                        ratio > 1.5f -> peakBpm / 2f
+                        ratio < 0.75f -> peakBpm * 2f
+                        else -> peakBpm
+                    }
+                    if (kotlin.math.abs(normalizedPeak - candidateBpm) < 12f) {
+                        candidateBpm = candidateBpm * 0.65f + normalizedPeak * 0.35f
+                        confidence = maxOf(confidence, peakConfidence * 0.88f)
+                    }
+                }
             }
         }
 

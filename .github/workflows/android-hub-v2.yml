@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/android-hub-v2
+      - fix/android-hub-pair-crash
     paths:
       - "sensors/music/android/**"
       - ".github/workflows/android-hub-v2.yml"

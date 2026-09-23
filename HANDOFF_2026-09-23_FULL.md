@@ -49,6 +49,20 @@ Command palette follow-up:
 - entry routes to `/control`; unauthenticated local request correctly redirects `307 -> /control/login`
 - added a dedicated control-panel icon; TypeScript, targeted ESLint and `git diff --check` PASS
 
+Account/self-management follow-up:
+
+- `SiteHeader` now resolves the Better Auth session server-side and passes a minimal viewer model to the command palette
+- anonymous Command palette shows `Sign in`; signed-in users get `My account`, `My discussions`, `Sign out`; `Control` is owner-only
+- added `/account` with OAuth identity/provider/joined date, editable display name, and sign out
+- added `/account/discussions` with the signed-in user's own topics/replies and moderation status
+- added per-item edit routes under `/account/discussions/[kind]/[id]`
+- self-edit reuses the Discuss rich editor and always returns edited content to `pending` moderation
+- self-delete is a soft-delete guarded by `userId` ownership; no schema migration was needed
+- added authenticated account APIs for profile edit and own Discuss edit/delete
+- anonymous protection verified: `/account*` redirects to `/discuss`; account mutation APIs return `401`
+- read-path validation on existing data passed for account overview, owned thread/reply lookup, and participant lookup
+- validation: TypeScript PASS; layout/theme PASS; typography unchanged at the same 8 historical hero/Stack outliers; targeted ESLint 0 errors with one pre-existing rich-editor `<img>` warning; `git diff --check` PASS
+
 ---
 
 # 0. READ THIS FIRST

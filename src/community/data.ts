@@ -1019,3 +1019,179 @@ export async function setCommunityMemberStatus(
     entityId:userId,
   })
 }
+
+export async function getUserCommunityItems(userId:string) {
+  const threads=await db.select({
+    id:communityThreads.id,
+    title:communityThreads.title,
+    body:communityThreads.body,
+    bodyHtml:communityThreads.bodyHtml,
+    status:communityThreads.status,
+    createdAt:communityThreads.createdAt,
+    updatedAt:communityThreads.updatedAt,
+  }).from(communityThreads)
+    .where(and(eq(communityThreads.userId,userId),isNull(communityThreads.deletedAt)))
+    .orderBy(desc(communityThreads.updatedAt))
+    .limit(100)
+
+  const replies=await db.select({
+    id:communityReplies.id,
+    threadId:communityReplies.threadId,
+    body:communityReplies.body,
+    bodyHtml:communityReplies.bodyHtml,
+    status:communityReplies.status,
+    createdAt:communityReplies.createdAt,
+    updatedAt:communityReplies.updatedAt,
+    threadTitle:sql<string>`(
+      select t.title from community_threads t
+      where t.id=${communityReplies.threadId}
+      limit 1
+    )`,
+  }).from(communityReplies)
+    .where(and(eq(communityReplies.userId,userId),isNull(communityReplies.deletedAt)))
+    .orderBy(desc(communityReplies.updatedAt))
+    .limit(100)
+
+  return {
+    threads:threads.map(item=>({...item,kind:'thread' as const})),
+    replies:replies.map(item=>({...item,kind:'reply' as const})),
+  }
+}
+
+export async function getOwnedCommunityItem(
+  kind:'thread'|'reply',
+  id:string,
+  userId:string,
+) {
+  if (kind==='thread') {
+    const [item]=await db.select({
+      id:communityThreads.id,
+      title:communityThreads.title,
+      body:communityThreads.body,
+      bodyHtml:communityThreads.bodyHtml,
+      status:communityThreads.status,
+      createdAt:communityThreads.createdAt,
+      updatedAt:communityThreads.updatedAt,
+    }).from(communityThreads).where(and(
+      eq(communityThreads.id,id),
+      eq(communityThreads.userId,userId),
+      isNull(communityThreads.deletedAt),
+    )).limit(1)
+    return item?{...item,kind:'thread' as const,threadId:item.id}:null
+  }
+
+  const [item]=await db.select({
+    id:communityReplies.id,
+    threadId:communityReplies.threadId,
+    body:communityReplies.body,
+    bodyHtml:communityReplies.bodyHtml,
+    status:communityReplies.status,
+    createdAt:communityReplies.createdAt,
+    updatedAt:communityReplies.updatedAt,
+    threadTitle:sql<string>`(
+      select t.title from community_threads t
+      where t.id=${communityReplies.threadId}
+      limit 1
+    )`,
+  }).from(communityReplies).where(and(
+    eq(communityReplies.id,id),
+    eq(communityReplies.userId,userId),
+    isNull(communityReplies.deletedAt),
+  )).limit(1)
+  return item?{...item,kind:'reply' as const,title:item.threadTitle}:null
+}
+
+export async function updateOwnedCommunityItem(
+  kind:'thread'|'reply',
+  id:string,
+  userId:string,
+  input:{title?:string;body:string;bodyHtml?:string|null},
+) {
+  await requireCommunityPostingAccess(userId)
+  const now=new Date()
+
+  if (kind==='thread') {
+    const title=(input.title ?? '').trim().replace(/\s+/g,' ')
+    if (title.length<3 || title.length>180) throw new Error('title_length_invalid')
+    const normalized=await normalizeCommunityBody(input.body,input.bodyHtml,5000,new Map())
+    const [row]=await db.update(communityThreads).set({
+      title,
+      body:normalized.body,
+      bodyHtml:normalized.bodyHtml,
+      mentions:normalized.mentions,
+      status:'pending',
+      moderatedBy:null,
+      moderatedAt:null,
+      updatedAt:now,
+    }).where(and(
+      eq(communityThreads.id,id),
+      eq(communityThreads.userId,userId),
+      isNull(communityThreads.deletedAt),
+    )).returning({id:communityThreads.id,status:communityThreads.status})
+    if (!row) throw new Error('community_item_not_found')
+    return row
+  }
+  const [owned]=await db.select({threadId:communityReplies.threadId})
+    .from(communityReplies)
+    .where(and(
+      eq(communityReplies.id,id),
+      eq(communityReplies.userId,userId),
+      isNull(communityReplies.deletedAt),
+    )).limit(1)
+  if (!owned) throw new Error('community_item_not_found')
+
+  const participants=await getCommunityParticipants(owned.threadId)
+  const allowedMentions=new Map(participants.map(item=>[item.id,item.name]))
+  const normalized=await normalizeCommunityBody(input.body,input.bodyHtml,3000,allowedMentions)
+  const [row]=await db.update(communityReplies).set({
+    body:normalized.body,
+    bodyHtml:normalized.bodyHtml,
+    mentions:normalized.mentions,
+    status:'pending',
+    moderatedBy:null,
+    moderatedAt:null,
+    updatedAt:now,
+  }).where(and(
+    eq(communityReplies.id,id),
+    eq(communityReplies.userId,userId),
+    isNull(communityReplies.deletedAt),
+  )).returning({id:communityReplies.id,status:communityReplies.status})
+  if (!row) throw new Error('community_item_not_found')
+  return row
+}
+
+export async function deleteOwnedCommunityItem(
+  kind:'thread'|'reply',
+  id:string,
+  userId:string,
+) {
+  const now=new Date()
+  if (kind==='thread') {
+    const [row]=await db.update(communityThreads).set({
+      deletedAt:now,
+      updatedAt:now,
+    }).where(and(
+      eq(communityThreads.id,id),
+      eq(communityThreads.userId,userId),
+      isNull(communityThreads.deletedAt),
+    )).returning({id:communityThreads.id})
+    if (!row) throw new Error('community_item_not_found')
+  } else {
+    const [row]=await db.update(communityReplies).set({
+      deletedAt:now,
+      updatedAt:now,
+    }).where(and(
+      eq(communityReplies.id,id),
+      eq(communityReplies.userId,userId),
+      isNull(communityReplies.deletedAt),
+    )).returning({id:communityReplies.id})
+    if (!row) throw new Error('community_item_not_found')
+  }
+
+  await db.insert(auditLogs).values({
+    actorId:userId,
+    action:'community.self_delete',
+    entityType:'community_'+kind,
+    entityId:id,
+  })
+}

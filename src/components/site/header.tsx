@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { MusicWaveIndicator } from '@/components/living/music-wave-indicator'
 import { HeaderCommand } from '@/components/site/header-command'
 import { LanguageSwitch } from '@/components/site/language-switch'
@@ -10,16 +11,20 @@ import { textFor } from '@/content/types'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 import { isFeatureEnabled } from '@/lib/feature-flags'
+import { auth } from '@/lib/auth'
+import { isCommunityAdminEmail } from '@/community/data'
 import { getSiteSetting, type SiteIdentity } from '@/lib/site-settings'
 
 type Props = { locale: Locale }
 
 export async function SiteHeader({ locale }: Props) {
   const t = messages[locale].header
-  const [nav, musicEnabled, identity] = await Promise.all([
+  const requestHeaders=await headers()
+  const [nav, musicEnabled, identity, session] = await Promise.all([
     getRegistry('nav'),
     isFeatureEnabled('music.sensor', true),
     getSiteSetting<SiteIdentity>('site.identity', {}),
+    auth.api.getSession({headers:requestHeaders}),
   ])
 
   const brandName = identity.name?.trim() || 'Thái Duy'
@@ -53,7 +58,14 @@ export async function SiteHeader({ locale }: Props) {
           label={t.language}
           title={t.languageTitle}
         />
-        <HeaderCommand locale={locale} />
+        <HeaderCommand
+          locale={locale}
+          viewer={session?.user?{
+            name:session.user.name,
+            image:session.user.image ?? null,
+            isOwner:isCommunityAdminEmail(session.user.email),
+          }:null}
+        />
       </div>
     </header>
   )

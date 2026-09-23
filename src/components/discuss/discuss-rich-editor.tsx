@@ -76,6 +76,7 @@ type Props={
   placeholder:string
   maxLength:number
   resetKey:number
+  initialHtml?:string
   onChange:(value:ChangeValue)=>void
 }
 
@@ -118,7 +119,7 @@ function ToolbarButton({
   )
 }
 export function DiscussRichEditor({
-  locale,participants,placeholder,maxLength,resetKey,onChange,
+  locale,participants,placeholder,maxLength,resetKey,initialHtml,onChange,
 }:Props){
   const vi=locale==='vi'
   const [emojiOpen,setEmojiOpen]=useState(false)
@@ -131,7 +132,7 @@ export function DiscussRichEditor({
 
   const editor=useEditor({
     extensions:extensions(placeholder),
-    content:'<p></p>',
+    content:initialHtml?.trim() || '<p></p>',
     immediatelyRender:false,
     shouldRerenderOnTransaction:true,
     editorProps:{
@@ -157,7 +158,7 @@ export function DiscussRichEditor({
         text:editor.getText({blockSeparator:'\n'}),
       })
     },
-  },[resetKey])
+  },[resetKey,initialHtml])
 
   const filteredParticipants=useMemo(()=>{
     const query=mentionQuery.trim().toLocaleLowerCase(locale==='vi'?'vi-VN':'en-US')

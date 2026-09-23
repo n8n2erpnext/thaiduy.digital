@@ -73,6 +73,8 @@ export class ServerDspEngine {
   private meterAccent3=0
   private meterAccent4=0
   private meterConfidence=0
+  private pendingMeter:'2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'='unknown'
+  private pendingMeterCount=0
   private meterBeatLag=0
   private meterOppositeAsymmetry4=0
   private subdivisionSimple=0
@@ -539,18 +541,64 @@ export class ServerDspEngine {
     const p2=Math.max(0,this.meterCorr2),p3=Math.max(0,this.meterCorr3),p4=Math.max(0,this.meterCorr4)
     const macro2=clamp(p2*.55+this.meterAccent2*.45),macro3=clamp(p3*.55+this.meterAccent3*.45),macro4=clamp(p4*.55+this.meterAccent4*.45)
     const clear2=this.meterCorr2>=.36&&this.meterAccent2>=.22&&this.meterAccent2>=this.meterAccent3+.10&&this.meterAccent2>=this.meterAccent4+.12
+    const fourBeatAccentStructure=
+      this.meterAccent4>=.20 &&
+      this.meterOppositeAsymmetry4>=.10 &&
+      this.meterAccent4>=this.meterAccent3+.10
+    const fourBeatPersistence=
+      this.meterAccent2<.18 &&
+      p4>=.20 &&
+      p4>=p2*.62 &&
+      p4>=p3*.70
     const ranked:[[number,number],[number,number],[number,number]]=[[2,macro2],[3,macro3],[4,macro4]]
     ranked.sort((x,y)=>y[1]-x[1])
     const gap=ranked[0][1]-ranked[1][1]
     let macro=0
-    if(clear2)macro=2
-    else if(ranked[0][1]>=.24&&gap>=.04)macro=ranked[0][0]
+    if(fourBeatAccentStructure||fourBeatPersistence)macro=4
+    else if(clear2)macro=2
+    else if(
+      ranked[0][1]>=.24 &&
+      gap>=.04 &&
+      (ranked[0][0]!==2 || this.meterAccent2>=.18)
+    )macro=ranked[0][0]
     else if(this.meterAccent4>=.46&&macro4>=.24)macro=4
     else if(this.meterAccent3>=.34&&macro3>=.24)macro=3
     const compound=this.subdivisionTriplet>=.18&&(this.subdivisionTriplet-this.subdivisionSimple)>=.06
-    const candidate=macro===2?(compound?'6/8':'2/4'):macro===3?'3/4':macro===4?(compound?'12/8':'4/4'):'unknown'
-    this.meter=this.tempoReliable?candidate:'unknown'
-    this.meterConfidence=!this.tempoReliable||macro===0?0:clamp((ranked[0][1]*.72+clamp(gap,0,.35)*.80)*this.beatConfidence)
+    const candidate:'2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'=
+      macro===2
+        ? (compound?'6/8':'2/4')
+        : macro===3
+          ? '3/4'
+          : macro===4
+            ? (compound?'12/8':'4/4')
+            : 'unknown'
+
+    if(!this.tempoReliable||candidate==='unknown'){
+      this.meter='unknown'
+      this.pendingMeter='unknown'
+      this.pendingMeterCount=0
+    }else if(candidate===this.meter){
+      this.pendingMeter='unknown'
+      this.pendingMeterCount=0
+    }else{
+      if(this.pendingMeter===candidate)this.pendingMeterCount++
+      else{
+        this.pendingMeter=candidate
+        this.pendingMeterCount=1
+      }
+      if(this.pendingMeterCount>=2){
+        this.meter=candidate
+        this.pendingMeter='unknown'
+        this.pendingMeterCount=0
+      }else{
+        this.meter='unknown'
+      }
+    }
+
+    this.meterConfidence=
+      !this.tempoReliable||macro===0||this.meter!==candidate
+        ? 0
+        : clamp((ranked[0][1]*.72+clamp(gap,0,.35)*.80)*this.beatConfidence)
     const swing=clamp((this.subdivisionTriplet-this.subdivisionSimple-.02)*2.4)
     this.swingness=this.swingness*.76+swing*.24
   }

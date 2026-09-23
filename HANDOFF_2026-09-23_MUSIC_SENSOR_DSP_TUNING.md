@@ -781,3 +781,13 @@ This is the authoritative continuation point.
 - Meter requires two consecutive confirmations before public output.
 - Offline meter regressions after hysteresis: 60/2 -> 14 2/4, 2 unknown, 0 wrong 4/4; 80/2 -> 36 2/4, 1 unknown; 120/4 -> 16 4/4, 1 unknown; Billie snapshot -> 6 4/4, 20 unknown, 0 wrong 2/4.
 - Active server commits: 58cd6e66 tempo harmonic families; 6277b503 conservative four-beat meter.
+
+### Open-dataset batch evaluation · FSLD discovery set
+- Source: Freesound Loop Dataset (FSLD), Creative Commons audio with expert tempo/meter/instrumentation annotations. Expert annotation archive is small (~1.6 MB); audio previews are fetched one at a time.
+- Added scripts/music-dsp-fsld-batch.ts. Evaluation path mirrors Hub 0.6.0 transport: preview -> AAC-LC 128 kbps / 48 kHz stereo -> ffmpeg decode -> ServerDspEngine -> metrics. Each MP3/AAC/PCM temp file is deleted immediately after its sample.
+- Discovery batch selected 30 balanced samples across BPM ~60-190 and instrumentation, including 2/4 and 3/4 where available. 29 completed; one preview timed out.
+- Tempo results: exact 7, harmonic 6, unresolved 13, fail 3.
+- BPM pattern: 160-190 BPM frequently collapses to half-time; 60-80 BPM is frequently unresolved; percussion-dominant 90-140 BPM is materially stronger. FX/melody-only loops are often unresolved or alias to unrelated pulse families.
+- Meter behavior is conservative: 4/4 aggregate correct-frame rate 22.2%, unknown 75.0%, wrong ~2.8%. 3/4 aggregate correct 50%, unknown 47.5%, wrong 2.5%. The two available 2/4 samples are insufficient for a broad conclusion; one 150 BPM 2/4 sample collapsed to half-time and then 4/4.
+- Treat this 30-sample set as discovery/tuning evidence only. Do not report post-tune accuracy on the same set as validation. Next validation should use a fresh, unseen FSLD holdout batch.
+- Result artifact: artifacts/music-dsp-eval/fsld-2026-09-23.json.

@@ -348,30 +348,6 @@ export default async function Home() {
             />
           </section>
 
-          <section className="home-public-close">
-            <aside className="home-public-close-rail home-public-close-rail-left" aria-label={locale==='vi'?'Nguyên tắc phòng lab':'Lab principles'}>
-              <strong>{locale==='vi'?'MỘT PHÒNG LAB CÔNG KHAI':'A PUBLIC LAB'}</strong>
-              <span>{locale==='vi'?'TRẠNG THÁI THẬT':'REAL STATE'}</span>
-              <span>{locale==='vi'?'DỮ LIỆU CÔNG KHAI':'PUBLIC DATA'}</span>
-              <span>{locale==='vi'?'KHÔNG GIẢ LẬP':'NO SIMULATION'}</span>
-            </aside>
-            <div className="home-public-close-poster">
-              <div className="home-public-close-words" aria-label={locale==='vi'?'Xây. Quan sát. Ghi lại.':'Build. Observe. Write.'}>
-                <strong>{locale==='vi'?'XÂY.':'BUILD.'}</strong>
-                <strong>{locale==='vi'?'QUAN SÁT.':'OBSERVE.'}</strong>
-                <strong>{locale==='vi'?'GHI LẠI.':'WRITE.'}</strong>
-              </div>
-              <p>{locale==='vi'
-                ? 'Hệ thống thật luôn để lại dấu vết. Tôi ghi lại những gì chúng cho thấy.'
-                : 'Real systems leave evidence. I keep the notes.'}</p>
-            </div>
-            <aside className="home-public-close-rail home-public-close-rail-right" aria-label={locale==='vi'?'Nhịp làm việc':'Working rhythm'}>
-              <span>BUILD</span>
-              <span>OBSERVE</span>
-              <span>WRITE</span>
-              <strong>{locale==='vi'?'GIỮ LẠI GHI CHÉP':'KEEP THE NOTES'}</strong>
-            </aside>
-          </section>
         </main>
       </div>
     </div>

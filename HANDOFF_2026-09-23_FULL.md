@@ -63,6 +63,14 @@ Account/self-management follow-up:
 - read-path validation on existing data passed for account overview, owned thread/reply lookup, and participant lookup
 - validation: TypeScript PASS; layout/theme PASS; typography unchanged at the same 8 historical hero/Stack outliers; targeted ESLint 0 errors with one pre-existing rich-editor `<img>` warning; `git diff --check` PASS
 
+Homepage closeout simplification:
+
+- removed the final `A PUBLIC LAB / BUILD. OBSERVE. WRITE.` poster block from the homepage at owner request
+- removed all `home-public-close*` markup and responsive CSS; no dead selectors remain
+- this also removed 6 historical typography audit violations that belonged to that block
+- typography audit now reports only 2 historical Stack icon raw-size outliers
+- TypeScript/layout/theme PASS and local `/` returns 200 after removal
+
 ---
 
 # 0. READ THIS FIRST

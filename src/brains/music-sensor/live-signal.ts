@@ -39,6 +39,7 @@ export type MusicDspFrame = {
   meterAccent3?: number
   meterAccent4?: number
   meterConfidence?: number
+  meterBeatLag?: number
   subdivisionSimple?: number
   subdivisionTriplet?: number
   swingness?: number

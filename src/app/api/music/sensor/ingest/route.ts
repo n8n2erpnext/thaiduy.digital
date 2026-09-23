@@ -40,6 +40,7 @@ const frameSchema = z.object({
   meterAccent3: unit.optional(),
   meterAccent4: unit.optional(),
   meterConfidence: unit.optional(),
+  meterBeatLag: z.number().int().min(1).max(512).optional(),
   subdivisionSimple: unit.optional(),
   subdivisionTriplet: unit.optional(),
   swingness: unit.optional(),

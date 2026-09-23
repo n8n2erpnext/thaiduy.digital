@@ -39,6 +39,7 @@ data class DspFeatures(
     val meterAccent3: Float,
     val meterAccent4: Float,
     val meterConfidence: Float,
+    val meterBeatLag: Int,
     val subdivisionSimple: Float,
     val subdivisionTriplet: Float,
     val swingness: Float,
@@ -95,6 +96,7 @@ class DspEngine(
     private var meterAccent3 = 0f
     private var meterAccent4 = 0f
     private var meterConfidence = 0f
+    private var meterBeatLag = 0
     private var subdivisionSimple = 0f
     private var subdivisionTriplet = 0f
     private var swingness = 0f
@@ -253,6 +255,7 @@ class DspEngine(
             meterAccent3 = meterAccent3,
             meterAccent4 = meterAccent4,
             meterConfidence = meterConfidence,
+            meterBeatLag = meterBeatLag,
             subdivisionSimple = subdivisionSimple,
             subdivisionTriplet = subdivisionTriplet,
             swingness = swingness,
@@ -760,9 +763,33 @@ class DspEngine(
         }
 
         val energy = chronologicalRhythm(rhythmEnergyHistory)
-        val beatLag = (
+        val tempoBeatLag = (
             60.0 / (tempoBpm.coerceIn(55f, 190f) * secondsPerWindow)
             ).roundToInt().coerceIn(minLag, maxLag)
+
+        // BPM estimation can be a few percent biased while still musically
+        // correct (the 120 BPM onset estimator sits near 117). Meter phase is
+        // much more sensitive: one subwindow of lag error can erase a 4-beat
+        // downbeat pattern. Refine only the meter lag locally; never rewrite
+        // the public tempo from this search.
+        var beatLag = tempoBeatLag
+        var bestMeterLagScore = -1f
+        for (candidateLag in maxOf(minLag, tempoBeatLag - 1)..minOf(maxLag, tempoBeatLag + 1)) {
+            val c2 = maxOf(0f, correlation(energy, candidateLag * 2))
+            val c3 = maxOf(0f, correlation(energy, candidateLag * 3))
+            val c4 = maxOf(0f, correlation(energy, candidateLag * 4))
+            val a2 = accentPeriodicity(energy, candidateLag, 2)
+            val a3 = accentPeriodicity(energy, candidateLag, 3)
+            val a4 = accentPeriodicity(energy, candidateLag, 4)
+            val periodic = maxOf(c2, c3, c4)
+            val accent = maxOf(a2, a3, a4)
+            val score = periodic * 0.62f + accent * 0.38f
+            if (score > bestMeterLagScore) {
+                bestMeterLagScore = score
+                beatLag = candidateLag
+            }
+        }
+        meterBeatLag = beatLag
 
         val corr2 = correlation(energy, beatLag * 2)
         val corr3 = correlation(energy, beatLag * 3)

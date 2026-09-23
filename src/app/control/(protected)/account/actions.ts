@@ -3,7 +3,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { requireControlOwner } from '@/lib/control-auth'
+import { requireBetterAuthControlOwner } from '@/lib/control-auth'
 
 function passwordFrom(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? '')
@@ -12,7 +12,7 @@ function passwordFrom(formData: FormData, key: string) {
 }
 
 export async function setFallbackPassword(formData: FormData) {
-  await requireControlOwner()
+  await requireBetterAuthControlOwner()
   const newPassword = passwordFrom(formData, 'newPassword')
   try {
     await auth.api.setPassword({ headers: await headers(), body: { newPassword } })

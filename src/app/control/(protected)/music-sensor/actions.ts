@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { db } from '@/db/client'
 import { auditLogs, hubDevices, revisions } from '@/db/schema'
 import { requireControlOwner } from '@/lib/control-auth'
+import { revokeHubControlSession } from '@/lib/hub-control-session'
 import { ensureRedis } from '@/lib/redis'
 
 export async function createMusicSensorPairCodeAction() {
@@ -71,6 +72,7 @@ export async function revokeHubDeviceAction(formData: FormData) {
       `hub:auth:${revokedTokenHash}`,
       `hub:lastseen:${id}`,
     )
+    await revokeHubControlSession(id)
   }
   revalidatePath('/control/music-sensor')
 }

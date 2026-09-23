@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { assets, auditLogs } from '@/db/schema'
-import { auth } from '@/lib/auth'
+import { getControlIdentityFromHeaders } from '@/lib/control-auth'
 import { requestOriginAllowed } from '@/lib/request-security'
 
 type UnsplashPhoto = {
@@ -23,10 +23,8 @@ function withUtm(value: string) {
 
 async function owner(request: NextRequest) {
   if (!requestOriginAllowed(request)) return null
-  const session = await auth.api.getSession({ headers:request.headers })
-  const email = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
-  if (!session?.user || !email || session.user.email.toLowerCase() !== email) return null
-  return session
+  const identity=await getControlIdentityFromHeaders(request.headers)
+  return identity.state==='owner' ? identity.session : null
 }
 function accessKey() {
   return process.env.UNSPLASH_ACCESS_KEY?.trim() ?? ''

@@ -7,6 +7,7 @@ import { setFallbackPassword } from './actions'
 
 export default async function ControlAccountPage({ searchParams }: PageProps<'/control/account'>) {
   const session = await requireControlOwner()
+  const isHubSession='authSource' in session && session.authSource==='hub'
   const params = await searchParams
   const credential = await db.select({ id: account.id }).from(account).where(and(
     eq(account.userId, session.user.id),
@@ -30,30 +31,39 @@ export default async function ControlAccountPage({ searchParams }: PageProps<'/c
             <em>ACTIVE</em>
           </div>
           <h2>{session.user.email}</h2>
-          <p>Google OAuth remains the primary identity for this control plane.</p>
+          <p>{isHubSession ? 'Android Hub owner identity established by one-time device pairing.' : 'Google OAuth remains the primary browser identity for this control plane.'}</p>
           <div className="control-account-meta">
-            <div><span>PRIMARY</span><strong>GOOGLE OAUTH</strong></div>
-            <div><span>FALLBACK</span><strong>{hasPassword ? 'READY' : 'NOT SET'}</strong></div>
+            <div><span>PRIMARY</span><strong>{isHubSession ? 'HUB PAIRING' : 'GOOGLE OAUTH'}</strong></div>
+            <div><span>{isHubSession ? 'SESSION' : 'FALLBACK'}</span><strong>{isHubSession ? '12H / ROTATING' : hasPassword ? 'READY' : 'NOT SET'}</strong></div>
           </div>
         </section>
 
         <section className="control-account-security">
           <div className="control-card-kicker">
-            <span>FALLBACK ACCESS</span>
-            <em>{hasPassword ? 'CONFIGURED' : 'OPTIONAL'}</em>
+            <span>{isHubSession ? 'HUB SESSION' : 'FALLBACK ACCESS'}</span>
+            <em>{isHubSession ? 'PAIRED' : hasPassword ? 'CONFIGURED' : 'OPTIONAL'}</em>
           </div>
-          <h2>{hasPassword ? 'Rotate fallback password' : 'Set fallback password'}</h2>
-          <p>Password access is recovery-only. Google remains the normal owner gate.</p>
-          {hasPassword ? (
-            <ChangePasswordForm />
+          {isHubSession ? (
+            <>
+              <h2>Credential changes stay in the browser</h2>
+              <p>The Android Hub is already authenticated by device pairing. Password and identity recovery remain browser-only so a paired device cannot rotate owner credentials.</p>
+            </>
           ) : (
-            <form className="control-form" action={setFallbackPassword}>
-              <label>
-                <span>NEW PASSWORD · 12+ CHARACTERS</span>
-                <input name="newPassword" type="password" minLength={12} required autoComplete="new-password" />
-              </label>
-              <button className="control-primary-button" type="submit">SET FALLBACK PASSWORD</button>
-            </form>
+            <>
+              <h2>{hasPassword ? 'Rotate fallback password' : 'Set fallback password'}</h2>
+              <p>Password access is recovery-only. Google remains the normal owner gate.</p>
+              {hasPassword ? (
+                <ChangePasswordForm />
+              ) : (
+                <form className="control-form" action={setFallbackPassword}>
+                  <label>
+                    <span>NEW PASSWORD · 12+ CHARACTERS</span>
+                    <input name="newPassword" type="password" minLength={12} required autoComplete="new-password" />
+                  </label>
+                  <button className="control-primary-button" type="submit">SET FALLBACK PASSWORD</button>
+                </form>
+              )}
+            </>
           )}
         </section>
       </div>

@@ -378,34 +378,85 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(6), dp(12), dp(6))
         }
-        strip.addView(label("CONTROL / OWNER WEB SESSION", 9, MUTED, mono = true), LinearLayout.LayoutParams(0, -2, 1f))
+        strip.addView(label("CONTROL / PAIRED OWNER SESSION", 9, MUTED, mono = true), LinearLayout.LayoutParams(0, -2, 1f))
         strip.addView(secondaryButton("BROWSER ↗") {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://thaiduy.digital/control")))
         }, LinearLayout.LayoutParams(dp(104), dp(38)))
         shell.addView(strip, LinearLayout.LayoutParams(-1, dp(50)))
 
-        val web = webView ?: WebView(this).also { view ->
-            CookieManager.getInstance().setAcceptCookie(true)
-            view.settings.javaScriptEnabled = true
-            view.settings.domStorageEnabled = true
-            view.settings.allowFileAccess = false
-            view.settings.allowContentAccess = false
-            view.settings.userAgentString = view.settings.userAgentString + " ThaiDuyHub/0.4"
-            view.webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
-                    val uri = request?.url ?: return false
-                    val host = uri.host?.lowercase() ?: return false
-                    if (host == "thaiduy.digital" || host.endsWith(".thaiduy.digital")) return false
-                    startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    return true
+        val token = SecureStore.token(this)
+        if (token == null) {
+            val missing = page().apply {
+                addView(kicker("CONTROL / PAIR REQUIRED"))
+                addView(heading("Pair once.
+Control opens itself."))
+                addView(body("Android Control uses the Hub pairing token. No Google or password sign-in is used inside the app."))
+                addView(actionButton("GO TO SENSOR / PAIR") {
+                    showTab("sensor")
+                }, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(16) })
+            }
+            shell.addView(wrap(missing), LinearLayout.LayoutParams(-1, 0, 1f))
+            return shell
+        }
+
+        val loading = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+            addView(kicker("CONTROL / AUTHORIZING"))
+            addView(label("Using paired Hub identity…", 15, INK, bold = true).apply {
+                setPadding(0, dp(10), 0, 0)
+            })
+        }
+        shell.addView(loading, LinearLayout.LayoutParams(-1, 0, 1f))
+
+        Thread {
+            val bootstrap = runCatching {
+                HubDiagnostics.mark(this, "control.bootstrap.request")
+                ApiClient.controlBootstrap(token)
+            }
+            runOnUiThread {
+                bootstrap.onSuccess { url ->
+                    HubDiagnostics.mark(this, "control.bootstrap.ready")
+                    shell.removeView(loading)
+                    val web = webView ?: WebView(this).also { view ->
+                        CookieManager.getInstance().setAcceptCookie(true)
+                        view.settings.javaScriptEnabled = true
+                        view.settings.domStorageEnabled = true
+                        view.settings.allowFileAccess = false
+                        view.settings.allowContentAccess = false
+                        view.settings.userAgentString = view.settings.userAgentString + " ThaiDuyHub/0.4"
+                        view.webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
+                                val uri = request?.url ?: return false
+                                val host = uri.host?.lowercase() ?: return false
+                                if (host == "thaiduy.digital" || host.endsWith(".thaiduy.digital")) return false
+                                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                return true
+                            }
+                        }
+                        view.setBackgroundColor(BG)
+                        webView = view
+                    }
+                    if (web.parent != null) (web.parent as ViewGroup).removeView(web)
+                    shell.addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
+                    web.loadUrl(url)
+                }.onFailure { error ->
+                    HubDiagnostics.error(this, "control.bootstrap.failed", error)
+                    shell.removeView(loading)
+                    val failure = page().apply {
+                        addView(kicker("CONTROL / SESSION UNAVAILABLE"))
+                        addView(heading("Re-pair once
+to refresh access."))
+                        addView(body("This installed Hub token predates the Control-session scope, or the device was revoked. Pair again with a fresh six-digit code; no password is required."))
+                        addView(actionButton("GO TO SENSOR / RE-PAIR") {
+                            showTab("sensor")
+                        }, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(16) })
+                    }
+                    shell.addView(wrap(failure), LinearLayout.LayoutParams(-1, 0, 1f))
                 }
             }
-            view.setBackgroundColor(BG)
-            view.loadUrl("https://thaiduy.digital/control")
-            webView = view
-        }
-        if (web.parent != null) (web.parent as ViewGroup).removeView(web)
-        shell.addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
+        }.start()
         return shell
     }
 
@@ -469,7 +520,7 @@ class MainActivity : Activity() {
         ))
         root.addView(sectionCard(
             "CONTROL AUTH",
-            "The native device token is read-only outside Music Sensor. Full mutations stay behind the website owner session.",
+            "One pair code authenticates the Hub. The native token mints a short-lived owner WebView session; the device token itself never enters browser storage.",
             INK,
             null,
         ))

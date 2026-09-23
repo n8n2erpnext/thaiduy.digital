@@ -49,9 +49,8 @@ export default async function ControlLoginPage() {
 
           {isHub && ownerEmail && initialized && (
             <section className="control-auth-method is-primary">
-              <header><span>01 / HUB SESSION</span><strong>Owner password</strong></header>
-              <p>Embedded Google OAuth is intentionally avoided inside Android WebView. Sign in with the owner fallback password; use BROWSER ↗ in the Hub header when you prefer Google.</p>
-              <CredentialLogin email={ownerEmail} />
+              <header><span>01 / HUB SESSION</span><strong>Pairing is the sign-in</strong></header>
+              <p>The Android Hub does not use Google or password authentication. Return to the Hub, pair the device once, then reopen Control to mint a short-lived owner session automatically.</p>
             </section>
           )}
 

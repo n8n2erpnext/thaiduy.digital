@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { assets, auditLogs } from '@/db/schema'
-import { auth } from '@/lib/auth'
+import { getControlIdentityFromHeaders } from '@/lib/control-auth'
 import { storeAsset } from '@/lib/assets'
 import { requestOriginAllowed } from '@/lib/request-security'
 
 async function owner(request: NextRequest) {
   if (!requestOriginAllowed(request)) return null
-  const session = await auth.api.getSession({ headers: request.headers })
-  const ownerEmail = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
-  if (!session?.user || !ownerEmail || session.user.email.toLowerCase() !== ownerEmail) return null
-  return session
+  const identity=await getControlIdentityFromHeaders(request.headers)
+  return identity.state==='owner' ? identity.session : null
 }
 
 export async function GET(request: NextRequest) {

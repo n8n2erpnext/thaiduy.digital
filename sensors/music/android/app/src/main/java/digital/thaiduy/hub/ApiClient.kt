@@ -75,6 +75,21 @@ object ApiClient {
         )
     }
 
+    fun controlBootstrap(token: String): String {
+        val conn = connection("/api/hub/control/session", "POST")
+        conn.setRequestProperty("Authorization", "Bearer $token")
+        conn.outputStream.use { it.write("{}".toByteArray()) }
+        val code = conn.responseCode
+        if (code !in 200..299) {
+            runCatching { conn.errorStream?.close() }
+            conn.disconnect()
+            error(if (code == 401 || code == 403) "Re-pair Hub to enable Control" else "Control session unavailable")
+        }
+        val body = conn.inputStream.bufferedReader().use { it.readText() }
+        conn.disconnect()
+        return JSONObject(body).getString("bootstrapUrl")
+    }
+
     fun sendPlayback(
         token: String,
         packageName: String,

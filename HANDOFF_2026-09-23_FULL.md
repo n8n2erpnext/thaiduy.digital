@@ -4732,3 +4732,85 @@ Calibration note:
   guitar) is not claimed by this first V2 family classifier
 - title/artist recognition still requires local media metadata or future audio
   fingerprinting; DSP spectral features alone do not identify a recording
+
+## Music Sensor visual authority split · real Live DSP renderer — 2026-09-23
+
+Owner clarified the intended model:
+
+1. No audible Android DSP input:
+   - LastFM/semantic metadata is authoritative
+   - genre/style/mood may choose a procedural preset/archetype
+   - simulated sine/procedural wave geometry is acceptable because no acoustic
+     signal is available
+
+2. Audible Android DSP input:
+   - DSP is the sole visual/acoustic authority
+   - LastFM genre/style/preset/archetype must not shape the live wave
+   - local Android title/artist metadata is displayed when available
+   - no genre is published in the public DSP state
+   - the wave must be driven by the temporal DSP signal itself
+
+Implementation:
+
+- added src/lib/music-live-dsp-wave.ts
+- Live DSP renderer consumes the browser-side temporal frame timeline; it never
+  accepts genre, style, archetype, seed or autonomous procedural motion
+- Android 0.5.0 currently sends frames up to every 100 ms
+- browser retains ~2.8s of frames
+- live visualization displays a ~1.45s acoustic history with ~900ms presentation
+  delay to absorb network jitter and interpolate between frames smoothly
+- each layer uses its own measured timeline:
+  bass, lowMid, mid, vocal, presence, air
+- measured RMS/peak/layer energy controls visual amplitude
+- measured temporal slope controls movement
+- percussive/harmonic balance changes contour sharpness/smoothness
+- dynamic range contributes to activity
+- faster real changes naturally create denser/faster wave movement because the
+  x-axis is real buffered time, not a synthetic clock
+- crest mode:
+  - inactive below measured 0.85 zone
+  - above 0.85, a small sine resonance is added around the real contour
+  - crest strength follows measured peak/energy/layer plus spectral flux
+  - this is the only intentional sine enhancement in Live DSP and is not the
+    source of the underlying wave motion
+- fixed layer palette is used for Live DSP so genre-derived expression colors do
+  not influence the live renderer
+- Music Organ and header wave both use the same Live DSP temporal renderer
+- semantic/LastFM and humming keep the existing musicWaveSample archetype engine
+
+Client arbiter fixes:
+
+- raw timeline keeps both audible and silent DSP frames so the wave can decay to
+  baseline naturally
+- a silent frame no longer postpones fallback polling indefinitely
+- browser tracks last audible DSP arrival independently
+- DSP grace remains 10s for network jitter/high latency
+- after >10s without audible input, semantic/LastFM state may take over
+- while DSP is active, public state has genre=null, style=null, arrangement=null
+- local Android track metadata is used if available; DSP does not guess title
+
+Validation:
+
+- new scripts/test-music-live-dsp.ts contract
+- quiet signal activity ~0.092
+- loud bass activity ~0.849
+- >85% bass hit crest ~0.634
+- bass/mid/vocal timelines generate distinct paths
+- quiet signal does not trigger crest
+- ambiguous/procedural genre is not required by Live DSP geometry
+- music:live-dsp-check added to audit:repo
+- TypeScript PASS
+- ESLint 0 errors; 22 historical raw-img warnings only
+- layout/theme/typography/music-expression PASS
+- DSP V2 classifier contract PASS
+- Live DSP visual contract PASS
+- production Next build PASS, 58/58 routes/pages
+- bun dev remained running on port 3000
+
+Important limitation kept explicit:
+
+- Android currently streams compact DSP features, not raw PCM. The Live renderer
+  therefore visualizes the real temporal envelopes/features of the captured
+  audio rather than reconstructing the literal PCM waveform.
+- exact title/artist requires Android-local media metadata access; DSP spectral
+  features do not identify a recording by themselves.

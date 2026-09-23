@@ -40,6 +40,11 @@ export type HummingComposition = {
   storedMelody: false
 }
 
+export type BufferedMusicDspFrame = {
+  receivedAt: number
+  frame: MusicDspPublicFrame
+}
+
 export type MusicDspPublicFrame = {
   seq: number
   at: string
@@ -92,6 +97,8 @@ export type MusicCortexState = {
   layers: Record<MusicLayerName, MusicLayer>
   composition: HummingComposition | null
   updatedAt: string | null
+  dspFrames?: BufferedMusicDspFrame[]
+  dspVisualDelayMs?: number
 }
 
 export const restingMusicState: MusicCortexState = {

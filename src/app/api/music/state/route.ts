@@ -425,18 +425,17 @@ export async function GET() {
     if (!cycle.enabled) return noStore(resting(true))
 
     const state=cycle.decision.state
-    const style=state.performedStyle
     await rememberAfterglow({
       at:Date.now(),
       mood:state.mood,
-      genre:state.acousticGenre,
-      style,
+      genre:null,
+      style:null,
       texture:state.texture,
       dominantLayer:state.dominantLayer,
       energy:live.rms,
-      swingness:style==='swing' ? .34 : .08,
-      meter:style==='waltz' ? '3/4' : '4/4',
-      modeFamily:abstractModeFamily(state.acousticGenre,style,state.mood),
+      swingness:state.swingness,
+      meter:state.meter==='3/4' ? '3/4' : '4/4',
+      modeFamily:abstractModeFamily(null,null,state.mood),
     })
 
     return noStore({
@@ -446,8 +445,8 @@ export async function GET() {
       track:localActive
         ? { artist:artist!, title:title!, url:'' }
         : null,
-      genre:state.acousticGenre,
-      style,
+      genre:null,
+      style:null,
       arrangement:null,
       instrumentFamily:state.instrumentFamily,
       acousticGenreConfidence:state.acousticGenreConfidence,

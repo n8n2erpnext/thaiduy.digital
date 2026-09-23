@@ -5,6 +5,10 @@ import { useEffect,useMemo,useState } from 'react'
 import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
+import {
+  liveDspLayerColors,
+  liveDspWavePath,
+} from '@/lib/music-live-dsp-wave'
 import { resolveMusicExpression,type MusicTheme } from '@/lib/music-expression'
 import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
@@ -12,7 +16,7 @@ const layers=['bass','lowMid','mid','vocal','presence','air'] as const
 type Props={locale:Locale}
 
 function readTheme():MusicTheme {
-  if (typeof document==='undefined') return 'dark'
+  if(typeof document==='undefined') return 'dark'
   return document.documentElement.dataset.theme==='normal'?'normal':'dark'
 }
 
@@ -22,6 +26,7 @@ export function MusicOrgan({locale}:Props) {
   const [theme,setTheme]=useState<MusicTheme>('dark')
   const t=messages[locale].music
   const active=state.mode!=='resting'
+  const liveDsp=state.signal==='dsp'
   const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
   const bars=useMemo(
     ()=>layers.map((layer,index)=>({
@@ -37,22 +42,25 @@ export function MusicOrgan({locale}:Props) {
     sync()
     const observer=new MutationObserver(sync)
     observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})
-    return ()=>observer.disconnect()
+    return()=>observer.disconnect()
   },[])
 
   useEffect(()=>{
-    if (!active) return
+    if(!active) return
     let frame=0
-    const tick=(ts:number)=>{setTime(ts);frame=requestAnimationFrame(tick)}
+    const tick=()=>{
+      setTime(Date.now())
+      frame=requestAnimationFrame(tick)
+    }
     frame=requestAnimationFrame(tick)
-    return ()=>cancelAnimationFrame(frame)
+    return()=>cancelAnimationFrame(frame)
   },[active])
 
   const status=!state.connected?(locale==='vi'?'CHƯA KẾT NỐI':'NOT CONNECTED')
     : state.mode==='listening'
       ? (locale==='vi'
-          ? (state.signal==='dsp'?'ĐANG NGHE · DSP LIVE':'ĐANG NGHE · NGỮ NGHĨA')
-          : (state.signal==='dsp'?'LISTENING · LIVE DSP':'LISTENING · SEMANTIC'))
+          ? (liveDsp?'ĐANG NGHE · DSP LIVE':'ĐANG NGHE · NGỮ NGHĨA')
+          : (liveDsp?'LISTENING · LIVE DSP':'LISTENING · SEMANTIC'))
       : state.mode==='humming'
         ? (locale==='vi'?'ĐANG NGÂN NGA · TỰ SÁNG TÁC':'HUMMING · SELF-COMPOSING')
         : (locale==='vi'?'ĐANG NGHỈ · LAST.FM SẴN SÀNG':'RESTING · LAST.FM READY')
@@ -65,14 +73,25 @@ export function MusicOrgan({locale}:Props) {
     if(value==='unknown') return 'chưa rõ'
     return value
   }
-  const interpretation=[
-    {label:'genre',value:displayValue(state.genre)},
-    {label:'style',value:displayValue(state.style)},
-    {label:locale==='vi'?'tâm trạng':'mood',value:displayValue(state.mood)},
-    {label:locale==='vi'?'kết cấu':'texture',value:displayValue(state.texture)},
-    {label:locale==='vi'?'nhạc cụ':'instrument',value:displayValue(state.instrumentFamily)},
-    {label:'tempo',value:state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'},
-  ]
+
+  const interpretation=liveDsp
+    ? [
+        {label:locale==='vi'?'nguồn':'source',value:'LIVE DSP'},
+        {label:'tempo',value:state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'},
+        {label:locale==='vi'?'nhạc cụ':'instrument',value:displayValue(state.instrumentFamily)},
+        {label:locale==='vi'?'kết cấu':'texture',value:displayValue(state.texture)},
+        {label:locale==='vi'?'nhịp':'meter',value:displayValue(state.meter)},
+      ]
+    : [
+        {label:'genre',value:displayValue(state.genre)},
+        {label:'style',value:displayValue(state.style)},
+        {label:locale==='vi'?'tâm trạng':'mood',value:displayValue(state.mood)},
+        {label:locale==='vi'?'kết cấu':'texture',value:displayValue(state.texture)},
+        {label:locale==='vi'?'nhạc cụ':'instrument',value:displayValue(state.instrumentFamily)},
+        {label:'tempo',value:state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'},
+      ]
+
+  const liveColors=liveDspLayerColors[theme]
 
   return (
     <section className="music-organ" aria-label={t.aria}>
@@ -82,44 +101,82 @@ export function MusicOrgan({locale}:Props) {
           <span className="sensor-state">{status}</span>
         </div>
 
-        <div className="music-wave-shell" title={note} data-expression={expression.id}>
+        <div
+          className="music-wave-shell"
+          title={note}
+          data-expression={liveDsp?'live-dsp':expression.id}
+        >
           <svg viewBox="0 0 620 124" role="img" aria-label={t.waveAria}>
             {bars.map((item,row)=>{
               const y=20+row*17
-              const amp=active
-                ? (2.2+item.weight*7.6)*expression.motion.amplitude*expression.motion.layerSpread
-                : .4
-              let path='M 0 '+y
-              for(let i=0;i<=62;i+=1){
-                const r=i/62
-                const x=i*10
-                const envelope=Math.pow(Math.sin(r*Math.PI),1.18)
-                const sample=musicWaveSample({
-                  archetype:expression.archetype,
-                  r,
-                  clock:time*.00145*expression.motion.speed,
-                  phase:item.phase*expression.motion.phaseSpread,
-                  frequency:(1.3+row*.42)*expression.motion.phaseSpread,
-                  layerIndex:row,
-                  seed:expression.seed,
-                  motion:expression.motion,
-                })
-                const yy=y+sample*amp*envelope
-                path+=' L '+x+' '+yy.toFixed(2)
-              }
               const dominant=state.dominantLayer===item.layer
+              let path='M 0 '+y
+              let activity=item.weight
+              let crest=0
+
+              if(liveDsp) {
+                const live=liveDspWavePath({
+                  layer:item.layer,
+                  frames:state.dspFrames??[],
+                  now:time,
+                  delayMs:state.dspVisualDelayMs??900,
+                  width:620,
+                  centerY:y,
+                  amplitude:10.5,
+                  points:62,
+                })
+                path=live.path
+                activity=live.stats.activity
+                crest=live.stats.crest
+              } else {
+                const amp=active
+                  ? (2.2+item.weight*7.6)*expression.motion.amplitude*expression.motion.layerSpread
+                  : .4
+                path='M 0 '+y
+                for(let i=0;i<=62;i+=1) {
+                  const ratio=i/62
+                  const x=i*10
+                  const envelope=Math.pow(Math.sin(ratio*Math.PI),1.18)
+                  const sample=musicWaveSample({
+                    archetype:expression.archetype,
+                    r:ratio,
+                    clock:time*.00145*expression.motion.speed,
+                    phase:item.phase*expression.motion.phaseSpread,
+                    frequency:(1.3+row*.42)*expression.motion.phaseSpread,
+                    layerIndex:row,
+                    seed:expression.seed,
+                    motion:expression.motion,
+                  })
+                  const yy=y+sample*amp*envelope
+                  path+=' L '+x+' '+yy.toFixed(2)
+                }
+              }
+
+              const color=liveDsp?liveColors[item.layer]:expression.colors[item.layer]
+              const opacity=liveDsp
+                ? Math.min(1,.30+activity*.58+(dominant ? .12 : 0)+crest*.10)
+                : dominant?expression.motion.dominantOpacity:expression.motion.secondaryOpacity
+              const strokeWidth=liveDsp
+                ? (dominant?1.55:1.02)+crest*.72
+                : (dominant?1.7:1.05)*expression.motion.stroke
+              const glow=liveDsp
+                ? (dominant||crest>.35)
+                  ? 'drop-shadow(0 0 '+String(2.5+crest*8)+'px '+color+')'
+                  : 'none'
+                : dominant
+                  ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
+                  : 'none'
+
               return (
                 <path
                   key={item.layer}
                   d={path}
-                  className={'music-layer music-layer-'+item.layer+(dominant?' is-dominant':'')}
+                  className={'music-layer music-layer-'+item.layer+(dominant?' is-dominant':'')+(crest>.35?' is-crest':'')}
                   style={{
-                    stroke:expression.colors[item.layer],
-                    opacity:dominant?expression.motion.dominantOpacity:expression.motion.secondaryOpacity,
-                    strokeWidth:(dominant?1.7:1.05)*expression.motion.stroke,
-                    filter:dominant
-                      ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
-                      : 'none',
+                    stroke:color,
+                    opacity,
+                    strokeWidth,
+                    filter:glow,
                   }}
                 />
               )
@@ -130,7 +187,7 @@ export function MusicOrgan({locale}:Props) {
         <div className="music-legend">
           {layers.map(layer=>(
             <span key={layer}>
-              <i style={{background:expression.colors[layer]}} />
+              <i style={{background:liveDsp?liveColors[layer]:expression.colors[layer]}} />
               {t.layers[layer]}
             </span>
           ))}
@@ -145,7 +202,7 @@ export function MusicOrgan({locale}:Props) {
             <strong>
               {state.mode==='humming'&&state.composition
                 ? state.composition.key+' '+state.composition.mode.toUpperCase()+' · '+state.composition.bpm+' BPM'
-                : state.signal.toUpperCase()}
+                : liveDsp?'LIVE DSP · SIGNAL':state.signal.toUpperCase()}
             </strong>
           </div>
           <span>{Math.round(state.confidence*100)}%</span>
@@ -157,8 +214,17 @@ export function MusicOrgan({locale}:Props) {
           <span>{t.explorer.semantic}</span><i>→</i><span>{t.explorer.acoustic}</span><i>→</i><span>{t.explorer.cortex}</span><i>→</i><span>{t.explorer.afterglow}</span>
         </div>
         <div className="music-expression-mini">
-          <span>{expression.label} · {musicWaveArchetypeLabel(expression.archetype)}</span>
-          <span>{Math.round(expression.valence*100)} V · {Math.round(expression.arousal*100)} E</span>
+          {liveDsp ? (
+            <>
+              <span>LIVE DSP · TEMPORAL BUFFER</span>
+              <span>{state.dspVisualDelayMs??900} MS · SIGNAL-DRIVEN · CREST 85%+</span>
+            </>
+          ) : (
+            <>
+              <span>{expression.label} · {musicWaveArchetypeLabel(expression.archetype)}</span>
+              <span>{Math.round(expression.valence*100)} V · {Math.round(expression.arousal*100)} E</span>
+            </>
+          )}
         </div>
         <Link className="music-inspect-link" href="/music-sensor">{t.explorer.open}<span aria-hidden="true">↗</span></Link>
       </div>

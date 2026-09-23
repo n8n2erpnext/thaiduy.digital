@@ -11,6 +11,7 @@ import {
   type MusicExpression,
   type MusicTheme,
 } from '@/lib/music-expression'
+import { liveDspLayerColors,liveDspWavePath } from '@/lib/music-live-dsp-wave'
 import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
 import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
@@ -93,7 +94,9 @@ export function MusicWaveIndicator({locale}:Props) {
   const state=useMusicState()
   const t=messages[locale].music.indicator
   const active=state.mode==='listening'||state.mode==='humming'
+  const liveDsp=state.signal==='dsp'
   const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
+  const liveColors=liveDspLayerColors[theme]
   const [displayMotion,setDisplayMotion]=useState(expression.motion)
   const [tooltipOpen,setTooltipOpen]=useState(false)
   const [tooltipCycle,setTooltipCycle]=useState(0)
@@ -159,15 +162,24 @@ export function MusicWaveIndicator({locale}:Props) {
         +' · '+composition.bpm+' BPM'
         +' · '+(vi&&state.mood==='unresolved'?'CHƯA XÁC ĐỊNH':state.mood.toUpperCase())
     }
+    if(liveDsp) {
+      const tempo=state.tempoBpm&&state.tempoBpm>0?Math.round(state.tempoBpm)+' BPM':'TEMPO —'
+      const instrument=state.instrumentFamily?state.instrumentFamily.toUpperCase():'INSTRUMENT —'
+      return modeLabel+' · LIVE DSP · '+tempo+' · '+instrument
+    }
     const bits=[styleLabel,state.arrangement,state.texture].filter(Boolean)
     return modeLabel+' · '+bits.join(' · ')
-      +' · '+(state.signal==='dsp'?'LIVE DSP':(vi?'NGỮ NGHĨA · LAST.FM':'SEMANTIC · LAST.FM'))
-  },[composition,modeLabel,state,styleLabel,t,vi])
+      +' · '+(vi?'NGỮ NGHĨA · LAST.FM':'SEMANTIC · LAST.FM')
+  },[composition,liveDsp,modeLabel,state,styleLabel,t,vi])
 
-  const visualDetail=(vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
-  const motionDetail=(vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
-    +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
-    +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
+  const visualDetail=liveDsp
+    ? (vi?'TÍN HIỆU':'SIGNAL')+' · LIVE DSP · '+(state.dspVisualDelayMs??900)+' MS BUFFER'
+    : (vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
+  const motionDetail=liveDsp
+    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · SIGNAL-DRIVEN · CREST 85%+'
+    : (vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
+      +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
+      +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
 
   const subdetail=composition
     ? composition.meter+' · '+composition.bars+' '+(vi?'Ô NHỊP':'BARS')
@@ -201,25 +213,50 @@ export function MusicWaveIndicator({locale}:Props) {
           className="header-wave"
           role="img"
           tabIndex={0}
-          data-expression={expression.id}
+          data-expression={liveDsp?'live-dsp':expression.id}
           aria-label={title+' · '+detail+' · '+visualDetail+' · '+motionDetail+(subdetail?' · '+subdetail:'')}
         >
           <svg viewBox="0 0 112 24" aria-hidden="true">
             <path
               d="M 4 12 L 108 12"
               className="header-wave-base"
-              style={{stroke:expression.baseColor}}
+              style={{stroke:liveDsp?(theme==='dark'?'#65727A':'#A6AFAB'):expression.baseColor}}
             />
             {layerOrder.map(layer=>{
               const dominant=state.dominantLayer===layer
-              const opacity=dominant
-                ? displayMotion.dominantOpacity
-                : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
-              const width=(dominant?1.42:1.02)*displayMotion.stroke
+              const live=liveDsp
+                ? liveDspWavePath({
+                    layer,
+                    frames:state.dspFrames??[],
+                    now:time,
+                    delayMs:state.dspVisualDelayMs??900,
+                    xStart:4,
+                    width:104,
+                    centerY:12,
+                    amplitude:6.2,
+                    points:42,
+                  })
+                : null
+              const opacity=live
+                ? Math.min(1,.28+live.stats.activity*.58+(dominant ? .10 : 0)+live.stats.crest*.12)
+                : dominant
+                  ? displayMotion.dominantOpacity
+                  : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
+              const width=live
+                ? (dominant?1.36:1.0)+live.stats.crest*.62
+                : (dominant?1.42:1.02)*displayMotion.stroke
+              const color=live?liveColors[layer]:expression.colors[layer]
+              const glow=live
+                ? (dominant||live.stats.crest>.35)
+                  ? 'drop-shadow(0 0 '+String(1.6+live.stats.crest*6.2)+'px '+color+')'
+                  : 'none'
+                : dominant
+                  ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
+                  : 'none'
               return (
                 <path
                   key={layer}
-                  d={pathFor(
+                  d={live?.path??pathFor(
                     layer,
                     state.layers[layer].weight,
                     time,
@@ -229,14 +266,12 @@ export function MusicWaveIndicator({locale}:Props) {
                     expression.archetype,
                     expression.seed,
                   )}
-                  className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')}
+                  className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')+(live&&live.stats.crest>.35?' is-crest':'')}
                   style={{
-                    stroke:expression.colors[layer],
+                    stroke:color,
                     opacity,
                     strokeWidth:width,
-                    filter:dominant
-                      ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
-                      : 'none',
+                    filter:glow,
                   }}
                 />
               )

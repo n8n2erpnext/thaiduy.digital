@@ -388,8 +388,7 @@ class MainActivity : Activity() {
         if (token == null) {
             val missing = page().apply {
                 addView(kicker("CONTROL / PAIR REQUIRED"))
-                addView(heading("Pair once.
-Control opens itself."))
+                addView(heading("Pair once.\nControl opens itself."))
                 addView(body("Android Control uses the Hub pairing token. No Google or password sign-in is used inside the app."))
                 addView(actionButton("GO TO SENSOR / PAIR") {
                     showTab("sensor")
@@ -446,8 +445,7 @@ Control opens itself."))
                     shell.removeView(loading)
                     val failure = page().apply {
                         addView(kicker("CONTROL / SESSION UNAVAILABLE"))
-                        addView(heading("Re-pair once
-to refresh access."))
+                        addView(heading("Re-pair once\nto refresh access."))
                         addView(body("This installed Hub token predates the Control-session scope, or the device was revoked. Pair again with a fresh six-digit code; no password is required."))
                         addView(actionButton("GO TO SENSOR / RE-PAIR") {
                             showTab("sensor")

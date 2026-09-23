@@ -108,7 +108,7 @@ export function MusicOrgan({locale}:Props) {
         >
           <svg viewBox="0 0 620 124" role="img" aria-label={t.waveAria}>
             {bars.map((item,row)=>{
-              const y=liveDsp ? 13+row*20 : 20+row*17
+              const y=20+row*17
               const dominant=state.dominantLayer===item.layer
               let path='M 0 '+y
               let activity=item.weight
@@ -122,7 +122,7 @@ export function MusicOrgan({locale}:Props) {
                   delayMs:state.dspVisualDelayMs??900,
                   width:620,
                   centerY:y,
-                  amplitude:6.4,
+                  amplitude:9.2,
                   points:62,
                 })
                 path=live.path
@@ -224,8 +224,8 @@ export function MusicOrgan({locale}:Props) {
         <div className="music-expression-mini">
           {liveDsp ? (
             <>
-              <span>LIVE DSP · TEMPORAL BUFFER</span>
-              <span>{state.dspVisualDelayMs??900} MS · SIGNAL-DRIVEN · CREST 85%+</span>
+              <span>LIVE DSP · AMPLIFIED SINE CARRIER</span>
+              <span>{state.dspVisualDelayMs??900} MS BUFFER · DSP ENVELOPE · ADAPTIVE CREST</span>
             </>
           ) : (
             <>

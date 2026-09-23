@@ -19,14 +19,6 @@ const layerOrder:MusicLayerName[]=['bass','lowMid','mid','vocal','presence','air
 const phase:Record<MusicLayerName,number>={bass:.2,lowMid:1.1,mid:2.2,vocal:.7,presence:2.9,air:4.1}
 const freq:Record<MusicLayerName,number>={bass:1.2,lowMid:1.8,mid:2.6,vocal:1.6,presence:3.4,air:4.4}
 const layerIndex:Record<MusicLayerName,number>={bass:0,lowMid:1,mid:2,vocal:3,presence:4,air:5}
-const liveLaneCenter:Record<MusicLayerName,number>={
-  bass:3.2,
-  lowMid:6.7,
-  mid:10.2,
-  vocal:13.8,
-  presence:17.3,
-  air:20.8,
-}
 
 function phraseAt(composition:HummingComposition|null,time:number) {
   if (!composition || !composition.notes.length || !time) return null
@@ -181,10 +173,10 @@ export function MusicWaveIndicator({locale}:Props) {
   },[composition,liveDsp,modeLabel,state,styleLabel,t,vi])
 
   const visualDetail=liveDsp
-    ? (vi?'TÍN HIỆU':'SIGNAL')+' · LIVE DSP · '+(state.dspVisualDelayMs??900)+' MS BUFFER'
+    ? (vi?'TÍN HIỆU':'SIGNAL')+' · LIVE DSP AMP · '+(state.dspVisualDelayMs??900)+' MS BUFFER'
     : (vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
   const motionDetail=liveDsp
-    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · SIGNAL-DRIVEN · CREST 85%+'
+    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · SINE CARRIER · DSP ENVELOPE · ADAPTIVE CREST'
     : (vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
       +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
       +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
@@ -243,8 +235,8 @@ export function MusicWaveIndicator({locale}:Props) {
                     delayMs:state.dspVisualDelayMs??900,
                     xStart:4,
                     width:104,
-                    centerY:liveLaneCenter[layer],
-                    amplitude:1.55,
+                    centerY:12,
+                    amplitude:6.2,
                     points:42,
                   })
                 : null

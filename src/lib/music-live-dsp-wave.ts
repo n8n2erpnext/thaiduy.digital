@@ -7,15 +7,33 @@ import type {
 const clamp01=(value:number)=>Math.max(0,Math.min(1,value))
 const lerp=(a:number,b:number,t:number)=>a+(b-a)*t
 
-const LIVE_HISTORY_MS=1_450
+const CONTROL_HISTORY_MS=1_150
 
-const slopeGain:Record<MusicLayerName,number>={
-  bass:.68,
-  lowMid:.78,
-  mid:.92,
-  vocal:1,
-  presence:1.12,
-  air:1.24,
+const carrierCycles:Record<MusicLayerName,number>={
+  bass:1.15,
+  lowMid:1.55,
+  mid:2.05,
+  vocal:1.42,
+  presence:2.75,
+  air:3.55,
+}
+
+const carrierPhase:Record<MusicLayerName,number>={
+  bass:.20,
+  lowMid:1.10,
+  mid:2.20,
+  vocal:.70,
+  presence:2.90,
+  air:4.10,
+}
+
+const layerGain:Record<MusicLayerName,number>={
+  bass:1.05,
+  lowMid:.98,
+  mid:1.02,
+  vocal:1.10,
+  presence:.94,
+  air:.88,
 }
 
 export const liveDspLayerColors={
@@ -42,10 +60,7 @@ function layerValue(frame:MusicDspPublicFrame,layer:MusicLayerName) {
   return clamp01(frame[layer])
 }
 
-function sampleAt(
-  frames:BufferedMusicDspFrame[],
-  at:number,
-):MusicDspPublicFrame|null {
+function sampleAt(frames:BufferedMusicDspFrame[],at:number):MusicDspPublicFrame|null {
   if(!frames.length) return null
   if(at<=frames[0].receivedAt) return frames[0].frame
   const last=frames[frames.length-1]
@@ -106,8 +121,21 @@ function quantile(values:number[],q:number) {
   const index=(sorted.length-1)*clamp01(q)
   const lo=Math.floor(index)
   const hi=Math.ceil(index)
-  if(lo===hi) return sorted[lo]
-  return lerp(sorted[lo],sorted[hi],index-lo)
+  return lo===hi?sorted[lo]:lerp(sorted[lo],sorted[hi],index-lo)
+}
+
+function mean(values:number[]) {
+  return values.length?values.reduce((sum,value)=>sum+value,0)/values.length:0
+}
+
+function controlFrames(
+  frames:BufferedMusicDspFrame[],
+  endAt:number,
+) {
+  const start=endAt-CONTROL_HISTORY_MS
+  return frames
+    .filter(item=>item.receivedAt>=start&&item.receivedAt<=endAt)
+    .map(item=>item.frame)
 }
 
 export type LiveDspWaveStats={
@@ -115,6 +143,8 @@ export type LiveDspWaveStats={
   crest:number
   latest:number
   baseline:number
+  gain:number
+  tempo:number
 }
 
 export function liveDspWavePath({
@@ -141,103 +171,119 @@ export function liveDspWavePath({
   if(frames.length<2||!now) {
     return {
       path:`M ${xStart} ${centerY} L ${xStart+width} ${centerY}`,
-      stats:{activity:0,crest:0,latest:0,baseline:0},
+      stats:{activity:0,crest:0,latest:0,baseline:0,gain:0,tempo:0},
     }
   }
 
   const endAt=now-delayMs
-  const startAt=endAt-LIVE_HISTORY_MS
-  const samples:Array<{frame:MusicDspPublicFrame;value:number}>=[]
-  for(let i=0;i<=points;i++) {
-    const r=i/points
-    const frame=sampleAt(frames,startAt+r*LIVE_HISTORY_MS)
-    if(!frame) continue
-    samples.push({frame,value:layerValue(frame,layer)})
-  }
-
-  if(samples.length<2) {
+  const current=sampleAt(frames,endAt)
+  if(!current) {
     return {
       path:`M ${xStart} ${centerY} L ${xStart+width} ${centerY}`,
-      stats:{activity:0,crest:0,latest:0,baseline:0},
+      stats:{activity:0,crest:0,latest:0,baseline:0,gain:0,tempo:0},
     }
   }
 
-  const values=samples.map(sample=>sample.value)
-  const drives=samples.map(sample=>clamp01(
-    sample.frame.rms*.48
-    +sample.value*.32
-    +sample.frame.spectralFlux*.20,
+  const history=controlFrames(frames,endAt)
+  const useful=history.length?history:[current]
+  const layerHistory=useful.map(frame=>layerValue(frame,layer))
+  const energyHistory=useful.map(frame=>clamp01(frame.rms))
+  const fluxHistory=useful.map(frame=>clamp01(frame.spectralFlux))
+  const driveHistory=useful.map((frame,index)=>clamp01(
+    energyHistory[index]*.50
+    +layerHistory[index]*.34
+    +fluxHistory[index]*.16,
   ))
-  const baseline=quantile(drives,.50)
-  const high=quantile(drives,.88)
-  const crestThreshold=Math.max(baseline+.055,high)
-  const crestRange=Math.max(.055,quantile(drives,.98)-crestThreshold)
 
-  let maxActivity=0
-  let maxCrest=0
-  let path=''
-  let previous=values[0]
+  const latest=layerValue(current,layer)
+  const smoothLayer=mean(layerHistory.slice(-6))
+  const smoothEnergy=mean(energyHistory.slice(-6))
+  const smoothFlux=mean(fluxHistory.slice(-5))
+  const dynamic=clamp01(current.dynamicRange??0)
+  const percussive=clamp01(current.percussiveProbability??0)
+  const harmonic=clamp01(current.harmonicProbability??0)
 
-  samples.forEach((sample,index)=>{
-    const r=index/(samples.length-1)
+  // DSP acts as an amplifier/envelope, not as the geometry itself.
+  // The nonlinear gain gives small source movement enough visual headroom while
+  // preserving the measured loud/quiet relationship.
+  const sourceLevel=clamp01((smoothLayer-.08)/.84)
+  const amplified=Math.pow(sourceLevel,.62)
+  const energyAmp=Math.pow(clamp01((smoothEnergy-.025)/.93),.70)
+  const gain=clamp01(
+    (amplified*(.46+energyAmp*.72)+dynamic*.08)*layerGain[layer],
+  )
+
+  const activity=clamp01(
+    smoothEnergy*.50
+    +smoothLayer*.34
+    +dynamic*.10
+    +smoothFlux*.06,
+  )
+
+  // Relative crest: a loud/mastered track does not remain permanently in climax.
+  const baseline=quantile(driveHistory,.50)
+  const high=quantile(driveHistory,.88)
+  const crestRange=Math.max(.05,quantile(driveHistory,.98)-high)
+  const crestSamples=driveHistory.map((drive,index)=>{
+    const relative=clamp01((drive-Math.max(baseline+.05,high))/crestRange)
+    const transient=clamp01((fluxHistory[index]-.07)/.34)
+    return relative*(.58+.42*transient)
+  })
+  const crest=Math.max(0,...crestSamples)
+
+  const beatConfidence=clamp01(current.beatConfidence??0)
+  const measuredTempo=current.tempoBpm&&current.tempoBpm>=45&&current.tempoBpm<=210
+    ? current.tempoBpm
+    : 0
+  // If beat lock is weak, movement still follows measured transients/energy.
+  const tempo=measuredTempo&&beatConfidence>=.18
+    ? measuredTempo
+    : 58+smoothFlux*82+smoothEnergy*24
+
+  const seconds=endAt/1000
+  const beatHz=tempo/60
+  const clock=seconds*Math.PI*2*beatHz*(.28+beatConfidence*.10)
+  const temporalSlope=layerHistory.length>=2
+    ? layerHistory[layerHistory.length-1]-layerHistory[Math.max(0,layerHistory.length-4)]
+    : 0
+  const attack=clamp01(Math.abs(temporalSlope)*2.8+smoothFlux*.72)
+
+  const cycles=carrierCycles[layer]*(
+    .90
+    +beatConfidence*.08
+    +smoothFlux*.12
+  )
+  const phase=carrierPhase[layer]+temporalSlope*1.35
+  const visualAmp=amplitude*(.12+gain*1.10)*(1+attack*.10)
+
+  let path=`M ${xStart} ${centerY}`
+  for(let i=0;i<=points;i+=1) {
+    const r=i/points
     const x=xStart+r*width
-    const frame=sample.frame
-    const value=sample.value
-    const energy=clamp01(frame.rms)
-    const flux=clamp01(frame.spectralFlux)
-    const percussive=clamp01(frame.percussiveProbability??0)
-    const harmonic=clamp01(frame.harmonicProbability??0)
-    const dynamic=clamp01(frame.dynamicRange??0)
+    const envelope=Math.pow(Math.sin(r*Math.PI),1.62)
+    const theta=r*Math.PI*2*cycles+clock+phase
 
-    const slope=value-previous
-    previous=value
+    const fundamental=Math.sin(theta)
+    const second=Math.sin(theta*2+phase*.45)
+    const third=Math.sin(theta*3-clock*.12)
 
-    // Absolute measured layer level opens the lane. Temporal delta adds motion.
-    // There is no autonomous oscillator or genre archetype in this contour.
-    const absolute=(value-.50)*1.55
-    const temporal=slope*slopeGain[layer]*2.25
-    const sharpness=1+percussive*.55-harmonic*.20
-    const contour=Math.tanh((absolute+temporal)*sharpness)
+    // Harmonic material stays round; percussive material gains a sharper edge.
+    const harmonicMix=.92+harmonic*.08
+    const edgeMix=percussive*(.10+.12*smoothFlux)
+    let carrier=fundamental*harmonicMix+second*edgeMix+third*edgeMix*.28
+    carrier=Math.tanh(carrier*(1+percussive*.32))/(Math.tanh(1+percussive*.32)||1)
 
-    const activity=clamp01(
-      energy*.50
-      +value*.34
-      +dynamic*.10
-      +flux*.06,
-    )
-    maxActivity=Math.max(maxActivity,activity)
-
-    const energyScale=.24+energy*.76
-    let offset=contour*amplitude*energyScale
-
-    // Adaptive crest uses the local 88th-percentile zone. Mastered tracks with
-    // consistently high normalized peaks therefore do not stay in "climax".
-    const drive=drives[index]
-    const relativeCrest=clamp01((drive-crestThreshold)/crestRange)
-    const transientGate=clamp01((flux-.08)/.35)
-    const crest=relativeCrest*(.55+.45*transientGate)
-    maxCrest=Math.max(maxCrest,crest)
-
+    // Climax is only a resonance around the real DSP-controlled carrier.
     if(crest>0) {
-      const bpm=frame.tempoBpm&&frame.tempoBpm>0?frame.tempoBpm:90
-      const cycles=4.5+percussive*6+clamp01((bpm-60)/140)*2.5
-      const phase=(startAt+r*LIVE_HISTORY_MS)/1000
-      const ripple=Math.sin(r*Math.PI*2*cycles+phase*(1.8+flux*3.4))
-      offset+=ripple*amplitude*crest*(.055+flux*.085)
+      carrier+=Math.sin(theta*3.35+clock*.24)*crest*(.06+smoothFlux*.08)
     }
 
-    const edge=.62+.38*Math.pow(Math.sin(Math.PI*r),.34)
-    const y=centerY+offset*edge
-    path+=(index?' L ':'M ')+x.toFixed(2)+' '+y.toFixed(2)
-  })
+    const y=centerY+carrier*visualAmp*envelope
+    path+=' L '+x.toFixed(2)+' '+y.toFixed(2)
+  }
 
   return {
     path,
-    stats:{
-      activity:maxActivity,
-      crest:maxCrest,
-      latest:values[values.length-1]??0,
-      baseline,
-    },
+    stats:{activity,crest,latest,baseline,gain,tempo},
   }
 }

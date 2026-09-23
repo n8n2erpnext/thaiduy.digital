@@ -24,7 +24,11 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
   const t=messages[locale].music
   const e=t.explorer
   const vi=locale==='vi'
-  const track=state.track ? state.track.title+' — '+state.track.artist : (vi?'Không có bài đang phát':'No active playback')
+  const track=state.track
+    ? state.track.title+' — '+state.track.artist
+    : state.signal==='dsp'
+      ? (vi?'Live DSP · chưa có metadata từ Android':'Live DSP · Android metadata unavailable')
+      : (vi?'Không có bài đang phát':'No active playback')
   const modeLabel=vi
     ? (state.mode==='listening'?'ĐANG NGHE':state.mode==='humming'?'ĐANG NGÂN NGA':'ĐANG NGHỈ')
     : state.mode.toUpperCase()

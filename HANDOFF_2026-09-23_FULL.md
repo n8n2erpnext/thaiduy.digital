@@ -4873,3 +4873,71 @@ Live smoke before installing 0.5.1:
   MediaSession/Notification metadata path
 - currently installed DSP reported ~54 BPM with low beat confidence, so tempo
   must be re-evaluated only after installing 0.5.1.
+
+## Live DSP amplified sine renderer — 2026-09-23
+
+Owner clarified the final visual model:
+
+- LastFM/semantic mode:
+  - no acoustic signal exists
+  - genre/style presets remain responsible for procedural wave simulation
+- Live DSP mode:
+  - do not draw raw DSP timelines like an oscilloscope
+  - do not use genre/style/archetype presets
+  - keep the same visual grammar as the LastFM waves: smooth connected sine
+    carriers that start/end on the common baseline
+  - DSP acts as the control/envelope/amplifier for those carriers
+
+Implemented:
+
+- rewrote src/lib/music-live-dsp-wave.ts around an amplified sine-carrier model
+- each layer has a fixed neutral carrier family (bass/low-mid/mid/vocal/
+  presence/air) with no genre dependency
+- source DSP band level is amplified nonlinearly so small measured source
+  movement receives enough visual headroom without losing loud/quiet relations
+- RMS controls overall opening
+- per-layer band level controls gain/amplitude
+- tempo/beat confidence controls carrier motion speed
+- temporal band slope + spectral flux control attack/phase response
+- percussive/harmonic probabilities control carrier edge/roundness
+- dynamic range contributes to visual expansion
+- crest remains adaptive to the local signal distribution; only relative
+  climax adds a small resonance around the DSP-controlled sine carrier
+- Live DSP header returned to a shared center baseline like LastFM instead of
+  six parallel lane centers
+- Music Organ returned to the same row spacing as its LastFM presentation
+- existing colored stroke-only halo remains; no black Live DSP drop-shadow
+- semantic/LastFM renderer remains unchanged
+
+Metadata UX:
+
+- while signal=dsp and Android metadata is unavailable, /music-sensor now says
+  "Live DSP · Android metadata unavailable" instead of "No active playback"
+- Android 0.5.1 already attempts MediaSession metadata plus media-notification
+  fallback; both require Android-granted media-session/notification-listener
+  access for third-party playback metadata
+- AudioPlaybackCapture/DSP itself does not contain title/artist, so no LastFM
+  title is injected into Live DSP mode
+
+Regression contract:
+
+- scripts/test-music-live-dsp.ts now validates amplified-sine semantics:
+  - quiet DSP gain ~0.143
+  - loud DSP gain ~0.952
+  - relative climax crest = 1
+  - constant mastered signal crest = 0
+  - measured tempo 78 vs 156 produces different carrier motion
+  - bass/mid/vocal use distinct sine carriers
+  - each Live DSP path starts and returns to the common baseline
+
+Validation:
+
+- music:live-dsp-check PASS
+- music:dsp-v2-check PASS
+- TypeScript PASS
+- ESLint 0 errors; existing 22 raw-img warnings only
+- git diff --check PASS
+- production Next build PASS, 58/58 routes/pages
+- bun dev remains on port 3000
+- local / => 200
+- public / => 200

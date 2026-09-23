@@ -791,3 +791,16 @@ This is the authoritative continuation point.
 - Meter behavior is conservative: 4/4 aggregate correct-frame rate 22.2%, unknown 75.0%, wrong ~2.8%. 3/4 aggregate correct 50%, unknown 47.5%, wrong 2.5%. The two available 2/4 samples are insufficient for a broad conclusion; one 150 BPM 2/4 sample collapsed to half-time and then 4/4.
 - Treat this 30-sample set as discovery/tuning evidence only. Do not report post-tune accuracy on the same set as validation. Next validation should use a fresh, unseen FSLD holdout batch.
 - Result artifact: artifacts/music-dsp-eval/fsld-2026-09-23.json.
+
+
+### FSLD strict-consensus benchmark closeout
+- Important correction: the original discovery pool treated individual expert annotations as independent ground truth. Some sound IDs have conflicting annotators (for example octave 60/120 disagreement, and even signature disagreements). The original artifact is retained but explicitly marked superseded.
+- Annotation audit across the downloaded expert archive: 2,656 annotated sound IDs; 1,550 had only one usable annotation; among multiply annotated IDs, 1,029 were strict agreement (same signature and BPM within 3 BPM), 20 were octave-ambiguous, and 57 were conflicting.
+- Intersecting strict agreement with the available metadata mirror yielded 308 reproducible consensus samples, all 4/4 in this mirror subset. The consensus metadata manifest is persisted at artifacts/music-dsp-eval/fsld-consensus-candidates.json; it contains metadata only, no audio.
+- Production-core strict discovery baseline (29 completed / 1 network error): exact 6, harmonic 6, unresolved 13, fail 4. 4/4 frame rates: correct 29.8%, unknown 64.0%, wrong 6.2%.
+- A narrow v4 experiment allowed a strong, dominant 125–155 BPM harmonic family to partially bypass the timbre gate and protected that family from the legacy 1.34–1.72 onset override. Discovery improved to exact 8, harmonic 7, unresolved 11, fail 4; meter correct 34.2%, unknown 59.8%, wrong 6.0%.
+- Fresh holdout used different sound IDs. v4 holdout (26 completed / 1 network error): exact 6, harmonic 3, unresolved 9, fail 8. Production baseline rerun on exactly the same holdout IDs produced the identical tempo counts: exact 6, harmonic 3, unresolved 9, fail 8.
+- Holdout meter changed only slightly: production correct 23.1%, unknown 67.5%, wrong 9.42%; v4 correct 25.2%, unknown 65.4%, wrong 9.42%.
+- Decision: v4 does NOT demonstrate generalizable tempo improvement and is NOT deployed. src/brains/music-sensor/server-dsp.ts remains at the production behavior from the committed tempo-family/meter core.
+- The evaluator selects benchmark IDs offline, fetches each preview only during its sample, transcodes through AAC-LC 128 kbps / 48 kHz stereo to mirror Hub 0.6.0, deletes MP3/AAC/PCM after each sample, and persists metrics only.
+- FSLD strict-consensus mirror is suitable for tempo and 4/4 stress testing but does not provide enough consensus non-4/4 material. A separate meter-focused dataset remains necessary for 3/4, 2/4 and compound meter validation.

@@ -1,0 +1,1263 @@
+{
+  "source": "Freesound Loop Dataset",
+  "generatedAt": "2026-09-23T15:36:03.581Z",
+  "summary": {
+    "selected": 27,
+    "completed": 16,
+    "errors": 11,
+    "tempo": {
+      "fail": 6,
+      "unresolved": 6,
+      "exact": 4
+    },
+    "bySignature": {
+      "4/4": {
+        "n": 16,
+        "correctRate": 0.246875,
+        "unknownRate": 0.6187499999999999,
+        "wrongRate": 0.134375
+      }
+    }
+  },
+  "results": [
+    {
+      "id": 4636,
+      "groundTruthBpm": 60,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "electronic"
+      ],
+      "name": "convoluted bare bone loop 60 bpm 244.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/4/4636_2518-hq.mp3",
+      "estimateBpm": 87.890625,
+      "absError": 27.890625,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "3/4": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 0,
+      "meterWrongRate": 1,
+      "finalCandidates": [
+        {
+          "bpm": 60.6004859334573,
+          "score": 0.3211894771348554,
+          "support": 3
+        },
+        {
+          "bpm": 87.67310869863869,
+          "score": 0.27135074434243034,
+          "support": 2
+        },
+        {
+          "bpm": 71.71840026814216,
+          "score": 0.2127675872710071,
+          "support": 3
+        },
+        {
+          "bpm": 80.35714285714286,
+          "score": 0.1860111751992386,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.5027978804351727,
+      "finalMeter": "3/4",
+      "diagnostics": {
+        "meterCorr2": -0.2574672000228423,
+        "meterCorr3": 0.6282389439637117,
+        "meterCorr4": -0.27727510692899776,
+        "meterAccent2": 0.013550171071753225,
+        "meterAccent3": 0.08767678502798915,
+        "meterAccent4": 0.013551470815499699,
+        "meterOppositeAsymmetry4": 0.02596586233015976,
+        "percussiveProbability": 0.37632824067475756,
+        "harmonicProbability": 0.7092317543743074,
+        "subdivisionSimple": 0.08840642055257776,
+        "subdivisionTriplet": 0.04247445266729973
+      }
+    },
+    {
+      "id": 86906,
+      "groundTruthBpm": 70,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno",
+        "live sounds",
+        "other dance music"
+      ],
+      "name": "75 bpm Acoustic Party Next Door Attack loop 5.flac",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/86/86906_2518-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 140.3065199255746,
+          "score": 0.761185427866428,
+          "support": 2
+        },
+        {
+          "bpm": 69.50043335417665,
+          "score": 0.2827088923488422,
+          "support": 1
+        },
+        {
+          "bpm": 93.75,
+          "score": 0.21858074628610244,
+          "support": 1
+        },
+        {
+          "bpm": 56.25,
+          "score": 0.12279928292343029,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.29757049879825714,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.2727068879398667,
+        "meterCorr3": 0.04368483114342932,
+        "meterCorr4": 0.09077684364037446,
+        "meterAccent2": 0.07754157944654945,
+        "meterAccent3": 0.010534994546524973,
+        "meterAccent4": 0.013884439103690995,
+        "meterOppositeAsymmetry4": 0.07772605740792098,
+        "percussiveProbability": 0.20614411755572537,
+        "harmonicProbability": 0.7715376669562051,
+        "subdivisionSimple": 0.06533312010204681,
+        "subdivisionTriplet": 0.001111090926908087
+      }
+    },
+    {
+      "id": 262519,
+      "groundTruthBpm": 70,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "chords",
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "cinematic",
+        "electronic",
+        "hip hop"
+      ],
+      "name": "mystic chamber loop.wav",
+      "license": "http://creativecommons.org/licenses/by-nc/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/262/262519_3162775-hq.mp3",
+      "estimateBpm": 117.1875,
+      "absError": 47.1875,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 8,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 18,
+        "3/4": 2
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 0.9,
+      "meterWrongRate": 0.1,
+      "finalCandidates": [
+        {
+          "bpm": 70.20129116030371,
+          "score": 0.24236961999910503,
+          "support": 3
+        },
+        {
+          "bpm": 94.6291223107729,
+          "score": 0.17500969549912823,
+          "support": 2
+        },
+        {
+          "bpm": 127.8409090909091,
+          "score": 0.08860948735264915,
+          "support": 1
+        },
+        {
+          "bpm": 136.3356515315543,
+          "score": 0.06219794761639518,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.1987495859808006,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.1060968604253048,
+        "meterCorr3": 0.3005631685206507,
+        "meterCorr4": -0.06023280232072302,
+        "meterAccent2": 0.06836548480103391,
+        "meterAccent3": 0.3225693305728516,
+        "meterAccent4": 0.12748982669295347,
+        "meterOppositeAsymmetry4": 0.21328486205830466,
+        "percussiveProbability": 0.25773727819218273,
+        "harmonicProbability": 0.6576306892654347,
+        "subdivisionSimple": 8.205077520050908e-11,
+        "subdivisionTriplet": 0.013897245915581273
+      }
+    },
+    {
+      "id": 382221,
+      "groundTruthBpm": 78,
+      "signature": "4/4",
+      "instrumentation": [
+        "chords",
+        "melody"
+      ],
+      "genres": [
+        "live sounds"
+      ],
+      "name": "E-Git Loop 01 78BPM  25-02-17.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/382/382221_7112606-hq.mp3",
+      "error": "TimeoutError: The operation timed out."
+    },
+    {
+      "id": 22128,
+      "groundTruthBpm": 99,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "hip hop",
+        "house / techno"
+      ],
+      "name": "diztheeng_99bpm.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/22/22128_109943-hq.mp3",
+      "estimateBpm": 90.98465594903624,
+      "absError": 8.015344050963762,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "2/4": 9,
+        "unknown": 10,
+        "4/4": 1
+      },
+      "meterCorrectRate": 0.05,
+      "meterUnknownRate": 0.5,
+      "meterWrongRate": 0.45,
+      "finalCandidates": [
+        {
+          "bpm": 98.9411292449688,
+          "score": 0.27929731045876705,
+          "support": 2
+        },
+        {
+          "bpm": 132.70119335493627,
+          "score": 0.25478462515074624,
+          "support": 2
+        },
+        {
+          "bpm": 79.1817717360184,
+          "score": 0.22102217082081282,
+          "support": 2
+        },
+        {
+          "bpm": 56.96769559458863,
+          "score": 0.21952903795752182,
+          "support": 3
+        }
+      ],
+      "beatConfidence": 0.3271555685563858,
+      "finalMeter": "2/4",
+      "diagnostics": {
+        "meterCorr2": 0.30083539908435497,
+        "meterCorr3": -0.3313357995230093,
+        "meterCorr4": 0.2306978648169263,
+        "meterAccent2": 0.3044689891231007,
+        "meterAccent3": 0.009770906248176156,
+        "meterAccent4": 0.029689502960828115,
+        "meterOppositeAsymmetry4": 0.05628063184794983,
+        "percussiveProbability": 0.36940798063198943,
+        "harmonicProbability": 0.6915243909711158,
+        "subdivisionSimple": 0.1158372194445736,
+        "subdivisionTriplet": 0.006856422139415758
+      }
+    },
+    {
+      "id": 43265,
+      "groundTruthBpm": 91,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "melody"
+      ],
+      "genres": [
+        "electronic",
+        "house / techno",
+        "other dance music"
+      ],
+      "name": "91loopypoopy3.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/43/43265_4948-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 122.08832777274161,
+          "score": 1.1358203486826148,
+          "support": 3
+        },
+        {
+          "bpm": 91.24807864417215,
+          "score": 0.7271400157656026,
+          "support": 1
+        },
+        {
+          "bpm": 72.93861467523348,
+          "score": 0.6069723890969125,
+          "support": 2
+        },
+        {
+          "bpm": 175.78125,
+          "score": 0.33249052563992476,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.3190975526507054,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": 0.6189033955807602,
+        "meterCorr3": 0.534232175822129,
+        "meterCorr4": 0.8453750117554159,
+        "meterAccent2": 0.10150037349274191,
+        "meterAccent3": 0.003329818178742223,
+        "meterAccent4": 0.020152731174494815,
+        "meterOppositeAsymmetry4": 0.07271639711477022,
+        "percussiveProbability": 0.22850541441271813,
+        "harmonicProbability": 0.8395482648435052,
+        "subdivisionSimple": 0.35869462093088866,
+        "subdivisionTriplet": 0.0000016795425840432466
+      }
+    },
+    {
+      "id": 58581,
+      "groundTruthBpm": 90,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "electronic"
+      ],
+      "name": "RHUMBA.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/58/58581_497386-hq.mp3",
+      "estimateBpm": 88.89323359375568,
+      "absError": 1.1067664062443185,
+      "tempoClass": "exact",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 20
+      },
+      "meterCorrectRate": 1,
+      "meterUnknownRate": 0,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 89.85607583733562,
+          "score": 1.085543003919632,
+          "support": 2
+        },
+        {
+          "bpm": 81.76477227826267,
+          "score": 0.222070076646342,
+          "support": 2
+        },
+        {
+          "bpm": 98.6148784145592,
+          "score": 0.18663718868240292,
+          "support": 2
+        },
+        {
+          "bpm": 60.16042969870626,
+          "score": 0.10251860443152988,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.5597492977081691,
+      "finalMeter": "4/4",
+      "diagnostics": {
+        "meterCorr2": 0.7116670750093302,
+        "meterCorr3": 0.6831256694006408,
+        "meterCorr4": 0.6361007856686429,
+        "meterAccent2": 0.05486773298476297,
+        "meterAccent3": 0.14597414756706437,
+        "meterAccent4": 0.05511570661010891,
+        "meterOppositeAsymmetry4": 0.2612763508717264,
+        "percussiveProbability": 0.24896602534667675,
+        "harmonicProbability": 0.6804332636009698,
+        "subdivisionSimple": 0.15650506865457342,
+        "subdivisionTriplet": 0
+      }
+    },
+    {
+      "id": 78614,
+      "groundTruthBpm": 80,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx"
+      ],
+      "genres": [
+        "cinematic",
+        "electronic",
+        "other dance music"
+      ],
+      "name": "DISTOPIA LOOPZ 010 80 BPM.flac",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/78/78614_2518-hq.mp3",
+      "error": "TimeoutError: The operation timed out."
+    },
+    {
+      "id": 6853,
+      "groundTruthBpm": 110,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "electronic"
+      ],
+      "name": "110 bpm FM Rhythm -27.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/6/6853_2518-hq.mp3",
+      "estimateBpm": 87.88747168117305,
+      "absError": 22.112528318826946,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "3/4": 12,
+        "unknown": 8
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 0.4,
+      "meterWrongRate": 0.6,
+      "finalCandidates": [
+        {
+          "bpm": 88.09191461420623,
+          "score": 0.35014002363604213,
+          "support": 1
+        },
+        {
+          "bpm": 63.02221151604849,
+          "score": 0.31001567721664974,
+          "support": 2
+        },
+        {
+          "bpm": 110.00920208651112,
+          "score": 0.2004728595389866,
+          "support": 3
+        },
+        {
+          "bpm": 75.1573090277262,
+          "score": 0.1471406081936712,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.5780777589196979,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.03487138136708435,
+        "meterCorr3": 0.41704075460617096,
+        "meterCorr4": 0.09274411824258257,
+        "meterAccent2": 0.02015918847282942,
+        "meterAccent3": 0.10896211911790743,
+        "meterAccent4": 0.03722047073722571,
+        "meterOppositeAsymmetry4": 0.062260322429500733,
+        "percussiveProbability": 0.45615136274674545,
+        "harmonicProbability": 0.7065619382797848,
+        "subdivisionSimple": 0.00019406975377122635,
+        "subdivisionTriplet": 0
+      }
+    },
+    {
+      "id": 11824,
+      "groundTruthBpm": 100,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "chords",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic"
+      ],
+      "name": "fall_and_bounce_arp_100BPM_B1.wav",
+      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/11/11824_32690-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 100.75759284646774,
+          "score": 0.5288662699333069,
+          "support": 4
+        },
+        {
+          "bpm": 130.09637821711257,
+          "score": 0.32269746316049575,
+          "support": 5
+        },
+        {
+          "bpm": 110.9061414528419,
+          "score": 0.31785523605508265,
+          "support": 5
+        },
+        {
+          "bpm": 121.26421751875982,
+          "score": 0.2580770150266069,
+          "support": 5
+        }
+      ],
+      "beatConfidence": 0.17891444409096738,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": 0.08201928360097141,
+        "meterCorr3": -0.3701826155297406,
+        "meterCorr4": -0.40849087135839424,
+        "meterAccent2": 0.34989649922922056,
+        "meterAccent3": 0.1628014455279981,
+        "meterAccent4": 0.3811269157815464,
+        "meterOppositeAsymmetry4": 0.2600596918166975,
+        "percussiveProbability": 0.20795524513831587,
+        "harmonicProbability": 0.7446055911653371,
+        "subdivisionSimple": 0.16227400404907535,
+        "subdivisionTriplet": 0.21366513489188438
+      }
+    },
+    {
+      "id": 11832,
+      "groundTruthBpm": 110,
+      "signature": "4/4",
+      "instrumentation": [
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "cinematic",
+        "electronic",
+        "hip hop",
+        "house / techno"
+      ],
+      "name": "fall_and_bounce_arp_110BPM_C2.wav",
+      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/11/11832_32690-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 107.76183664566774,
+          "score": 0.33406479256311244,
+          "support": 5
+        },
+        {
+          "bpm": 119.56545807356014,
+          "score": 0.31949809111814587,
+          "support": 4
+        },
+        {
+          "bpm": 137.73473492043695,
+          "score": 0.24354696052040706,
+          "support": 4
+        },
+        {
+          "bpm": 89.04929893076823,
+          "score": 0.21539678002648013,
+          "support": 4
+        }
+      ],
+      "beatConfidence": 0.14267364422833806,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.14655505489133722,
+        "meterCorr3": -0.4980030402424588,
+        "meterCorr4": -0.6102884267480403,
+        "meterAccent2": 0.43272229614993646,
+        "meterAccent3": 0.004820614338180625,
+        "meterAccent4": 0.5840357186490232,
+        "meterOppositeAsymmetry4": 0.2958996105969612,
+        "percussiveProbability": 0.19603532663490184,
+        "harmonicProbability": 0.6671489340265998,
+        "subdivisionSimple": 0.27224842911806113,
+        "subdivisionTriplet": 0.2019727896016546
+      }
+    },
+    {
+      "id": 19069,
+      "groundTruthBpm": 110,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "electronic",
+        "house / techno"
+      ],
+      "name": "TechOddLoop1_LC_110bpm .wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/19/19069_34300-hq.mp3",
+      "estimateBpm": 109.9394882651558,
+      "absError": 0.06051173484419792,
+      "tempoClass": "exact",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 18,
+        "unknown": 2
+      },
+      "meterCorrectRate": 0.9,
+      "meterUnknownRate": 0.1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 109.82934926895571,
+          "score": 0.8312803710616651,
+          "support": 3
+        },
+        {
+          "bpm": 73.25964687159893,
+          "score": 0.2657505615586838,
+          "support": 2
+        },
+        {
+          "bpm": 148.0263157894737,
+          "score": 0.22640646220805355,
+          "support": 1
+        },
+        {
+          "bpm": 62.77993274977405,
+          "score": 0.2039313741664762,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.6203304131399013,
+      "finalMeter": "4/4",
+      "diagnostics": {
+        "meterCorr2": 0.3052770696432401,
+        "meterCorr3": 0.19357789043448875,
+        "meterCorr4": 0.2348467918679535,
+        "meterAccent2": 0.08522428963130943,
+        "meterAccent3": 0.03759090518788466,
+        "meterAccent4": 0.14726789835051127,
+        "meterOppositeAsymmetry4": 0.11404328278172281,
+        "percussiveProbability": 0.17401526048092886,
+        "harmonicProbability": 0.8024793373271786,
+        "subdivisionSimple": 0.25164795081268254,
+        "subdivisionTriplet": 2.847614313872828e-11
+      }
+    },
+    {
+      "id": 2625,
+      "groundTruthBpm": 133,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "133 bpm ATTACK LOOP 04 electrified analog kit variation 11 mastered 16 bit.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/2/2625_2518-hq.mp3",
+      "estimateBpm": 133.40121506962453,
+      "absError": 0.40121506962452713,
+      "tempoClass": "exact",
+      "tempoReliableFrames": 14,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 9,
+        "unknown": 11
+      },
+      "meterCorrectRate": 0.45,
+      "meterUnknownRate": 0.55,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 133.1893253661714,
+          "score": 0.6918358740532431,
+          "support": 2
+        },
+        {
+          "bpm": 88.29490361574044,
+          "score": 0.4488581718144139,
+          "support": 2
+        },
+        {
+          "bpm": 62.678642674299745,
+          "score": 0.3307626453880026,
+          "support": 2
+        },
+        {
+          "bpm": 107.27424686322405,
+          "score": 0.22935990203818496,
+          "support": 3
+        }
+      ],
+      "beatConfidence": 0.5026917503683482,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.21268239243220158,
+        "meterCorr3": 0.3220797540215413,
+        "meterCorr4": -0.05154426785741196,
+        "meterAccent2": 0.004134270221380733,
+        "meterAccent3": 0.006251809086480662,
+        "meterAccent4": 0.005577708106375918,
+        "meterOppositeAsymmetry4": 0.04005338156924368,
+        "percussiveProbability": 0.37685737509700223,
+        "harmonicProbability": 0.6548835017125676,
+        "subdivisionSimple": 0.01851806175028851,
+        "subdivisionTriplet": 5.175158195807618e-10
+      }
+    },
+    {
+      "id": 5163,
+      "groundTruthBpm": 125,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "electronic"
+      ],
+      "name": "Rhythmmakerloop 125 bpm-17.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/5/5163_2518-hq.mp3",
+      "estimateBpm": 117.1875,
+      "absError": 7.8125,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 19,
+        "4/4": 1
+      },
+      "meterCorrectRate": 0.05,
+      "meterUnknownRate": 0.95,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 82.75686946655101,
+          "score": 0.8306040201491839,
+          "support": 2
+        },
+        {
+          "bpm": 61.715864248829824,
+          "score": 0.7228300974474279,
+          "support": 1
+        },
+        {
+          "bpm": 100.22899971959534,
+          "score": 0.645629875257149,
+          "support": 1
+        },
+        {
+          "bpm": 71.69735833382761,
+          "score": 0.42517645188221903,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.47628122290627406,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": -0.2233780058769841,
+        "meterCorr3": 0.090784920421137,
+        "meterCorr4": 0.13374725170486249,
+        "meterAccent2": 0.0008579701319420437,
+        "meterAccent3": 0.019314256735172206,
+        "meterAccent4": 0.1872346537155539,
+        "meterOppositeAsymmetry4": 0.27134966434068114,
+        "percussiveProbability": 0.3166245733504879,
+        "harmonicProbability": 0.6921640397775373,
+        "subdivisionSimple": 0.008685980789075738,
+        "subdivisionTriplet": 2.7823493064378456e-9
+      }
+    },
+    {
+      "id": 5179,
+      "groundTruthBpm": 125,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "electronic",
+        "house / techno"
+      ],
+      "name": "Rhythmmakerloop 125 bpm-33.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/5/5179_2518-hq.mp3",
+      "estimateBpm": 117.1875,
+      "absError": 7.8125,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 20
+      },
+      "meterCorrectRate": 1,
+      "meterUnknownRate": 0,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 82.81623651403626,
+          "score": 1.029965245255918,
+          "support": 2
+        },
+        {
+          "bpm": 61.619330746771084,
+          "score": 0.8932181988086609,
+          "support": 1
+        },
+        {
+          "bpm": 100.18019826902383,
+          "score": 0.7637936918790126,
+          "support": 1
+        },
+        {
+          "bpm": 125.10860054966597,
+          "score": 0.6825213390986089,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.42221649230250313,
+      "finalMeter": "4/4",
+      "diagnostics": {
+        "meterCorr2": -0.4118731466845633,
+        "meterCorr3": 0.02242180626347558,
+        "meterCorr4": 0.524226303663723,
+        "meterAccent2": 0.034821841293066196,
+        "meterAccent3": 0.022568583676414705,
+        "meterAccent4": 0.007333969600843167,
+        "meterOppositeAsymmetry4": 0.026238549137272825,
+        "percussiveProbability": 0.25969677028422633,
+        "harmonicProbability": 0.744488909833266,
+        "subdivisionSimple": 0.05642309963760878,
+        "subdivisionTriplet": 3.881964737122692e-9
+      }
+    },
+    {
+      "id": 5825,
+      "groundTruthBpm": 120,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx"
+      ],
+      "genres": [
+        "cinematic",
+        "electronic"
+      ],
+      "name": "China Dream Convoloop k-01.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/5/5825_2518-hq.mp3",
+      "estimateBpm": 116.67344045799777,
+      "absError": 3.3265595420022294,
+      "tempoClass": "exact",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 10,
+        "unknown": 10
+      },
+      "meterCorrectRate": 0.5,
+      "meterUnknownRate": 0.5,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 114.197882227233,
+          "score": 0.2782383459804844,
+          "support": 4
+        },
+        {
+          "bpm": 82.0579536699991,
+          "score": 0.24820978746703048,
+          "support": 2
+        },
+        {
+          "bpm": 122.28260869565219,
+          "score": 0.1532563718526222,
+          "support": 1
+        },
+        {
+          "bpm": 68.50482571271787,
+          "score": 0.11760812013746946,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.4488012986785987,
+      "finalMeter": "4/4",
+      "diagnostics": {
+        "meterCorr2": 0.10288533821191936,
+        "meterCorr3": -0.009745923432758001,
+        "meterCorr4": 0.24688250893387184,
+        "meterAccent2": 0.09869148520122709,
+        "meterAccent3": 0.012033238177954136,
+        "meterAccent4": 0.00034977724799185975,
+        "meterOppositeAsymmetry4": 0.21478781563740043,
+        "percussiveProbability": 0.30525348815626335,
+        "harmonicProbability": 0.8070256473288554,
+        "subdivisionSimple": 0.0002290588472084004,
+        "subdivisionTriplet": 0.04032754051700266
+      }
+    },
+    {
+      "id": 9360,
+      "groundTruthBpm": 120,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "fx",
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "electronic",
+        "house / techno",
+        "live sounds"
+      ],
+      "name": "industrial.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/9/9360_24904-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 119.10812056284756,
+          "score": 0.7120295875339225,
+          "support": 4
+        },
+        {
+          "bpm": 79.23924247898391,
+          "score": 0.43499293142078527,
+          "support": 3
+        },
+        {
+          "bpm": 95.694606274363,
+          "score": 0.31905913990934054,
+          "support": 2
+        },
+        {
+          "bpm": 68.46541057282668,
+          "score": 0.25935084436324285,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.29455499016523223,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": 0.12851030136046085,
+        "meterCorr3": 0.06060373873553618,
+        "meterCorr4": 0.010270361905663796,
+        "meterAccent2": 0.024006135740452444,
+        "meterAccent3": 0.017807251847350197,
+        "meterAccent4": 0.033141299199335,
+        "meterOppositeAsymmetry4": 0.08172672903345142,
+        "percussiveProbability": 0.3570882411593996,
+        "harmonicProbability": 0.7744721906231983,
+        "subdivisionSimple": 0.2886937781425073,
+        "subdivisionTriplet": 0
+      }
+    },
+    {
+      "id": 32158,
+      "groundTruthBpm": 140,
+      "signature": "4/4",
+      "instrumentation": [
+        "chords",
+        "melody"
+      ],
+      "genres": [
+        "house / techno",
+        "live sounds",
+        "other dance music"
+      ],
+      "name": "piano_2_140bpm.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/32/32158_209299-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 94.10236734385826,
+          "score": 0.579882135613377,
+          "support": 1
+        },
+        {
+          "bpm": 140.625,
+          "score": 0.4141451014658646,
+          "support": 2
+        },
+        {
+          "bpm": 112.34638690126096,
+          "score": 0.3070831693338657,
+          "support": 2
+        },
+        {
+          "bpm": 82.58741755132192,
+          "score": 0.281455751137064,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.24146989066092833,
+      "finalMeter": "unknown",
+      "diagnostics": {
+        "meterCorr2": 0.23162300010338396,
+        "meterCorr3": 0.12536422386354873,
+        "meterCorr4": 0.054686592607339136,
+        "meterAccent2": 0.041129429376501374,
+        "meterAccent3": 0.009230262879265524,
+        "meterAccent4": 0.011836196224542617,
+        "meterOppositeAsymmetry4": 0.016582800404787868,
+        "percussiveProbability": 0.3611449229521336,
+        "harmonicProbability": 0.83093328152538,
+        "subdivisionSimple": 0.007342191542431157,
+        "subdivisionTriplet": 0.2704393005325733
+      }
+    },
+    {
+      "id": 34891,
+      "groundTruthBpm": 140,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "Freesound beat 1 (house).wav",
+      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/34/34891_305530-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/34891.mp3'"
+    },
+    {
+      "id": 44193,
+      "groundTruthBpm": 143.5,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "[jerado] RB_beat_221107_03.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/44/44193_433129-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/44193.mp3'"
+    },
+    {
+      "id": 52892,
+      "groundTruthBpm": 148,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic"
+      ],
+      "name": "GrainDrums1.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/52/52892_38815-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/52892.mp3'"
+    },
+    {
+      "id": 104382,
+      "groundTruthBpm": 140,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "melody"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "Wobble_Loop_140_C2.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/104/104382_1757287-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/104382.mp3'"
+    },
+    {
+      "id": 151349,
+      "groundTruthBpm": 175,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "live sounds"
+      ],
+      "name": "175 fs punchy.AIF",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/151/151349_2195442-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/151349.mp3'"
+    },
+    {
+      "id": 201010,
+      "groundTruthBpm": 160,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass"
+      ],
+      "genres": [
+        "electronic",
+        "global",
+        "hip hop",
+        "live sounds",
+        "other dance music"
+      ],
+      "name": "drums2_Insert 5.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/201/201010_3734261-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/201010.mp3'"
+    },
+    {
+      "id": 246089,
+      "groundTruthBpm": 175,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "melody"
+      ],
+      "genres": [
+        "bass music",
+        "cinematic",
+        "electronic",
+        "global",
+        "house / techno",
+        "other dance music"
+      ],
+      "name": "24_ca_dnb layers.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/246/246089_4522120-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/246089.mp3'"
+    },
+    {
+      "id": 249472,
+      "groundTruthBpm": 160,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "20140914_attackloop_160BPM_4_4_loop2.2.flac",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/249/249472_2518-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/249472.mp3'"
+    },
+    {
+      "id": 414358,
+      "groundTruthBpm": 180,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "global",
+        "hip hop",
+        "live sounds",
+        "other dance music"
+      ],
+      "name": "Finger snapping Jazzy (two hands).wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/414/414358_3946273-hq.mp3",
+      "error": "Error: ENOENT: no such file or directory, open '/tmp/music-dsp-fsld-batch/414358.mp3'"
+    }
+  ]
+}

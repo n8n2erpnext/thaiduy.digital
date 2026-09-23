@@ -1,298 +1,39 @@
 {
   "source": "Freesound Loop Dataset",
-  "generatedAt": "2026-09-23T14:43:41.808Z",
+  "generatedAt": "2026-09-23T15:08:28.117Z",
   "summary": {
     "selected": 30,
     "completed": 29,
     "errors": 1,
     "tempo": {
-      "unresolved": 13,
       "harmonic": 6,
-      "exact": 7,
-      "fail": 3
+      "unresolved": 13,
+      "exact": 6,
+      "fail": 4
     },
     "bySignature": {
-      "2/4": {
-        "n": 2,
-        "correctRate": 0,
-        "unknownRate": 0.5,
-        "wrongRate": 0.5
-      },
-      "3/4": {
-        "n": 2,
-        "correctRate": 0.5,
-        "unknownRate": 0.475,
-        "wrongRate": 0.025
-      },
       "4/4": {
-        "n": 25,
-        "correctRate": 0.222,
-        "unknownRate": 0.75,
-        "wrongRate": 0.027999999999999997
+        "n": 29,
+        "correctRate": 0.2982758620689655,
+        "unknownRate": 0.6396551724137931,
+        "wrongRate": 0.06206896551724138
       }
     }
   },
   "results": [
     {
-      "id": 4430,
-      "groundTruthBpm": 60,
-      "signature": "2/4",
-      "instrumentation": [
-        "fx"
-      ],
-      "genres": [
-        "bass music",
-        "cinematic",
-        "house / techno"
-      ],
-      "name": "convoluted back to back loop 60 bpm 5g.wav",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/4/4430_2518-hq.mp3",
-      "estimateBpm": null,
-      "absError": null,
-      "tempoClass": "unresolved",
-      "tempoReliableFrames": 0,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 131.7742343686776,
-          "score": 0.23730407283533347,
-          "support": 3
-        },
-        {
-          "bpm": 76.02523514407612,
-          "score": 0.21035602711360085,
-          "support": 3
-        },
-        {
-          "bpm": 58.14235764716107,
-          "score": 0.1659881424609616,
-          "support": 3
-        },
-        {
-          "bpm": 113.01903867145349,
-          "score": 0.16114620845260388,
-          "support": 1
-        }
-      ],
-      "beatConfidence": 0.11443222735552523,
-      "finalMeter": "unknown"
-    },
-    {
-      "id": 33979,
-      "groundTruthBpm": 150,
-      "signature": "2/4",
-      "instrumentation": [
-        "percussion"
-      ],
-      "genres": [
-        "bass music",
-        "electronic"
-      ],
-      "name": "k 14 150 5.wav",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/33/33979_215874-hq.mp3",
-      "estimateBpm": 73.27756291036302,
-      "absError": 76.72243708963698,
-      "tempoClass": "harmonic",
-      "tempoReliableFrames": 20,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "4/4": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 0,
-      "meterWrongRate": 1,
-      "finalCandidates": [
-        {
-          "bpm": 73.22732642678899,
-          "score": 1.2172131134509634,
-          "support": 1
-        },
-        {
-          "bpm": 58.58127125556533,
-          "score": 0.4286673432171813,
-          "support": 1
-        },
-        {
-          "bpm": 98.66889308818212,
-          "score": 0.3439448861099102,
-          "support": 2
-        },
-        {
-          "bpm": 116.24990892405197,
-          "score": 0.23059998418516053,
-          "support": 2
-        }
-      ],
-      "beatConfidence": 0.42333779875292266,
-      "finalMeter": "4/4"
-    },
-    {
-      "id": 6075,
-      "groundTruthBpm": 105,
-      "signature": "3/4",
-      "instrumentation": [
-        "percussion"
-      ],
-      "genres": [
-        "electronic",
-        "house / techno"
-      ],
-      "name": "Rhythmmaker Randomized 140 bpm loop -78.wav",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/6/6075_2518-hq.mp3",
-      "estimateBpm": 106.61835420429041,
-      "absError": 1.6183542042904122,
-      "tempoClass": "exact",
-      "tempoReliableFrames": 20,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "3/4": 20
-      },
-      "meterCorrectRate": 1,
-      "meterUnknownRate": 0,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 105.29240783268972,
-          "score": 0.6618593896993726,
-          "support": 2
-        },
-        {
-          "bpm": 70.03809157199917,
-          "score": 0.6043464118922663,
-          "support": 1
-        },
-        {
-          "bpm": 112.5,
-          "score": 0.14554661150390838,
-          "support": 1
-        },
-        {
-          "bpm": 60.42338017374197,
-          "score": 0.09284761648970646,
-          "support": 1
-        }
-      ],
-      "beatConfidence": 0.5065668721988286,
-      "finalMeter": "3/4"
-    },
-    {
-      "id": 161244,
-      "groundTruthBpm": 120,
-      "signature": "3/4",
-      "instrumentation": [
-        "fx"
-      ],
-      "genres": [
-        "cinematic",
-        "electronic"
-      ],
-      "name": "Waltzing walk.wav",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/161/161244_649468-hq.mp3",
-      "estimateBpm": 87.890625,
-      "absError": 32.109375,
-      "tempoClass": "fail",
-      "tempoReliableFrames": 20,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 19,
-        "4/4": 1
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 0.95,
-      "meterWrongRate": 0.05,
-      "finalCandidates": [
-        {
-          "bpm": 119.16069127852458,
-          "score": 0.45833227652884767,
-          "support": 7
-        },
-        {
-          "bpm": 95.21980448518862,
-          "score": 0.3288568747111217,
-          "support": 2
-        },
-        {
-          "bpm": 130.00756589763773,
-          "score": 0.3284394637770639,
-          "support": 4
-        },
-        {
-          "bpm": 104.61154476321941,
-          "score": 0.30130239987442564,
-          "support": 5
-        }
-      ],
-      "beatConfidence": 0.4375152152680758,
-      "finalMeter": "unknown"
-    },
-    {
-      "id": 4392,
-      "groundTruthBpm": 60,
-      "signature": "4/4",
-      "instrumentation": [
-        "fx"
-      ],
-      "genres": [
-        "cinematic",
-        "global"
-      ],
-      "name": "convoluted back to back loop 60 bpm 1a.wav",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/4/4392_2518-hq.mp3",
-      "estimateBpm": null,
-      "absError": null,
-      "tempoClass": "unresolved",
-      "tempoReliableFrames": 0,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 60.03402739239976,
-          "score": 0.5105288335962116,
-          "support": 1
-        },
-        {
-          "bpm": 80.23515408309908,
-          "score": 0.3097383046265862,
-          "support": 2
-        },
-        {
-          "bpm": 87.890625,
-          "score": 0.004817574066812201,
-          "support": 1
-        }
-      ],
-      "beatConfidence": 0.29759612899188004,
-      "finalMeter": "unknown"
-    },
-    {
       "id": 4535,
       "groundTruthBpm": 60,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "fx"
+        "fx",
+        "percussion"
       ],
       "genres": [
         "bass music",
         "cinematic",
-        "global",
         "electronic",
+        "global",
         "house / techno",
         "other dance music"
       ],
@@ -337,18 +78,20 @@
       "finalMeter": "2/4"
     },
     {
-      "id": 34373,
+      "id": 4604,
       "groundTruthBpm": 60,
       "signature": "4/4",
       "instrumentation": [
-        "bass"
+        "fx"
       ],
       "genres": [
-        "live sounds"
+        "bass music",
+        "electronic",
+        "global"
       ],
-      "name": "bass60bpm.wav",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/34/34373_95609-hq.mp3",
+      "name": "convoluted bare bone loop 60 bpm 158.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/4/4604_2518-hq.mp3",
       "estimateBpm": null,
       "absError": null,
       "tempoClass": "unresolved",
@@ -362,27 +105,27 @@
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 79.97641100026942,
-          "score": 0.15252110979485287,
-          "support": 2
-        },
-        {
-          "bpm": 114.65333347940316,
-          "score": 0.12496383679487572,
-          "support": 4
-        },
-        {
-          "bpm": 89.5414774281724,
-          "score": 0.04763205161766887,
+          "bpm": 122.07524313546955,
+          "score": 0.15739351097925308,
           "support": 1
         },
         {
-          "bpm": 63.20574764559766,
-          "score": 0.023516840815870188,
+          "bpm": 93.74999999999999,
+          "score": 0.11269777864172942,
           "support": 1
+        },
+        {
+          "bpm": 136.5231948850056,
+          "score": 0.10181684267702419,
+          "support": 1
+        },
+        {
+          "bpm": 106.47685550269505,
+          "score": 0.09879700473560196,
+          "support": 3
         }
       ],
-      "beatConfidence": 0.2008008174787213,
+      "beatConfidence": 0.3416281445016067,
       "finalMeter": "unknown"
     },
     {
@@ -394,7 +137,8 @@
       ],
       "genres": [
         "cinematic",
-        "global"
+        "global",
+        "live sounds"
       ],
       "name": "Perc_deff_st_74bpm.wav",
       "license": "http://creativecommons.org/licenses/by/3.0/",
@@ -436,23 +180,24 @@
       "finalMeter": "unknown"
     },
     {
-      "id": 659,
-      "groundTruthBpm": 90,
+      "id": 132052,
+      "groundTruthBpm": 74,
       "signature": "4/4",
       "instrumentation": [
-        "melody"
+        "bass",
+        "chords"
       ],
       "genres": [
-        "live sounds",
-        "global"
+        "cinematic",
+        "electronic"
       ],
-      "name": "boom boom2 8 beat Dm 90.wav",
-      "license": "http://creativecommons.org/licenses/by-nc/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/0/659_586-hq.mp3",
-      "estimateBpm": 117.1875,
-      "absError": 27.1875,
-      "tempoClass": "fail",
-      "tempoReliableFrames": 20,
+      "name": "rhodes loop 1.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/132/132052_316502-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
       "evaluatedFrames": 20,
       "meterCounts": {
         "unknown": 20
@@ -462,27 +207,27 @@
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 175.78125,
-          "score": 0.4131337382421133,
-          "support": 1
-        },
-        {
-          "bpm": 187.5,
-          "score": 0.3655063810504172,
-          "support": 1
-        },
-        {
-          "bpm": 71.74062922207854,
-          "score": 0.32053051215720413,
+          "bpm": 108.27773495399191,
+          "score": 0.44664989994976606,
           "support": 2
         },
         {
-          "bpm": 118.91233421771894,
-          "score": 0.28113756703606746,
+          "bpm": 119.85521264565148,
+          "score": 0.3482543612193664,
           "support": 4
+        },
+        {
+          "bpm": 148.0263157894737,
+          "score": 0.22635085293614604,
+          "support": 1
+        },
+        {
+          "bpm": 136.65874297359636,
+          "score": 0.21501935549712833,
+          "support": 3
         }
       ],
-      "beatConfidence": 0.436630743195009,
+      "beatConfidence": 0.16926083749160534,
       "finalMeter": "unknown"
     },
     {
@@ -493,8 +238,8 @@
         "percussion"
       ],
       "genres": [
-        "live sounds",
-        "hip hop"
+        "hip hop",
+        "live sounds"
       ],
       "name": "91elfy15.aif",
       "license": "http://creativecommons.org/licenses/by-nc/3.0/",
@@ -536,69 +281,19 @@
       "finalMeter": "4/4"
     },
     {
-      "id": 20510,
-      "groundTruthBpm": 90,
-      "signature": "4/4",
-      "instrumentation": [
-        "bass"
-      ],
-      "genres": [
-        "hip hop",
-        "other dance music"
-      ],
-      "name": "Didgerdoo Dance BPM 90.wav",
-      "license": "http://creativecommons.org/licenses/by-nc/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/20/20510_103296-hq.mp3",
-      "estimateBpm": 87.890625,
-      "absError": 2.109375,
-      "tempoClass": "exact",
-      "tempoReliableFrames": 1,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "4/4": 1,
-        "unknown": 19
-      },
-      "meterCorrectRate": 0.05,
-      "meterUnknownRate": 0.95,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 59.326878487519835,
-          "score": 0.3363047969989884,
-          "support": 2
-        },
-        {
-          "bpm": 122.13190762360317,
-          "score": 0.3087176031524088,
-          "support": 5
-        },
-        {
-          "bpm": 111.48426657597619,
-          "score": 0.21160358156180833,
-          "support": 3
-        },
-        {
-          "bpm": 89.59377387361859,
-          "score": 0.16373665730116282,
-          "support": 2
-        }
-      ],
-      "beatConfidence": 0.34529519083623866,
-      "finalMeter": "unknown"
-    },
-    {
       "id": 23042,
       "groundTruthBpm": 80,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
         "bass",
-        "melody"
+        "melody",
+        "percussion"
       ],
       "genres": [
+        "electronic",
         "global",
         "hip hop",
-        "electronic"
+        "live sounds"
       ],
       "name": "emptinesslikedust.wav",
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
@@ -637,6 +332,113 @@
         }
       ],
       "beatConfidence": 0.41499655542695313,
+      "finalMeter": "unknown"
+    },
+    {
+      "id": 33359,
+      "groundTruthBpm": 90,
+      "signature": "4/4",
+      "instrumentation": [
+        "fx",
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "cinematic",
+        "electronic"
+      ],
+      "name": "9oBpM_FLoWErS_Evil Creams - 4.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/33/33359_199517-hq.mp3",
+      "estimateBpm": 117.1875,
+      "absError": 27.1875,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 9,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 12,
+        "3/4": 8
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 0.6,
+      "meterWrongRate": 0.4,
+      "finalCandidates": [
+        {
+          "bpm": 117.1875,
+          "score": 0.20442149643618046,
+          "support": 2
+        },
+        {
+          "bpm": 175.78125,
+          "score": 0.13693137121422408,
+          "support": 1
+        },
+        {
+          "bpm": 59.8497832987124,
+          "score": 0.07573952602198904,
+          "support": 3
+        },
+        {
+          "bpm": 165.44117647058826,
+          "score": 0.018027009449191337,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.2890584186538031,
+      "finalMeter": "unknown"
+    },
+    {
+      "id": 43247,
+      "groundTruthBpm": 90.5,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "fx",
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "electronic",
+        "house / techno"
+      ],
+      "name": "91dreamloopverb.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/43/43247_4948-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 89.27461564266466,
+          "score": 0.8603969243846012,
+          "support": 2
+        },
+        {
+          "bpm": 60.16012588006655,
+          "score": 0.6412310518487239,
+          "support": 2
+        },
+        {
+          "bpm": 187.5,
+          "score": 0.4049853893927707,
+          "support": 1
+        },
+        {
+          "bpm": 121.94397886988759,
+          "score": 0.0537096154243515,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.31234957823734655,
       "finalMeter": "unknown"
     },
     {
@@ -695,11 +497,13 @@
       "groundTruthBpm": 115,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "melody"
+        "fx",
+        "melody",
+        "percussion"
       ],
       "genres": [
-        "electronic"
+        "electronic",
+        "other dance music"
       ],
       "name": "115 BPM STAB LOOP 17 mastered 16 bit.wav",
       "license": "http://creativecommons.org/licenses/by/3.0/",
@@ -741,63 +545,21 @@
       "finalMeter": "4/4"
     },
     {
-      "id": 5553,
-      "groundTruthBpm": 110,
-      "signature": "4/4",
-      "instrumentation": [
-        "melody"
-      ],
-      "genres": [
-        "other dance music"
-      ],
-      "name": "Gtr-Drm 100BPM.wav",
-      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/5/5553_1779-hq.mp3",
-      "estimateBpm": null,
-      "absError": null,
-      "tempoClass": "unresolved",
-      "tempoReliableFrames": 0,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 112.59308338564254,
-          "score": 0.2342761088041646,
-          "support": 7
-        },
-        {
-          "bpm": 101.08517223810057,
-          "score": 0.18536665970775096,
-          "support": 3
-        },
-        {
-          "bpm": 65.14729608229919,
-          "score": 0.07715188050831337,
-          "support": 2
-        },
-        {
-          "bpm": 123.54854160097436,
-          "score": 0.06890546982690793,
-          "support": 3
-        }
-      ],
-      "beatConfidence": 0.25410473285357765,
-      "finalMeter": "unknown"
-    },
-    {
       "id": 6831,
       "groundTruthBpm": 110,
       "signature": "4/4",
       "instrumentation": [
-        "fx"
+        "fx",
+        "percussion"
       ],
       "genres": [
-        "electronic"
+        "bass music",
+        "electronic",
+        "global",
+        "hip hop",
+        "house / techno",
+        "live sounds",
+        "other dance music"
       ],
       "name": "110 bpm FM Rhythm -05.wav",
       "license": "http://creativecommons.org/licenses/by/3.0/",
@@ -839,13 +601,66 @@
       "finalMeter": "unknown"
     },
     {
+      "id": 6973,
+      "groundTruthBpm": 110,
+      "signature": "4/4",
+      "instrumentation": [
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "electronic",
+        "other dance music"
+      ],
+      "name": "110 bpm FM Rhythm -50.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/6/6973_2518-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 62.10030641631432,
+          "score": 0.39563807184037314,
+          "support": 1
+        },
+        {
+          "bpm": 88.78408809792064,
+          "score": 0.24795874866110135,
+          "support": 1
+        },
+        {
+          "bpm": 100.26986887320821,
+          "score": 0.08688988306424542,
+          "support": 1
+        },
+        {
+          "bpm": 111.14838906517247,
+          "score": 0.06291555710626393,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.3509467763287596,
+      "finalMeter": "unknown"
+    },
+    {
       "id": 872,
       "groundTruthBpm": 123,
       "signature": "4/4",
       "instrumentation": [
+        "fx",
         "percussion"
       ],
       "genres": [
+        "cinematic",
         "electronic"
       ],
       "name": "beats_123bpm.aif",
@@ -889,65 +704,16 @@
       "finalMeter": "4/4"
     },
     {
-      "id": 1887,
-      "groundTruthBpm": 132,
-      "signature": "4/4",
-      "instrumentation": [
-        "percussion",
-        "fx"
-      ],
-      "genres": [
-        "bass music",
-        "electronic"
-      ],
-      "name": "machine2.aif",
-      "license": "http://creativecommons.org/licenses/by-nc/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/1/1887_176-hq.mp3",
-      "estimateBpm": null,
-      "absError": null,
-      "tempoClass": "unresolved",
-      "tempoReliableFrames": 0,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 67.34763748790384,
-          "score": 0.73770352823675,
-          "support": 1
-        },
-        {
-          "bpm": 131.63074345843688,
-          "score": 0.48054261304894696,
-          "support": 2
-        },
-        {
-          "bpm": 76.01351351351352,
-          "score": 0.17601406619188,
-          "support": 1
-        },
-        {
-          "bpm": 140.625,
-          "score": 0.14226726801938125,
-          "support": 2
-        }
-      ],
-      "beatConfidence": 0.27423035927805306,
-      "finalMeter": "unknown"
-    },
-    {
       "id": 1889,
       "groundTruthBpm": 132,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "bass"
+        "bass",
+        "percussion"
       ],
       "genres": [
+        "bass music",
+        "cinematic",
         "electronic"
       ],
       "name": "machine4.aif",
@@ -990,15 +756,65 @@
       "finalMeter": "unknown"
     },
     {
+      "id": 1981,
+      "groundTruthBpm": 126,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion"
+      ],
+      "genres": [
+        "global"
+      ],
+      "name": "rbh 126bpm tabla 01.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/1/1981_1112-hq.mp3",
+      "estimateBpm": null,
+      "absError": null,
+      "tempoClass": "unresolved",
+      "tempoReliableFrames": 0,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 83.09329445276533,
+          "score": 0.570468920103153,
+          "support": 3
+        },
+        {
+          "bpm": 156.25,
+          "score": 0.15295635811674826,
+          "support": 1
+        },
+        {
+          "bpm": 56.064913236977596,
+          "score": 0.12247016474315292,
+          "support": 2
+        },
+        {
+          "bpm": 175.78125,
+          "score": 0.12194464420545337,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.3675634424116422,
+      "finalMeter": "unknown"
+    },
+    {
       "id": 2629,
       "groundTruthBpm": 133,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
         "bass",
-        "fx"
+        "fx",
+        "percussion"
       ],
       "genres": [
+        "electronic",
         "global",
         "house / techno",
         "other dance music"
@@ -1043,17 +859,70 @@
       "finalMeter": "unknown"
     },
     {
+      "id": 5770,
+      "groundTruthBpm": 120,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "fx"
+      ],
+      "genres": [
+        "electronic",
+        "house / techno",
+        "other dance music"
+      ],
+      "name": "China Dream Convoloop d-02.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/5/5770_2518-hq.mp3",
+      "estimateBpm": 117.27545649568168,
+      "absError": 2.7245435043183193,
+      "tempoClass": "exact",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 12,
+        "4/4": 8
+      },
+      "meterCorrectRate": 0.4,
+      "meterUnknownRate": 0.6,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 117.38951863174596,
+          "score": 0.4467927388771738,
+          "support": 1
+        },
+        {
+          "bpm": 79.50511245992392,
+          "score": 0.305318743227615,
+          "support": 1
+        },
+        {
+          "bpm": 59.93055308377164,
+          "score": 0.27411156164602707,
+          "support": 3
+        },
+        {
+          "bpm": 127.8409090909091,
+          "score": 0.23145736384875448,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.4788177908752516,
+      "finalMeter": "4/4"
+    },
+    {
       "id": 1967,
       "groundTruthBpm": 140,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "bass"
+        "bass",
+        "percussion"
       ],
       "genres": [
         "bass music",
-        "global",
         "electronic",
+        "global",
         "house / techno"
       ],
       "name": "140 bpm ATTACK LOOP 1 ELEMENT 1 mastererd 16 bit.wav",
@@ -1100,9 +969,10 @@
       "groundTruthBpm": 140,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
         "bass",
-        "melody"
+        "chords",
+        "melody",
+        "percussion"
       ],
       "genres": [
         "bass music",
@@ -1154,9 +1024,9 @@
       "groundTruthBpm": 140,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
         "bass",
-        "fx"
+        "fx",
+        "percussion"
       ],
       "genres": [
         "house / techno",
@@ -1203,22 +1073,23 @@
       "finalMeter": "unknown"
     },
     {
-      "id": 6030,
+      "id": 6043,
       "groundTruthBpm": 140,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "fx"
+        "percussion"
       ],
       "genres": [
         "electronic",
-        "house / techno"
+        "house / techno",
+        "live sounds",
+        "other dance music"
       ],
-      "name": "Rhythmmaker Randomized 140 bpm loop -33.wav",
+      "name": "Rhythmmaker Randomized 140 bpm loop -46.wav",
       "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/6/6030_2518-hq.mp3",
-      "estimateBpm": 86.31984036063801,
-      "absError": 53.68015963936199,
+      "previewUrl": "http://freesound.org/data/previews/6/6043_2518-hq.mp3",
+      "estimateBpm": 112.02348709709148,
+      "absError": 27.976512902908524,
       "tempoClass": "fail",
       "tempoReliableFrames": 20,
       "evaluatedFrames": 20,
@@ -1230,95 +1101,147 @@
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 119.44239701703566,
-          "score": 0.2687930164203495,
-          "support": 4
-        },
-        {
-          "bpm": 82.69264102068085,
-          "score": 0.24661626360006764,
+          "bpm": 111.96089178716662,
+          "score": 1.2227786049402303,
           "support": 2
         },
         {
-          "bpm": 102.09034520544584,
-          "score": 0.18383645626145265,
+          "bpm": 94.17652621442993,
+          "score": 0.7493089479088997,
           "support": 2
         },
         {
-          "bpm": 90.7258064516129,
-          "score": 0.14707984977961547,
+          "bpm": 140.49087002495492,
+          "score": 0.5254004114721404,
+          "support": 2
+        },
+        {
+          "bpm": 80.35257674442158,
+          "score": 0.3218517482923442,
           "support": 1
         }
       ],
-      "beatConfidence": 0.5312335664860239,
+      "beatConfidence": 0.46263364381340355,
       "finalMeter": "unknown"
     },
     {
-      "id": 11672,
-      "groundTruthBpm": 166,
+      "id": 23233,
+      "groundTruthBpm": 146,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "melody"
+        "fx",
+        "percussion"
       ],
       "genres": [
-        "global",
+        "bass music",
         "hip hop",
-        "house / techno",
-        "other dance music"
+        "house / techno"
       ],
-      "name": "lo-fi_absynth_loop.wav",
-      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/11/11672_32250-hq.mp3",
-      "estimateBpm": 85.32722369959528,
-      "absError": 80.67277630040472,
-      "tempoClass": "harmonic",
-      "tempoReliableFrames": 20,
+      "name": "Merk Bill F Drum Loop3.wav",
+      "license": "http://creativecommons.org/licenses/by-nc/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/23/23233_30161-hq.mp3",
+      "estimateBpm": 87.890625,
+      "absError": 58.109375,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 3,
       "evaluatedFrames": 20,
       "meterCounts": {
-        "4/4": 20
+        "unknown": 20
       },
-      "meterCorrectRate": 1,
-      "meterUnknownRate": 0,
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 82.68675401716017,
-          "score": 0.6179789341179596,
+          "bpm": 76.47411178625197,
+          "score": 0.1692211525978879,
           "support": 3
         },
         {
-          "bpm": 71.92105797823,
-          "score": 0.2841789237029631,
-          "support": 2
+          "bpm": 125.13910706477249,
+          "score": 0.16856601453747364,
+          "support": 6
         },
         {
-          "bpm": 95.04057669609709,
-          "score": 0.25680081946262845,
-          "support": 2
+          "bpm": 116.1907124791993,
+          "score": 0.15243219893759405,
+          "support": 4
         },
         {
-          "bpm": 109.3597616520976,
-          "score": 0.2175728767515708,
+          "bpm": 99.0597081907334,
+          "score": 0.1443622679258421,
           "support": 2
         }
       ],
-      "beatConfidence": 0.6094961358384383,
-      "finalMeter": "4/4"
+      "beatConfidence": 0.4406463861889225,
+      "finalMeter": "unknown"
     },
     {
-      "id": 31749,
+      "id": 51201,
+      "groundTruthBpm": 168,
+      "signature": "4/4",
+      "instrumentation": [
+        "bass",
+        "percussion"
+      ],
+      "genres": [
+        "bass music",
+        "hip hop"
+      ],
+      "name": "jungle1_175bpm.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/51/51201_148867-hq.mp3",
+      "estimateBpm": 111.98977038462104,
+      "absError": 56.01022961537896,
+      "tempoClass": "fail",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 20
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 112.00718226162732,
+          "score": 1.2921085982726996,
+          "support": 3
+        },
+        {
+          "bpm": 67.48606272837243,
+          "score": 0.8431667327102426,
+          "support": 2
+        },
+        {
+          "bpm": 104.16666666666667,
+          "score": 0.1848691219157199,
+          "support": 2
+        },
+        {
+          "bpm": 122.28260869565219,
+          "score": 0.11094661212938635,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.345038484098914,
+      "finalMeter": "unknown"
+    },
+    {
+      "id": 98104,
       "groundTruthBpm": 170,
       "signature": "4/4",
       "instrumentation": [
-        "fx"
+        "fx",
+        "melody"
       ],
       "genres": [
-        "electronic"
+        "house / techno",
+        "other dance music"
       ],
-      "name": "sugodrone_01.wav",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/31/31749_261696-hq.mp3",
+      "name": "Riff_2_170BPM.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/98/98104_1644663-hq.mp3",
       "estimateBpm": null,
       "absError": null,
       "tempoClass": "unresolved",
@@ -1332,204 +1255,311 @@
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 116.41078585073485,
-          "score": 0.1939664485684774,
-          "support": 4
-        },
-        {
-          "bpm": 92.46728546185022,
-          "score": 0.1855941766032217,
-          "support": 3
-        },
-        {
-          "bpm": 126.38470353692433,
-          "score": 0.18295559062440422,
-          "support": 4
-        },
-        {
-          "bpm": 59.74098752471882,
-          "score": 0.13635365794908247,
+          "bpm": 104.14885647027926,
+          "score": 0.15282702763663186,
           "support": 2
-        }
-      ],
-      "beatConfidence": 0.10193830423541544,
-      "finalMeter": "unknown"
-    },
-    {
-      "id": 32873,
-      "groundTruthBpm": 160,
-      "signature": "4/4",
-      "instrumentation": [
-        "percussion",
-        "fx"
-      ],
-      "genres": [
-        "cinematic"
-      ],
-      "name": "NES 160 bpm 6:8.WAV",
-      "license": "http://creativecommons.org/licenses/by/3.0/",
-      "previewUrl": "http://freesound.org/data/previews/32/32873_229160-hq.mp3",
-      "estimateBpm": 80.05452954762097,
-      "absError": 79.94547045237903,
-      "tempoClass": "harmonic",
-      "tempoReliableFrames": 20,
-      "evaluatedFrames": 20,
-      "meterCounts": {
-        "unknown": 20
-      },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
-      "meterWrongRate": 0,
-      "finalCandidates": [
-        {
-          "bpm": 79.95755610781593,
-          "score": 0.6692584188674817,
-          "support": 1
         },
         {
-          "bpm": 63.813580653502946,
-          "score": 0.4561575026390936,
-          "support": 1
-        },
-        {
-          "bpm": 156.25,
-          "score": 0.45351975600674327,
-          "support": 1
-        },
-        {
-          "bpm": 107.51878892786436,
-          "score": 0.4472896247468718,
+          "bpm": 112.49999999999999,
+          "score": 0.1075522148603612,
           "support": 3
+        },
+        {
+          "bpm": 80.16737259438018,
+          "score": 0.08170688956804602,
+          "support": 4
+        },
+        {
+          "bpm": 69.36605397285392,
+          "score": 0.05184277565851229,
+          "support": 1
         }
       ],
-      "beatConfidence": 0.5952243168432823,
+      "beatConfidence": 0.16665776397101092,
       "finalMeter": "unknown"
     },
     {
-      "id": 44911,
-      "groundTruthBpm": 174,
+      "id": 112458,
+      "groundTruthBpm": 175,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "bass",
-        "chords",
-        "fx"
+        "percussion"
       ],
       "genres": [
         "bass music",
-        "house / techno",
-        "other dance music"
+        "live sounds"
       ],
-      "name": "Bgun_62_3.wav",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/44/44911_350554-hq.mp3",
-      "estimateBpm": 87.51719403915187,
-      "absError": 86.48280596084813,
+      "name": "complete loop.wav",
+      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/112/112458_1755605-hq.mp3",
+      "estimateBpm": 87.82333803973839,
+      "absError": 87.17666196026161,
       "tempoClass": "harmonic",
       "tempoReliableFrames": 20,
       "evaluatedFrames": 20,
       "meterCounts": {
-        "unknown": 20
+        "4/4": 20
       },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
+      "meterCorrectRate": 1,
+      "meterUnknownRate": 0,
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 87.12415032548861,
-          "score": 1.1219565135819827,
+          "bpm": 87.72788382973313,
+          "score": 1.2119547355160867,
           "support": 2
         },
         {
-          "bpm": 128.68754845954493,
-          "score": 0.4874993639580458,
+          "bpm": 60.30477127514403,
+          "score": 0.8521172920028661,
           "support": 2
         },
         {
-          "bpm": 115.57200573082413,
-          "score": 0.1458146187710167,
-          "support": 3
+          "bpm": 140.62500000000003,
+          "score": 0.6660181916317292,
+          "support": 2
         },
         {
-          "bpm": 70.3125,
-          "score": 0.13683530392555818,
+          "bpm": 100.44642857142858,
+          "score": 0.4545118567987307,
           "support": 1
         }
       ],
-      "beatConfidence": 0.9048611886160792,
-      "finalMeter": "unknown"
+      "beatConfidence": 0.9694935043884874,
+      "finalMeter": "4/4"
     },
     {
-      "id": 904,
-      "groundTruthBpm": 190,
+      "id": 189347,
+      "groundTruthBpm": 170,
       "signature": "4/4",
       "instrumentation": [
-        "percussion",
-        "melody"
+        "chords",
+        "fx"
       ],
       "genres": [
         "electronic",
         "house / techno"
       ],
-      "name": "weird_loop_2.WAV",
-      "license": "http://creativecommons.org/licenses/sampling+/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/0/904_838-hq.mp3",
-      "estimateBpm": 87.890625,
-      "absError": 102.109375,
+      "name": "Bass.",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/189/189347_3172867-hq.mp3",
+      "estimateBpm": 85.56837669867716,
+      "absError": 84.43162330132284,
       "tempoClass": "harmonic",
-      "tempoReliableFrames": 10,
+      "tempoReliableFrames": 20,
       "evaluatedFrames": 20,
       "meterCounts": {
-        "unknown": 20
+        "4/4": 20
       },
-      "meterCorrectRate": 0,
-      "meterUnknownRate": 1,
+      "meterCorrectRate": 1,
+      "meterUnknownRate": 0,
       "meterWrongRate": 0,
       "finalCandidates": [
         {
-          "bpm": 97.43187759159305,
-          "score": 0.15481890449171046,
+          "bpm": 83.40091851014832,
+          "score": 1.4564851704241177,
+          "support": 3
+        },
+        {
+          "bpm": 56.893592330924925,
+          "score": 1.0969020326537233,
+          "support": 2
+        },
+        {
+          "bpm": 175.78125,
+          "score": 0.7025605957103094,
           "support": 1
         },
         {
-          "bpm": 187.5,
-          "score": 0.13468499339128476,
+          "bpm": 91.7051234029814,
+          "score": 0.3040388454962558,
+          "support": 2
+        }
+      ],
+      "beatConfidence": 0.6204904444724193,
+      "finalMeter": "4/4"
+    },
+    {
+      "id": 107982,
+      "groundTruthBpm": 180,
+      "signature": "4/4",
+      "instrumentation": [
+        "chords",
+        "fx",
+        "percussion"
+      ],
+      "genres": [
+        "electronic",
+        "hip hop",
+        "house / techno"
+      ],
+      "name": "Drums_loop_180BPM-01.wav",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "previewUrl": "http://freesound.org/data/previews/107/107982_1863271-hq.mp3",
+      "estimateBpm": 87.89246712557443,
+      "absError": 92.10753287442557,
+      "tempoClass": "harmonic",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 6,
+        "2/4": 14
+      },
+      "meterCorrectRate": 0,
+      "meterUnknownRate": 0.3,
+      "meterWrongRate": 0.7,
+      "finalCandidates": [
+        {
+          "bpm": 118.86703477241298,
+          "score": 0.48808185257662096,
+          "support": 5
+        },
+        {
+          "bpm": 72.78909567871133,
+          "score": 0.41928463715269276,
           "support": 1
         },
         {
-          "bpm": 156.24999999999997,
-          "score": 0.11050700026633109,
+          "bpm": 90.63952350082546,
+          "score": 0.33459011123674387,
           "support": 1
         },
         {
-          "bpm": 78.125,
-          "score": 0.0876590662164513,
+          "bpm": 80.52815218750861,
+          "score": 0.1426636983974782,
           "support": 1
         }
       ],
-      "beatConfidence": 0.5032713904944077,
-      "finalMeter": "unknown"
+      "beatConfidence": 0.5170154285003713,
+      "finalMeter": "2/4"
     },
     {
-      "id": 65186,
-      "groundTruthBpm": 185,
+      "id": 151330,
+      "groundTruthBpm": 180,
       "signature": "4/4",
       "instrumentation": [
+        "bass",
+        "fx",
+        "melody",
+        "percussion"
+      ],
+      "genres": [
+        "cinematic",
+        "electronic",
+        "other dance music"
+      ],
+      "name": "etrange.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/151/151330_1677-hq.mp3",
+      "estimateBpm": 87.890625,
+      "absError": 92.109375,
+      "tempoClass": "harmonic",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "4/4": 18,
+        "unknown": 2
+      },
+      "meterCorrectRate": 0.9,
+      "meterUnknownRate": 0.1,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 119.96519701929253,
+          "score": 0.695007671132407,
+          "support": 4
+        },
+        {
+          "bpm": 72.08689294153343,
+          "score": 0.6220262528363404,
+          "support": 1
+        },
+        {
+          "bpm": 90.29612055735441,
+          "score": 0.5519186255014155,
+          "support": 1
+        },
+        {
+          "bpm": 59.840425531914896,
+          "score": 0.486821028935287,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.42118347685155205,
+      "finalMeter": "4/4"
+    },
+    {
+      "id": 151336,
+      "groundTruthBpm": 180,
+      "signature": "4/4",
+      "instrumentation": [
+        "melody",
         "percussion",
-        "fx"
+        "vocal"
       ],
       "genres": [
         "bass music",
-        "electronic"
+        "electronic",
+        "house / techno",
+        "other dance music"
       ],
-      "name": "185 LOOP BLUED.wav",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-      "previewUrl": "http://freesound.org/data/previews/65/65186_562620-hq.mp3",
+      "name": "houhouhou.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "http://freesound.org/data/previews/151/151336_1677-hq.mp3",
       "error": "TimeoutError: The operation timed out."
+    },
+    {
+      "id": 183156,
+      "groundTruthBpm": 180,
+      "signature": "4/4",
+      "instrumentation": [
+        "percussion",
+        "vocal"
+      ],
+      "genres": [
+        "bass music",
+        "global",
+        "live sounds"
+      ],
+      "name": "loop_180bpm.wav",
+      "license": "http://creativecommons.org/licenses/by/3.0/",
+      "previewUrl": "https://freesound.org/data/previews/183/183156_2140699-hq.mp3",
+      "estimateBpm": 88.40765914631973,
+      "absError": 91.59234085368027,
+      "tempoClass": "harmonic",
+      "tempoReliableFrames": 20,
+      "evaluatedFrames": 20,
+      "meterCounts": {
+        "unknown": 3,
+        "4/4": 17
+      },
+      "meterCorrectRate": 0.85,
+      "meterUnknownRate": 0.15,
+      "meterWrongRate": 0,
+      "finalCandidates": [
+        {
+          "bpm": 120.02575570805571,
+          "score": 0.6781759465076604,
+          "support": 5
+        },
+        {
+          "bpm": 90.3184297040055,
+          "score": 0.3439906780843942,
+          "support": 2
+        },
+        {
+          "bpm": 72.33223531451912,
+          "score": 0.3401377993062655,
+          "support": 3
+        },
+        {
+          "bpm": 165.4411764705883,
+          "score": 0.10649017699255642,
+          "support": 1
+        }
+      ],
+      "beatConfidence": 0.7683341758033431,
+      "finalMeter": "4/4"
     }
-  ],
-  "validity": {
-    "status": "superseded",
-    "reason": "Original discovery pool treated per-annotator FSLD labels as independent ground truth. Conflicting annotations were later found for the same sound IDs. Use strict-consensus artifacts instead."
-  }
+  ]
 }

@@ -5,10 +5,14 @@ import { ServerDspEngine } from '../src/brains/music-sensor/server-dsp'
 type Candidate={id:number;bpm:number;signature:string;inst:string[];genres:string[]}
 type FsMeta={id:number;name?:string;license?:string;preview_url?:string;tags?:string[];annotations?:{bpm?:number}}
 
+const EVAL_SET=process.env.FSLD_EVAL_SET ?? 'consensus-baseline'
 const ROOT='/tmp/music-dsp-fsld-batch'
-const CANDIDATES='/tmp/fsld-candidates.json'
+const CANDIDATES=process.env.FSLD_CANDIDATES ?? 'artifacts/music-dsp-eval/fsld-consensus-candidates.json'
 const HF='https://huggingface.co/datasets/nicolaus625/cmi/resolve/main/116_FreesoundLoopDataset/fs_analysis/'
-const OUT='artifacts/music-dsp-eval/fsld-2026-09-23.json'
+const BASELINE_OUT='artifacts/music-dsp-eval/fsld-consensus-baseline-2026-09-23.json'
+const OUT=EVAL_SET==='consensus-baseline'
+  ? BASELINE_OUT
+  : `artifacts/music-dsp-eval/fsld-${EVAL_SET}-2026-09-23.json`
 
 const median=(xs:number[])=>{
   if(!xs.length)return 0
@@ -21,18 +25,21 @@ const sh=(cmd:string,args:string[])=>{
   if(r.status!==0)throw new Error(String(r.stderr||r.stdout||`${cmd} failed`))
 }
 async function metaFor(id:number):Promise<FsMeta|null>{
-  try{
-    const r=await fetch(HF+id+'.json',{signal:AbortSignal.timeout(10_000)})
-    if(!r.ok)return null
-    return await r.json() as FsMeta
-  }catch{return null}
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetch(HF+id+'.json',{signal:AbortSignal.timeout(10_000)})
+      if(r.ok)return await r.json() as FsMeta
+    }catch{}
+    await new Promise(resolve=>setTimeout(resolve,250))
+  }
+  return null
 }
 function instKey(c:Candidate){return c.inst?.slice().sort().join('+')||'none'}
 
-async function choose(candidates:Candidate[]){
-  const chosen:Array<Candidate&{meta:FsMeta}>=[]
-  const used=new Set<number>()
-  async function fill(pool:Candidate[],quota:number){
+function choose(candidates:Candidate[],excluded:Set<number>){
+  const chosen:Candidate[]=[]
+  const used=new Set<number>(excluded)
+  function fill(pool:Candidate[],quota:number){
     const seenInst=new Set<string>()
     const ordered=[...pool].sort((a,b)=>a.id-b.id)
     for(let pass=0;pass<2&&quota>0;pass++){
@@ -41,16 +48,12 @@ async function choose(candidates:Candidate[]){
         if(used.has(c.id))continue
         const k=instKey(c)
         if(pass===0&&seenInst.has(k))continue
-        const meta=await metaFor(c.id)
-        if(!meta?.preview_url||!meta.license)continue
-        chosen.push({...c,meta});used.add(c.id);seenInst.add(k);quota--
+        chosen.push(c);used.add(c.id);seenInst.add(k);quota--
       }
     }
   }
-  await fill(candidates.filter(c=>c.signature==='2/4'),2)
-  await fill(candidates.filter(c=>c.signature==='3/4'),2)
-  for(const [lo,hi,q] of [[60,79,4],[80,99,4],[100,119,4],[120,139,4],[140,159,4],[160,179,4],[180,190,2]] as const){
-    await fill(candidates.filter(c=>c.signature==='4/4'&&c.bpm>=lo&&c.bpm<=hi),q)
+  for(const [lo,hi,q] of [[60,79,4],[80,99,4],[100,119,4],[120,139,5],[140,159,5],[160,179,4],[180,190,4]] as const){
+    fill(candidates.filter(c=>c.signature==='4/4'&&c.bpm>=lo&&c.bpm<=hi),q)
   }
   return chosen
 }
@@ -102,6 +105,19 @@ function evalPcm(path:string,gtBpm:number,signature:string){
     finalCandidates:final?.tempoCandidates?.slice(0,4)??[],
     beatConfidence:final?.beatConfidence??null,
     finalMeter:final?.meter??'unknown',
+    diagnostics:final?{
+      meterCorr2:final.meterCorr2,
+      meterCorr3:final.meterCorr3,
+      meterCorr4:final.meterCorr4,
+      meterAccent2:final.meterAccent2,
+      meterAccent3:final.meterAccent3,
+      meterAccent4:final.meterAccent4,
+      meterOppositeAsymmetry4:final.meterOppositeAsymmetry4,
+      percussiveProbability:final.percussiveProbability,
+      harmonicProbability:final.harmonicProbability,
+      subdivisionSimple:final.subdivisionSimple,
+      subdivisionTriplet:final.subdivisionTriplet,
+    }:null,
   }
 }
 
@@ -109,22 +125,65 @@ async function main(){
   const candidates=JSON.parse(readFileSync(CANDIDATES,'utf8')) as Candidate[]
   rmSync(ROOT,{recursive:true,force:true});mkdirSync(ROOT,{recursive:true})
   mkdirSync('artifacts/music-dsp-eval',{recursive:true})
-  const chosen=await choose(candidates)
+  const baselineDoc=existsSync(BASELINE_OUT)
+    ? JSON.parse(readFileSync(BASELINE_OUT,'utf8'))
+    : null
+  const baselineRows:any[]=baselineDoc?.results??[]
+  const excluded=new Set<number>()
+  if(EVAL_SET==='holdout'){
+    for(const row of baselineRows)excluded.add(Number(row.id))
+  }
+  const requestedIds=(process.env.FSLD_IDS??'')
+    .split(',')
+    .map(v=>v.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter(Number.isFinite)
+  const selectedCandidates=requestedIds.length
+    ? requestedIds
+        .map(id=>{
+          const current=candidates.find(c=>c.id===id)
+          if(current)return current
+          const row=baselineRows.find(r=>Number(r.id)===id)
+          if(!row)return null
+          return {
+            id,
+            bpm:Number(row.groundTruthBpm),
+            signature:String(row.signature),
+            inst:Array.isArray(row.instrumentation)?row.instrumentation:[],
+            genres:Array.isArray(row.genres)?row.genres:[],
+          } as Candidate
+        })
+        .filter((c):c is Candidate=>Boolean(c))
+    : choose(candidates,excluded)
+  const chosen=selectedCandidates
   console.log('selected',chosen.length,chosen.map(c=>({id:c.id,bpm:c.bpm,sig:c.signature,inst:instKey(c)})))
   const previous=existsSync(OUT)?JSON.parse(readFileSync(OUT,'utf8'))?.results??[]:[]
   const results:any[]=[...previous]
   const completedIds=new Set(results.map(r=>Number(r.id)))
   for(let i=0;i<chosen.length;i++){
-    const c=chosen[i],m=c.meta
+    const c=chosen[i]
     if(completedIds.has(c.id)){
       console.log(`[${i+1}/${chosen.length}] resume skip`,c.id)
       continue
     }
     const stem=safeName(String(c.id))
     const src=`${ROOT}/${stem}.mp3`,aac=`${ROOT}/${stem}.aac`,pcm=`${ROOT}/${stem}.pcm`
-    let row:any={id:c.id,groundTruthBpm:c.bpm,signature:c.signature,instrumentation:c.inst,genres:c.genres,name:m.name??null,license:m.license??null,previewUrl:m.preview_url??null}
+    let row:any={id:c.id,groundTruthBpm:c.bpm,signature:c.signature,instrumentation:c.inst,genres:c.genres,name:null,license:null,previewUrl:null}
     try{
-      const url=(m.preview_url??'').replace(/^http:/,'https:')
+      const baselineRow=baselineRows.find(r=>Number(r.id)===c.id)
+      const frozenMeta=EVAL_SET==='discovery-retune'&&baselineRow?.previewUrl
+        ? {
+            id:c.id,
+            name:baselineRow.name??undefined,
+            license:baselineRow.license??undefined,
+            preview_url:baselineRow.previewUrl,
+          } as FsMeta
+        : null
+      const m=frozenMeta??await metaFor(c.id)
+      if(!m?.preview_url||!m.license)throw new Error('metadata unavailable')
+      row.name=m.name??null;row.license=m.license??null;row.previewUrl=m.preview_url
+      const url=m.preview_url.replace(/^http:/,'https:')
       const resp=await fetch(url,{redirect:'follow',signal:AbortSignal.timeout(15_000)})
       if(!resp.ok)throw new Error(`download HTTP ${resp.status}`)
       writeFileSync(src,Buffer.from(await resp.arrayBuffer()))

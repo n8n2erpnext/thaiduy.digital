@@ -5761,7 +5761,7 @@ html[data-theme='normal'] .home-public-page{
   border-bottom:1px solid var(--demo-line);
 }
 .home-public-code{border-bottom:0;padding-bottom:28px}
-.home-public-page + .global-site-footer{margin-top:0}
+.home-public-page + .global-site-footer{margin-top:0;border-top:0}
 .home-public-section-head{
   display:grid;
   grid-template-columns:minmax(0,560px) auto;

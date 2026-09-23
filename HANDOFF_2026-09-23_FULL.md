@@ -77,6 +77,7 @@ Homepage footer-gap follow-up:
 - scoped fix for homepage only: `.home-public-code` bottom padding reduced to `28px` desktop / `24px` mobile
 - `.home-public-page + .global-site-footer` now removes the extra global top margin only when the footer follows the homepage
 - no negative margins or global footer behavior changes were introduced
+- follow-up: removed the footer `border-top` only when it directly follows `.home-public-page`, so the ticker flows into the footer menu without a second separator line; the footer base divider remains intact
 - TypeScript/layout/theme PASS; typography remains at the same 2 historical Stack icon outliers; local `/` returns 200
 
 ---

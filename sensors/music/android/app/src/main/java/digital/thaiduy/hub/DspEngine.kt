@@ -23,6 +23,9 @@ data class DspFeatures(
     val spectralFlatness: Float,
     val zeroCrossingRate: Float,
     val tempoBpm: Float,
+    val tempoAutocorrBpm: Float,
+    val tempoOnsetBpm: Float,
+    val processIntervalMs: Float,
     val beatConfidence: Float,
     val meter: String,
     val swingness: Float,
@@ -48,6 +51,8 @@ class DspEngine(
     private var processCount = 0L
 
     private var tempoBpm = 0f
+    private var tempoAutocorrBpm = 0f
+    private var tempoOnsetBpm = 0f
     private var beatConfidence = 0f
     private var meter = "unknown"
     private var swingness = 0f
@@ -181,6 +186,9 @@ class DspEngine(
             spectralFlatness = spectralFlatness,
             zeroCrossingRate = zeroCrossingRate,
             tempoBpm = tempoBpm,
+            tempoAutocorrBpm = tempoAutocorrBpm,
+            tempoOnsetBpm = tempoOnsetBpm,
+            processIntervalMs = (measuredProcessIntervalSeconds() * 1_000.0).toFloat(),
             beatConfidence = beatConfidence,
             meter = meter,
             swingness = swingness,
@@ -380,6 +388,7 @@ class DspEngine(
 
         var candidateBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
             .coerceIn(55f, 190f)
+        tempoAutocorrBpm = candidateBpm
 
         val harmonicPenalty = (chosenCorrelation / bestCorrelation.coerceAtLeast(1e-4f))
             .coerceIn(0.65f, 1f)
@@ -388,6 +397,7 @@ class DspEngine(
         ).coerceIn(0f, 1f)
 
         val (peakBpm, peakConfidence) = peakIntervalTempo(onset, secondsPerWindow)
+        tempoOnsetBpm = peakBpm
         if (peakBpm > 0f && peakConfidence >= 0.58f) {
             val disagreement = kotlin.math.abs(peakBpm - candidateBpm)
             if (disagreement >= 14f && peakConfidence >= confidence * 0.92f) {

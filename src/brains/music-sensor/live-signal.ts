@@ -23,6 +23,9 @@ export type MusicDspFrame = {
   spectralFlatness?: number
   zeroCrossingRate?: number
   tempoBpm?: number
+  tempoAutocorrBpm?: number
+  tempoOnsetBpm?: number
+  processIntervalMs?: number
   beatConfidence?: number
   meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
   swingness?: number

@@ -654,7 +654,7 @@ main {
   width:max-content;
   max-width:none;
   color:#d8e0db;
-  font-size:10px;
+  font-size:var(--type-meta);
   font-weight:500;
   white-space:nowrap;
   will-change:transform;

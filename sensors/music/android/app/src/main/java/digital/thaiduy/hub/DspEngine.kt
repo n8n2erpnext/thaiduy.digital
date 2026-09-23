@@ -40,6 +40,7 @@ data class DspFeatures(
     val meterAccent4: Float,
     val meterConfidence: Float,
     val meterBeatLag: Int,
+    val meterOppositeAsymmetry4: Float,
     val subdivisionSimple: Float,
     val subdivisionTriplet: Float,
     val swingness: Float,
@@ -97,6 +98,7 @@ class DspEngine(
     private var meterAccent4 = 0f
     private var meterConfidence = 0f
     private var meterBeatLag = 0
+    private var meterOppositeAsymmetry4 = 0f
     private var subdivisionSimple = 0f
     private var subdivisionTriplet = 0f
     private var swingness = 0f
@@ -256,6 +258,7 @@ class DspEngine(
             meterAccent4 = meterAccent4,
             meterConfidence = meterConfidence,
             meterBeatLag = meterBeatLag,
+            meterOppositeAsymmetry4 = meterOppositeAsymmetry4,
             subdivisionSimple = subdivisionSimple,
             subdivisionTriplet = subdivisionTriplet,
             swingness = swingness,
@@ -430,10 +433,14 @@ class DspEngine(
         return bpm to confidence
     }
 
-    private fun accentPeriodicity(values: FloatArray, beatLag: Int, beatsPerBar: Int): Float {
-        if (beatLag <= 0 || beatsPerBar < 2) return 0f
+    private fun beatPhaseMeans(
+        values: FloatArray,
+        beatLag: Int,
+        beatsPerBar: Int,
+    ): FloatArray? {
+        if (beatLag <= 0 || beatsPerBar < 2) return null
         val beatCount = values.size / beatLag
-        if (beatCount < beatsPerBar * 3) return 0f
+        if (beatCount < beatsPerBar * 3) return null
 
         val usableBeats = minOf(beatCount, 24)
         val start = values.size - usableBeats * beatLag
@@ -459,20 +466,30 @@ class DspEngine(
             phaseSum[phase] += beatEnergy[beat]
             phaseCount[phase] += 1
         }
-        val phaseMean = FloatArray(beatsPerBar) { phase ->
+        return FloatArray(beatsPerBar) { phase ->
             if (phaseCount[phase] > 0) phaseSum[phase] / phaseCount[phase] else 0f
         }
+    }
+
+    private fun accentPeriodicity(values: FloatArray, beatLag: Int, beatsPerBar: Int): Float {
+        val phaseMean = beatPhaseMeans(values, beatLag, beatsPerBar) ?: return 0f
         val overall = phaseMean.average().toFloat().coerceAtLeast(1e-5f)
         val sorted = phaseMean.sortedDescending()
 
         return if (beatsPerBar == 2) {
             (kotlin.math.abs(phaseMean[0] - phaseMean[1]) / overall).coerceIn(0f, 1f)
         } else {
-            // 3/4 and 4/4 need a distinct downbeat. A 2-beat strong/weak pattern
-            // mapped into 4 phases produces two similarly strong phases, so the
-            // strongest-vs-second-strongest separation stays small.
             ((sorted[0] - sorted[1]) / overall).coerceIn(0f, 1f)
         }
+    }
+
+    private fun oppositeAsymmetry4(values: FloatArray, beatLag: Int): Float {
+        val phase = beatPhaseMeans(values, beatLag, 4) ?: return 0f
+        val overall = phase.average().toFloat().coerceAtLeast(1e-5f)
+        val oppositeDifference =
+            kotlin.math.abs(phase[0] - phase[2]) +
+                kotlin.math.abs(phase[1] - phase[3])
+        return (oppositeDifference / (2f * overall)).coerceIn(0f, 1f)
     }
 
     private data class TempoCandidateStats(
@@ -800,6 +817,7 @@ class DspEngine(
         meterAccent2 = accentPeriodicity(energy, beatLag, 2)
         meterAccent3 = accentPeriodicity(energy, beatLag, 3)
         meterAccent4 = accentPeriodicity(energy, beatLag, 4)
+        meterOppositeAsymmetry4 = oppositeAsymmetry4(energy, beatLag)
 
         // Simple meter divides a beat in two; compound meter divides it in
         // three. The previous implementation compared /2 with 2/3 of a beat,

@@ -157,6 +157,7 @@ object ApiClient {
             .put("meterAccent4", features.meterAccent4)
             .put("meterConfidence", features.meterConfidence)
             .put("meterBeatLag", features.meterBeatLag)
+            .put("meterOppositeAsymmetry4", features.meterOppositeAsymmetry4)
             .put("subdivisionSimple", features.subdivisionSimple)
             .put("subdivisionTriplet", features.subdivisionTriplet)
             .put("swingness", features.swingness)

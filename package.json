@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "audit:repo": "bunx tsc --noEmit && bun run lint && bun run layout:check && bun run theme:check && bun run typography:check && bun run music:expression-check",
     "typography:check": "bun scripts/audit-typography.ts",
     "theme:check": "bun scripts/audit-theme-contrast.ts",
     "layout:check": "bun scripts/audit-layout-invariants.ts",

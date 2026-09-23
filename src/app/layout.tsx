@@ -84,9 +84,11 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${googleSans.variable} ${googleSansCode.variable} antialiased`}
     >
       <head>
+        {/* Material Symbols is a global icon font; it is intentionally not managed by next/font. */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,500,0,0"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,500,0,0&display=optional"
         />
         <script
           dangerouslySetInnerHTML={{

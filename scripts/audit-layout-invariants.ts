@@ -26,12 +26,7 @@ if (baseHeaderPosition!=='sticky') {
   failures.push('.site-header final position must be sticky, got '+(baseHeaderPosition ?? 'missing'))
 }
 
-const homeHeaderPosition=lastDeclaration('.home-shell > .site-header','position')
-if (homeHeaderPosition!=='sticky') {
-  failures.push('.home-shell > .site-header must explicitly remain sticky, got '+(homeHeaderPosition ?? 'missing'))
-}
-
-for (const selector of ['.site-shell','.home-shell','.home-page']) {
+for (const selector of ['.site-shell','.home-public-shell','.home-public-page']) {
   for (const prop of ['overflow','overflow-y']) {
     const value=lastDeclaration(selector,prop)
     if (value && /hidden|auto|scroll|clip/.test(value)) {
@@ -40,14 +35,14 @@ for (const selector of ['.site-shell','.home-shell','.home-page']) {
   }
 }
 
-const homeHeaderZ=Number.parseInt(lastDeclaration('.home-shell > .site-header','z-index') ?? '0',10)
-if (!Number.isFinite(homeHeaderZ) || homeHeaderZ<20) {
-  failures.push('.home-shell > .site-header z-index must remain >=20, got '+homeHeaderZ)
+const headerZ=Number.parseInt(lastDeclaration('.site-header','z-index') ?? '0',10)
+if (!Number.isFinite(headerZ) || headerZ<20) {
+  failures.push('.site-header z-index must remain >=20, got '+headerZ)
 }
 
 const atmosphereZ=Number.parseInt(lastDeclaration('.top-atmosphere','z-index') ?? '0',10)
-if (Number.isFinite(atmosphereZ) && atmosphereZ>=homeHeaderZ) {
-  failures.push('.top-atmosphere z-index ('+atmosphereZ+') must stay below sticky header ('+homeHeaderZ+')')
+if (Number.isFinite(atmosphereZ) && atmosphereZ>=headerZ) {
+  failures.push('.top-atmosphere z-index ('+atmosphereZ+') must stay below sticky header ('+headerZ+')')
 }
 
 const atmosphereWidth=lastDeclaration('.top-atmosphere','width')
@@ -64,8 +59,7 @@ if (atmosphereLeft!=='0') {
 
 console.log('Layout invariant audit')
 console.log('- base header position: '+baseHeaderPosition)
-console.log('- home header position: '+homeHeaderPosition)
-console.log('- home header z-index: '+homeHeaderZ)
+console.log('- header z-index: '+headerZ)
 console.log('- atmosphere z-index: '+atmosphereZ)
 console.log('- atmosphere width: '+atmosphereWidth)
 console.log('- atmosphere left: '+atmosphereLeft)

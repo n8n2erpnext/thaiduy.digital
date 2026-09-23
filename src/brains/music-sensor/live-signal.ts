@@ -58,6 +58,12 @@ export type MusicDspFrame = {
   stereoCorrelation?: number
   monoCancellationRatio?: number
   tempoCandidates?: Array<{ bpm:number; score:number; support:number }>
+  pulseBpm?: number
+  pulseConfidence?: number
+  pulseReliable?: boolean
+  tempoFamilyAgreement?: 'direct'|'octave'|'conflict'|'none'
+  tempoOctaveAmbiguous?: boolean
+  tempoOracleAnalysisMs?: number
 }
 
 const clamp01 = (value:number) => Math.max(0,Math.min(1,value))

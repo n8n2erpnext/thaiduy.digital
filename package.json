@@ -35,6 +35,7 @@
     "ioredis": "^6.0.0",
     "isbot": "^5.2.2",
     "lowlight": "^3.3.0",
+    "music-tempo": "1.0.3",
     "next": "16.3.5",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",

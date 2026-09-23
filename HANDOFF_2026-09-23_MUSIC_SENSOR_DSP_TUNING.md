@@ -804,3 +804,15 @@ This is the authoritative continuation point.
 - Decision: v4 does NOT demonstrate generalizable tempo improvement and is NOT deployed. src/brains/music-sensor/server-dsp.ts remains at the production behavior from the committed tempo-family/meter core.
 - The evaluator selects benchmark IDs offline, fetches each preview only during its sample, transcodes through AAC-LC 128 kbps / 48 kHz stereo to mirror Hub 0.6.0, deletes MP3/AAC/PCM after each sample, and persists metrics only.
 - FSLD strict-consensus mirror is suitable for tempo and 4/4 stress testing but does not provide enough consensus non-4/4 material. A separate meter-focused dataset remains necessary for 3/4, 2/4 and compound meter validation.
+
+### MIT pulse-tempo oracle · server-only
+- Added music-tempo 1.0.3 (MIT) as a server-side pulse oracle. It runs in a separate Node child process per active device session, so ~0.3-0.5 s analysis work never blocks AAC ingest or ServerDspEngine.
+- Oracle input is the in-memory PCM ring only. Worker sends a length-prefixed snapshot after >=12 s of audible audio, then refreshes about every 5 s. Silence below -55 dBFS does not invoke the oracle.
+- The oracle resamples captured 48 kHz stereo PCM to 44.1 kHz mono before music-tempo because that estimator assumes 44.1 kHz. Synthetic protocol regression: 60 -> 60.000, 80 -> 80.000, 120 -> 120.000, 160 -> 160.033 BPM.
+- New fields: pulseBpm, pulseConfidence, pulseReliable, tempoFamilyAgreement (direct/octave/conflict/none), tempoOctaveAmbiguous, tempoOracleAnalysisMs.
+- Exact tempoBpm semantics were intentionally not changed. The oracle is a pulse/family witness, not authority for choosing 60 vs 120 or 90 vs 180.
+- Wave movement now prefers a reliable pulseBpm; if unavailable it falls back to the existing reliable tempoBpm, then measured transient/energy movement. LastFM/semantic data remains excluded from live DSP.
+- Fusion policy: direct or octave agreement with the custom top tempo family can yield a reliable pulse; conflict does not. This follows FSLD evidence that estimator conflicts have low family precision.
+- FSLD benchmark for music-tempo over the existing discovery/holdout previews: discovery exact 16/30 (53.3%), family 24/30 (80.0%); holdout exact 11/26 (42.3%), family 19/26 (73.1%), about 0.43 s per 30 s sample on ARM.
+- Continuous worker integration regression at 120 BPM: core tempo ~121.5, oracle pulse 120, pulseConfidence 1, pulseReliable true, agreement direct, oracle analysis ~223 ms.
+- No Android rebuild is required.

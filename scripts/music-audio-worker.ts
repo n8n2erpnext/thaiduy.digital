@@ -10,12 +10,33 @@ const CHANNELS=2
 const FRAME_SAMPLES=4096
 const BYTES_PER_FRAME=FRAME_SAMPLES*CHANNELS*2
 const MAX_RING_BYTES=SAMPLE_RATE*CHANNELS*2*30
+const ORACLE_MIN_BUFFER_SECONDS=12
+const ORACLE_WINDOW_SECONDS=20
+const ORACLE_INTERVAL_MS=5_000
+const ORACLE_STALE_MS=12_000
+
+type TempoOracleState={
+  bpm:number
+  confidence:number
+  beatCount:number
+  intervalMad:number
+  analysisMs:number
+  receivedAt:number
+}
+type TempoFamilyAgreement='direct'|'octave'|'conflict'|'none'
+
 
 class DeviceSession {
   readonly deviceId:string
   readonly ffmpeg:ChildProcessWithoutNullStreams
+  readonly oracle:ChildProcessWithoutNullStreams
   readonly dsp=new ServerDspEngine(SAMPLE_RATE,FRAME_SAMPLES)
   private carry=Buffer.alloc(0)
+  private oracleCarry=''
+  private oracleBusy=false
+  private lastOracleRequestAt=0
+  private latestOracle:TempoOracleState|null=null
+  private recentPeakDbfs=-180
   private ring:Buffer[]=[]
   private ringBytes=0
   private frameSeq=0
@@ -26,6 +47,21 @@ class DeviceSession {
 
   constructor(deviceId:string){
     this.deviceId=deviceId
+    this.oracle=spawn('node',['scripts/music-tempo-oracle.cjs'],{
+      cwd:process.cwd(),
+      stdio:['pipe','pipe','pipe'],
+    })
+    this.oracle.stdout.setEncoding('utf8')
+    this.oracle.stdout.on('data',(chunk:string)=>this.acceptOracleOutput(chunk))
+    this.oracle.stderr.on('data',(chunk:Buffer)=>
+      process.stderr.write('[music-tempo oracle] '+chunk.toString()),
+    )
+    this.oracle.on('exit',(code,signal)=>{
+      this.oracleBusy=false
+      console.error('[music-tempo] oracle exit',this.deviceId,{code,signal})
+    })
+    this.oracle.stdin.on('error',()=>{this.oracleBusy=false})
+
     this.ffmpeg=spawn('ffmpeg',[
       '-hide_banner','-loglevel','error',
       '-probesize','2048','-analyzeduration','0',
@@ -53,8 +89,11 @@ class DeviceSession {
       const frameBytes=Buffer.from(this.carry.subarray(0,BYTES_PER_FRAME))
       this.carry=Buffer.from(this.carry.subarray(BYTES_PER_FRAME))
       this.pushRing(frameBytes)
+      this.maybeAnalyzeTempoOracle()
       const samples=new Int16Array(frameBytes.buffer,frameBytes.byteOffset,frameBytes.byteLength/2)
       const features=this.dsp.process(samples,CHANNELS)
+      this.recentPeakDbfs=features.rawPeakDbfs
+      const pulse=this.resolvePulse(features)
       const frame:MusicDspFrame={
         deviceId:this.deviceId,
         seq:++this.frameSeq,
@@ -64,6 +103,7 @@ class DeviceSession {
         transport:'server-aac',
         sourceAudioSeq:this.lastAudioSeq,
         ...features,
+        ...pulse,
       }
       this.lastFrame=frame
       if(!this.deviceId.startsWith('__test__')){
@@ -79,6 +119,99 @@ class DeviceSession {
     while(this.ringBytes>MAX_RING_BYTES&&this.ring.length){
       const old=this.ring.shift()!
       this.ringBytes-=old.length
+    }
+  }
+
+  private acceptOracleOutput(chunk:string){
+    this.oracleCarry+=chunk
+    while(true){
+      const newline=this.oracleCarry.indexOf('\n')
+      if(newline<0)break
+      const line=this.oracleCarry.slice(0,newline).trim()
+      this.oracleCarry=this.oracleCarry.slice(newline+1)
+      if(!line)continue
+      this.oracleBusy=false
+      try{
+        const parsed=JSON.parse(line) as Partial<TempoOracleState>&{error?:string}
+        if(parsed.error)continue
+        const bpm=Number(parsed.bpm)
+        const confidence=Number(parsed.confidence)
+        if(!Number.isFinite(bpm)||bpm<40||bpm>210||!Number.isFinite(confidence))continue
+        this.latestOracle={
+          bpm,
+          confidence:Math.max(0,Math.min(1,confidence)),
+          beatCount:Number(parsed.beatCount)||0,
+          intervalMad:Number(parsed.intervalMad)||0,
+          analysisMs:Number(parsed.analysisMs)||0,
+          receivedAt:Date.now(),
+        }
+      }catch{}
+    }
+  }
+
+  private maybeAnalyzeTempoOracle(){
+    const now=Date.now()
+    const bufferSeconds=this.ringBytes/(SAMPLE_RATE*CHANNELS*2)
+    if(bufferSeconds<ORACLE_MIN_BUFFER_SECONDS)return
+    if(this.recentPeakDbfs<-55)return
+    if(this.oracleBusy){
+      if(now-this.lastOracleRequestAt<=10_000)return
+      this.oracleBusy=false
+    }
+    if(now-this.lastOracleRequestAt<ORACLE_INTERVAL_MS)return
+    const pcm=this.snapshot(Math.min(ORACLE_WINDOW_SECONDS,bufferSeconds))
+    if(!pcm.length)return
+    const header=Buffer.allocUnsafe(4)
+    header.writeUInt32LE(pcm.length,0)
+    this.oracleBusy=true
+    this.lastOracleRequestAt=now
+    this.oracle.stdin.write(header)
+    this.oracle.stdin.write(pcm)
+  }
+
+  private resolvePulse(features:ReturnType<ServerDspEngine['process']>){
+    const oracle=this.latestOracle
+    if(!oracle||Date.now()-oracle.receivedAt>ORACLE_STALE_MS){
+      return {
+        pulseBpm:undefined,
+        pulseConfidence:0,
+        pulseReliable:false,
+        tempoFamilyAgreement:'none' as TempoFamilyAgreement,
+        tempoOctaveAmbiguous:false,
+        tempoOracleAnalysisMs:undefined,
+      }
+    }
+
+    const top=features.tempoCandidates?.[0]?.bpm
+    const near=(a:number,b:number)=>Math.abs(a-b)<=Math.max(3,b*.04)
+    let agreement:TempoFamilyAgreement='none'
+    if(typeof top==='number'&&top>0){
+      if(near(top,oracle.bpm))agreement='direct'
+      else if(near(top,oracle.bpm*.5)||near(top,oracle.bpm*2))agreement='octave'
+      else agreement='conflict'
+    }
+
+    const confidence=agreement==='direct'
+      ? oracle.confidence
+      : agreement==='octave'
+        ? oracle.confidence*.92
+        : agreement==='none'
+          ? oracle.confidence*.75
+          : oracle.confidence*.35
+    const pulseReliable=
+      (agreement==='direct'||agreement==='octave')
+        ? confidence>=.55
+        : agreement==='none'
+          ? confidence>=.78
+          : false
+
+    return {
+      pulseBpm:oracle.bpm,
+      pulseConfidence:confidence,
+      pulseReliable,
+      tempoFamilyAgreement:agreement,
+      tempoOctaveAmbiguous:agreement==='octave',
+      tempoOracleAnalysisMs:oracle.analysisMs,
     }
   }
 
@@ -105,6 +238,13 @@ class DeviceSession {
       frameSeq:this.frameSeq,
       tempoBpm:this.lastFrame?.tempoBpm??null,
       tempoReliable:this.lastFrame?.tempoReliable??false,
+      pulseBpm:this.lastFrame?.pulseBpm??null,
+      pulseConfidence:this.lastFrame?.pulseConfidence??0,
+      pulseReliable:this.lastFrame?.pulseReliable??false,
+      tempoFamilyAgreement:this.lastFrame?.tempoFamilyAgreement??'none',
+      oracleBusy:this.oracleBusy,
+      oracleRequestAgeMs:this.lastOracleRequestAt?Date.now()-this.lastOracleRequestAt:null,
+      oracleLatest:this.latestOracle,
       meter:this.lastFrame?.meter??'unknown',
       rawPeakDbfs:this.lastFrame?.rawPeakDbfs??null,
       stereoCorrelation:this.lastFrame?.stereoCorrelation??null,
@@ -115,6 +255,8 @@ class DeviceSession {
   close(){
     this.ffmpeg.stdin.end()
     this.ffmpeg.kill('SIGTERM')
+    this.oracle.stdin.end()
+    this.oracle.kill('SIGTERM')
   }
 }
 

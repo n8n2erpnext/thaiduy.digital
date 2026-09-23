@@ -62,6 +62,11 @@ export type MusicDspPublicFrame = {
   zeroCrossingRate?: number
   tempoBpm?: number
   tempoReliable?: boolean
+  pulseBpm?: number
+  pulseConfidence?: number
+  pulseReliable?: boolean
+  tempoFamilyAgreement?: 'direct'|'octave'|'conflict'|'none'
+  tempoOctaveAmbiguous?: boolean
   beatConfidence?: number
   meter?: '2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'
   swingness?: number

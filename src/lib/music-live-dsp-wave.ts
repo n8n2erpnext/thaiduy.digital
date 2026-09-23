@@ -106,6 +106,11 @@ function sampleAt(frames:BufferedMusicDspFrame[],at:number):MusicDspPublicFrame|
     zeroCrossingRate:numeric('zeroCrossingRate'),
     tempoBpm:numeric('tempoBpm'),
     tempoReliable:t<.5?left.frame.tempoReliable:right.frame.tempoReliable,
+    pulseBpm:numeric('pulseBpm'),
+    pulseConfidence:numeric('pulseConfidence'),
+    pulseReliable:t<.5?left.frame.pulseReliable:right.frame.pulseReliable,
+    tempoFamilyAgreement:t<.5?left.frame.tempoFamilyAgreement:right.frame.tempoFamilyAgreement,
+    tempoOctaveAmbiguous:t<.5?left.frame.tempoOctaveAmbiguous:right.frame.tempoOctaveAmbiguous,
     beatConfidence:numeric('beatConfidence'),
     swingness:numeric('swingness'),
     percussiveProbability:numeric('percussiveProbability'),
@@ -233,6 +238,13 @@ export function liveDspWavePath({
   })
   const crest=Math.max(0,...crestSamples)
 
+  const reliablePulseFrames=useful.filter(frame=>
+    frame.pulseReliable===true
+    &&!!frame.pulseBpm
+    &&frame.pulseBpm>=40
+    &&frame.pulseBpm<=210
+    &&(frame.pulseConfidence??0)>=.55,
+  )
   const reliableTempoFrames=useful.filter(frame=>
     frame.tempoReliable!==false
     &&!!frame.tempoBpm
@@ -240,21 +252,31 @@ export function liveDspWavePath({
     &&frame.tempoBpm<=210
     &&(frame.beatConfidence??0)>=.46,
   )
-  const beatConfidence=reliableTempoFrames.length
-    ? mean(reliableTempoFrames.map(frame=>clamp01(frame.beatConfidence??0)))
-    : clamp01(current.beatConfidence??0)
+  const movementConfidence=reliablePulseFrames.length
+    ? mean(reliablePulseFrames.map(frame=>clamp01(frame.pulseConfidence??0)))
+    : reliableTempoFrames.length
+      ? mean(reliableTempoFrames.map(frame=>clamp01(frame.beatConfidence??0)))
+      : clamp01(current.pulseConfidence??current.beatConfidence??0)
+  const pulseValues=reliablePulseFrames
+    .map(frame=>frame.pulseBpm??0)
+    .filter(value=>value>0)
   const tempoValues=reliableTempoFrames
     .map(frame=>frame.tempoBpm??0)
     .filter(value=>value>0)
-  const measuredTempo=tempoValues.length?quantile(tempoValues,.5):0
-  // If beat lock is weak, movement still follows measured transients/energy.
+  const measuredTempo=pulseValues.length
+    ? quantile(pulseValues,.5)
+    : tempoValues.length
+      ? quantile(tempoValues,.5)
+      : 0
+  // If neither pulse oracle nor exact tempo has a lock, movement still follows
+  // measured transients/energy rather than semantic metadata.
   const tempo=measuredTempo
     ? measuredTempo
     : 58+smoothFlux*82+smoothEnergy*24
 
   const seconds=endAt/1000
   const beatHz=tempo/60
-  const clock=seconds*Math.PI*2*beatHz*(.28+beatConfidence*.10)
+  const clock=seconds*Math.PI*2*beatHz*(.28+movementConfidence*.10)
   const temporalSlope=layerHistory.length>=2
     ? layerHistory[layerHistory.length-1]-layerHistory[Math.max(0,layerHistory.length-4)]
     : 0
@@ -262,7 +284,7 @@ export function liveDspWavePath({
 
   const cycles=carrierCycles[layer]*(
     .90
-    +beatConfidence*.08
+    +movementConfidence*.08
     +smoothFlux*.12
   )
   const phase=carrierPhase[layer]+temporalSlope*1.35

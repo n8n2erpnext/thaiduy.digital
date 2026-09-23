@@ -627,14 +627,27 @@ class DspEngine(
                     selectedStability = onsetStats.stability
                     tempoSource = "onset"
                 }
-                // Near-octave disagreement is different: prefer the slower,
-                // stable autocorrelation pulse. This protects true 60 BPM from
-                // note/subdivision onsets around 120 BPM.
+                // Near-octave disagreement needs macro-pulse evidence. A true
+                // 60 BPM 2/4 reference has a strong two-beat accent at the slower
+                // pulse, while 120 BPM 4/4 falsely folded to half-time does not.
                 ratio in 1.84f..2.16f && autoStats.bpm < onsetStats.bpm -> {
-                    selectedBpm = autoStats.bpm
-                    selectedEvidence = autoStats.evidence
-                    selectedStability = autoStats.stability
-                    tempoSource = "autocorr"
+                    val energyForOctave = chronologicalRhythm(rhythmEnergyHistory)
+                    val slowAccent2 = accentPeriodicity(energyForOctave, autoLag, 2)
+                    val onsetCanOwnPulse =
+                        onsetStats.stability >= 0.72f &&
+                            onsetStats.evidence >= 0.58f &&
+                            slowAccent2 < 0.20f
+                    if (onsetCanOwnPulse) {
+                        selectedBpm = onsetStats.bpm
+                        selectedEvidence = onsetStats.evidence
+                        selectedStability = onsetStats.stability
+                        tempoSource = "onset"
+                    } else {
+                        selectedBpm = autoStats.bpm
+                        selectedEvidence = autoStats.evidence
+                        selectedStability = autoStats.stability
+                        tempoSource = "autocorr"
+                    }
                 }
                 onsetStats.evidence >= autoStats.evidence + 0.18f &&
                     onsetStats.stability >= autoStats.stability + 0.08f -> {

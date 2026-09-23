@@ -4622,3 +4622,113 @@ Validation:
 - repository audit PASS
 - production Next build PASS, 58/58 routes/pages
 - music-expression/layout/theme/typography audits PASS
+
+## Music Sensor DSP V2 / Android Hub 0.5.0 — 2026-09-23
+
+Goal:
+
+- make live DSP the sole analysis authority while audible
+- improve the acoustic feature set enough to support conservative genre-family
+  and instrument-family inference without LastFM blending
+- keep unknown as a valid answer when evidence is weak
+
+Android DSP V2:
+
+- versionCode 10 / versionName 0.5.0
+- existing instantaneous features retained:
+  RMS, peak, bass, low-mid, mid, presence, air, spectral centroid
+- spectral flux normalization changed from fixed *12 saturation to adaptive
+  baseline normalization
+- new objective features:
+  - spectralFlatness
+  - zeroCrossingRate
+  - tempoBpm
+  - beatConfidence
+  - meter: unknown / 3/4 / 4/4 / 6/8
+  - swingness
+  - percussiveProbability
+  - harmonicProbability
+  - dynamicRange
+- temporal rhythm analysis uses a rolling ~10-12 second window; tempo/beat
+  confidence begin warming after roughly 40 DSP windows
+- raw PCM never leaves the phone
+
+Server / Right Ear:
+
+- ingest schema and public DSP stream accept the V2 features while remaining
+  backward-compatible with 0.4.x frames
+- acoustic knowledge version bumped to music-k2.1-dsp
+- added confidence-gated acoustic genre-family profiles:
+  classical, jazz, rock, metal, pop, electronic, hip-hop, folk-country,
+  soul-rnb, ambient
+- added confidence-gated instrument-family profiles:
+  voice, percussion, bass, plucked, keys, strings, synth
+- each family requires:
+  - minimum absolute profile score
+  - margin over the runner-up
+- ambiguous evidence remains null/unknown
+- DSP-only cortex confidence now includes temporal/classifier evidence
+- DSP public state now exposes optional:
+  instrumentFamily, acousticGenreConfidence, instrumentConfidence,
+  tempoBpm, beatConfidence, meter, swingness, percussiveProbability,
+  harmonicProbability and dynamicRange
+
+No source blending:
+
+- DSP HOT/GRACE remains the only analysis authority while audible
+- LastFM tags and semantic memory are excluded from DSP decisions
+- browser SSE no longer overlays DSP bands onto a semantic/LastFM snapshot
+- when DSP begins, semantic track/genre/style/arrangement are cleared until the
+  server returns a full DSP-only state
+- silent frames do not claim DSP authority
+- after the last audible frame, server grace protects against jitter before
+  semantic fallback takes over
+
+UI:
+
+- Music Organ can show instrument family and tempo
+- Music Sensor Explorer explains the exclusive authority arbiter
+- Semantic Ear displays STANDBY while DSP is authoritative
+- Right Ear description now reflects spectrum/onset/tempo/beat/meter/swing and
+  harmonic/percussive analysis
+
+Knowledge / classifier validation:
+
+- no self-training from the Sensor's own predicted labels was introduced
+  because that would create self-reinforcing errors without ground truth
+- instead, original acoustic profile knowledge was added and a deterministic
+  classifier contract test was created
+- scripts/test-music-dsp-v2.ts covers:
+  electronic, classical, hip-hop, voice, percussion and an ambiguous case that
+  must remain unknown
+- contract result:
+  electronic 0.9114
+  classical 0.8971
+  hip-hop 0.9160
+  voice 0.8962
+  percussion 0.8792
+  ambiguous => unknown
+- music:dsp-v2-check is now part of audit:repo
+
+Validation:
+
+- TypeScript PASS
+- layout/theme/typography/music-expression PASS
+- production Next build PASS, 58/58
+- Android Hub V2 CI run 35827683217 SUCCESS
+- Android debug + unsigned release + zipalign PASS
+- signed release:
+  artifacts/android/thaiduy-hub-0.5.0-release.apk
+- signer certificate unchanged:
+  SHA-256 3841c39b2fe3b27bb5a836e9a55b7723f72160ae1e0e05c8d51050f336720eb0
+- signed APK SHA-256:
+  541a392abba23ff2d9dc6ad0e6f848785e736f3f58a0eaa8653394b10ff843a5
+
+Calibration note:
+
+- genre/instrument outputs are deliberately conservative and should be
+  calibrated from real 0.5.0 sessions before lowering thresholds
+- exact instrument recognition (e.g. violin vs viola, electric vs acoustic
+  guitar) is not claimed by this first V2 family classifier
+- title/artist recognition still requires local media metadata or future audio
+  fingerprinting; DSP spectral features alone do not identify a recording

@@ -11,8 +11,8 @@ android {
         applicationId = "digital.thaiduy.hub"
         minSdk = 29
         targetSdk = 35
-        versionCode = 18
-        versionName = "0.5.8"
+        versionCode = 19
+        versionName = "0.5.9"
     }
 
     buildTypes {

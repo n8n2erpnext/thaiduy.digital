@@ -31,6 +31,9 @@ export type MusicDspFrame = {
   meterCorr2?: number
   meterCorr3?: number
   meterCorr4?: number
+  meterAccent2?: number
+  meterAccent3?: number
+  meterAccent4?: number
   swingness?: number
   percussiveProbability?: number
   harmonicProbability?: number

@@ -31,6 +31,9 @@ data class DspFeatures(
     val meterCorr2: Float,
     val meterCorr3: Float,
     val meterCorr4: Float,
+    val meterAccent2: Float,
+    val meterAccent3: Float,
+    val meterAccent4: Float,
     val swingness: Float,
     val percussiveProbability: Float,
     val harmonicProbability: Float,
@@ -66,6 +69,9 @@ class DspEngine(
     private var meterCorr2 = 0f
     private var meterCorr3 = 0f
     private var meterCorr4 = 0f
+    private var meterAccent2 = 0f
+    private var meterAccent3 = 0f
+    private var meterAccent4 = 0f
     private var swingness = 0f
 
     fun process(interleaved: ShortArray, count: Int, channels: Int = 2): DspFeatures {
@@ -211,6 +217,9 @@ class DspEngine(
             meterCorr2 = meterCorr2,
             meterCorr3 = meterCorr3,
             meterCorr4 = meterCorr4,
+            meterAccent2 = meterAccent2,
+            meterAccent3 = meterAccent3,
+            meterAccent4 = meterAccent4,
             swingness = swingness,
             percussiveProbability = percussive,
             harmonicProbability = harmonic,
@@ -383,6 +392,51 @@ class DspEngine(
         return bpm to confidence
     }
 
+    private fun accentPeriodicity(values: FloatArray, beatLag: Int, beatsPerBar: Int): Float {
+        if (beatLag <= 0 || beatsPerBar < 2) return 0f
+        val beatCount = values.size / beatLag
+        if (beatCount < beatsPerBar * 3) return 0f
+
+        val usableBeats = minOf(beatCount, 24)
+        val start = values.size - usableBeats * beatLag
+        val beatEnergy = FloatArray(usableBeats)
+        for (beat in 0 until usableBeats) {
+            var sum = 0.0
+            var peak = 0f
+            val from = start + beat * beatLag
+            val to = minOf(values.size, from + beatLag)
+            for (i in from until to) {
+                val value = values[i]
+                sum += value
+                if (value > peak) peak = value
+            }
+            val mean = if (to > from) (sum / (to - from)).toFloat() else 0f
+            beatEnergy[beat] = mean * 0.45f + peak * 0.55f
+        }
+
+        val phaseSum = FloatArray(beatsPerBar)
+        val phaseCount = IntArray(beatsPerBar)
+        for (beat in beatEnergy.indices) {
+            val phase = beat % beatsPerBar
+            phaseSum[phase] += beatEnergy[beat]
+            phaseCount[phase] += 1
+        }
+        val phaseMean = FloatArray(beatsPerBar) { phase ->
+            if (phaseCount[phase] > 0) phaseSum[phase] / phaseCount[phase] else 0f
+        }
+        val overall = phaseMean.average().toFloat().coerceAtLeast(1e-5f)
+        val sorted = phaseMean.sortedDescending()
+
+        return if (beatsPerBar == 2) {
+            (kotlin.math.abs(phaseMean[0] - phaseMean[1]) / overall).coerceIn(0f, 1f)
+        } else {
+            // 3/4 and 4/4 need a distinct downbeat. A 2-beat strong/weak pattern
+            // mapped into 4 phases produces two similarly strong phases, so the
+            // strongest-vs-second-strongest separation stays small.
+            ((sorted[0] - sorted[1]) / overall).coerceIn(0f, 1f)
+        }
+    }
+
     private fun updateRhythm() {
         val onset = chronologicalRhythm(rhythmOnsetHistory)
         if (onset.size < 96) return
@@ -496,6 +550,9 @@ class DspEngine(
         meterCorr2 = corr2
         meterCorr3 = corr3
         meterCorr4 = corr4
+        meterAccent2 = accentPeriodicity(energy, chosenLag, 2)
+        meterAccent3 = accentPeriodicity(energy, chosenLag, 3)
+        meterAccent4 = accentPeriodicity(energy, chosenLag, 4)
         meter = when {
             corr2 >= 0.24f && corr2 >= corr3 + 0.07f && corr2 >= corr4 * 0.90f -> "2/4"
             corr3 >= 0.24f && corr3 >= corr4 + 0.10f -> "3/4"

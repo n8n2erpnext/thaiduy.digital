@@ -4478,3 +4478,75 @@ Observed on the owner's Pixel 7 Pro after successful 0.4.1 pairing:
 After installing 0.4.2 over 0.4.1, pair once again with a fresh one-time code.
 Stale LAST SEEN NEVER device rows from failed 0.4.1 attempts can be revoked after
 the 0.4.2 device successfully reports activity.
+
+## Android Hub V2 · 0.4.4 single authentication gateway — 2026-09-23
+
+Owner requirement: pairing is the Android Hub authentication. Do not ask for
+Google OAuth or owner password again inside the app.
+
+Implemented model:
+
+- fresh Hub pair now grants three bounded device scopes:
+  - music:sensor:write
+  - hub:inbox:read
+  - hub:control:session
+- Android never places the long-lived device bearer token inside WebView/browser
+  storage
+- when Control is opened, native Android calls POST /api/hub/control/session
+  with the paired device bearer token
+- server verifies the device + hub:control:session scope and issues a random
+  one-time bootstrap ticket with a 30-second TTL
+- WebView opens the bootstrap URL; GET /api/hub/control/consume atomically
+  consumes the ticket and creates td_hub_control:
+  - opaque random server-side session
+  - HttpOnly
+  - Secure
+  - SameSite=Lax
+  - Path=/
+  - 12-hour TTL
+- Redis stores the Hub Control session and a per-device active-session pointer;
+  reopening Control rotates the session automatically
+- /control server components/actions and all /api/control routes now use the
+  same control identity resolver, accepting either:
+  - normal Better Auth owner browser session
+  - valid paired Hub Control session
+- no Android password form and no embedded Google OAuth remain
+- if an installed token predates hub:control:session, Control shows Re-pair once
+  instead of a credential form
+- revoking a Hub device also deletes its active Hub Control session immediately
+- Control SIGN OUT clears both Better Auth and Hub Control sessions
+- /control/account remains visible from Hub but credential/password mutation is
+  browser-auth-only; a paired device cannot rotate owner credentials
+- normal browser Control auth is unchanged: Google OAuth primary, password
+  fallback/recovery remains available there
+
+Android:
+
+- versionCode 9 / versionName 0.4.4
+- Control tab automatically requests and consumes the paired owner session
+- no password is stored in Android
+- no Google OAuth is attempted in WebView
+- Notification Listener remains optional metadata enrichment; Live DSP and
+  Control do not depend on it
+- CI run 35822455974: SUCCESS
+- web audit:repo PASS; production Next build PASS with 58 generated routes/pages
+
+Smoke checks before merge:
+
+- POST /api/hub/control/session without bearer => 401
+- invalid /api/hub/control/consume ticket => 303 to /control/login?hub=invalid
+- Hub User-Agent /control/login fallback says Pairing is the sign-in
+- Hub User-Agent login contains no SIGN IN WITH PASSWORD button
+
+Signed artifact:
+
+- artifacts/android/thaiduy-hub-0.4.4-release.apk
+- signer certificate is unchanged from 0.3.0/0.4.1/0.4.2:
+  SHA-256 3841c39b2fe3b27bb5a836e9a55b7723f72160ae1e0e05c8d51050f336720eb0
+- APK SHA-256:
+  bc0e21ad4b817d18b6a3c13a5e9faab504713f81124cb60d56b3c667f7ce54cc
+
+Upgrade note: devices paired before 0.4.4 lack hub:control:session. Install 0.4.4
+and pair once with a fresh six-digit code. After that, opening Control does not
+ask for Google or password again; the app renews its short-lived Control session
+from the paired device token.

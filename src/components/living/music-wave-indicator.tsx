@@ -176,7 +176,7 @@ export function MusicWaveIndicator({locale}:Props) {
       +' · '+(vi?'TỰ SINH · KHÔNG LƯU GIAI ĐIỆU ĐÃ NGHE':'GENERATED · NO STORED MELODY')
     : null
 
-  const shouldPanTitle=titleDistance>4
+  const shouldPanTitle=Boolean(state.track)&&titleDistance>4
   const titlePanDuration=Math.min(14,Math.max(6,6+titleDistance/42))
 
   const openTooltip=()=>{
@@ -243,7 +243,12 @@ export function MusicWaveIndicator({locale}:Props) {
             })}
           </svg>
         </div>
-        <div className="header-wave-tooltip" role="tooltip" data-open={tooltipOpen?'true':'false'}>
+        <div
+          className="header-wave-tooltip"
+          role="tooltip"
+          data-open={tooltipOpen?'true':'false'}
+          data-title-mode={state.track?'track':'content'}
+        >
           <div
             ref={titleViewportRef}
             className="header-wave-title-viewport"

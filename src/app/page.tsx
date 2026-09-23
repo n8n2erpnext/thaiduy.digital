@@ -350,6 +350,7 @@ export default async function Home() {
                     <span>{githubPulse.active30d} {locale==='vi'?'REPO HOẠT ĐỘNG / 30 NGÀY':'ACTIVE REPOS / 30D'}</span>
                     <i/>
                     <span>{locale==='vi'?'PUSH GẦN NHẤT':'LATEST PUSH'} · {currentRepo?.name ?? '—'}</span>
+                    <i/>
                   </div>
                 ))}
               </div>

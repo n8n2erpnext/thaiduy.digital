@@ -624,8 +624,9 @@ main {
   top: calc(100% + 8px);
   right: 0;
   display: grid;
-  width: min(420px, calc(100vw - 24px));
-  min-width: min(330px, calc(100vw - 24px));
+  width: max-content;
+  min-width: 0;
+  max-width: min(420px, calc(100vw - 24px));
   gap: 4px;
   padding: 10px 12px;
   overflow: hidden;
@@ -639,11 +640,17 @@ main {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 .header-wave-tooltip[data-open='true'] { opacity: 1; transform: translateY(0); }
+.header-wave-tooltip[data-title-mode='track']{
+  width:min(340px,calc(100vw - 24px));
+}
 .header-wave-title-viewport{
-  width:100%;
+  width:auto;
   min-width:0;
   overflow:hidden;
   white-space:nowrap;
+}
+.header-wave-tooltip[data-title-mode='track'] .header-wave-title-viewport{
+  width:100%;
 }
 .header-wave-title-viewport[data-pan='true']{
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
@@ -6089,22 +6096,20 @@ html[data-theme='normal'] .home-public-page{
   mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
 }
 .home-public-signal-track{
-  --home-signal-gap:32px;
   display:flex;
   width:max-content;
-  gap:var(--home-signal-gap);
+  animation:home-public-signal-flow 36s linear infinite;
+  will-change:transform;
 }
 .home-public-signal-set{
   display:flex;
   flex:none;
   align-items:center;
   gap:24px;
-  padding:12px 0;
+  padding:12px 24px 12px 0;
   white-space:nowrap;
   font:var(--type-meta)/1 var(--font-terminal),monospace;
   letter-spacing:.055em;
-  animation:home-public-signal-flow 36s linear infinite;
-  will-change:transform;
 }
 .home-public-signal-set span{color:var(--demo-meta)}
 .home-public-signal-set i{
@@ -6116,10 +6121,10 @@ html[data-theme='normal'] .home-public-page{
   box-shadow:0 0 8px color-mix(in srgb,var(--demo-live) 34%,transparent);
 }
 @keyframes home-public-signal-flow{
-  to{transform:translate3d(calc(-100% - var(--home-signal-gap)),0,0)}
+  to{transform:translate3d(-50%,0,0)}
 }
 @media(prefers-reduced-motion:reduce){
-  .home-public-signal-set{animation:none}
+  .home-public-signal-track{animation:none}
 }
 
 .home-public-close{

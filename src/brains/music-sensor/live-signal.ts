@@ -35,7 +35,7 @@ export type MusicDspFrame = {
 const clamp01 = (value:number) => Math.max(0,Math.min(1,value))
 
 export function estimateVocalProbability(
-  frame:Pick<MusicDspFrame,'rms'|'bass'|'lowMid'|'mid'|'presence'|'air'|'spectralCentroid'>,
+  frame:Pick<MusicDspFrame,'rms'|'bass'|'lowMid'|'mid'|'presence'|'air'|'spectralFlux'|'spectralCentroid'>,
 ) {
   if (frame.rms < .03) return 0
 
@@ -54,7 +54,11 @@ export function estimateVocalProbability(
           ? 1 - ((centroid-4200)/3800)*.75
           : .25
 
-  return clamp01(.06 + vocalCore*.62 + centroidFit*.18 + balance*.14)
+  const raw=clamp01(.06 + vocalCore*.62 + centroidFit*.18 + balance*.14)
+  const midPresence=frame.mid*.58 + frame.presence*.42
+  const relativeVoice=clamp01((midPresence-frame.bass*.28-.03)/.50)
+  const transientPenalty=1-clamp01((frame.spectralFlux-.35)/.45)*.22
+  return clamp01(raw*(.20+relativeVoice*.80)*transientPenalty)
 }
 
 export function normalizeMusicDspFrame(frame:MusicDspFrame):MusicDspFrame {

@@ -208,10 +208,10 @@ export function liveDspWavePath({
   // preserving the measured loud/quiet relationship.
   const [inputFloor,inputCeiling,trim]=amplifierRange[layer]
   const sourceLevel=clamp01((smoothLayer-inputFloor)/(inputCeiling-inputFloor))
-  const amplified=Math.pow(sourceLevel,.68)
-  const energyAmp=Math.pow(clamp01((smoothEnergy-.025)/.93),.72)
+  const amplified=Math.pow(sourceLevel,.72)
+  const energyAmp=Math.pow(clamp01((smoothEnergy-.025)/.93),.76)
   const gain=clamp01(
-    (amplified*(.62+energyAmp*.44)+dynamic*.055)*trim,
+    (amplified*(.54+energyAmp*.34)+dynamic*.04)*trim,
   )
 
   const activity=clamp01(

@@ -83,6 +83,7 @@ class DspEngine(
     private var tempoHistoryIndex = 0
     private var pendingTempoBpm = 0f
     private var pendingTempoCount = 0
+    private var tempoReliabilityHold = 0
     private var latestPercussive = 0f
     private var latestHarmonic = 0f
     private var beatConfidence = 0f
@@ -668,11 +669,11 @@ class DspEngine(
             ).coerceIn(0f, 1f)
         beatConfidence = beatConfidence * 0.72f + instantConfidence * 0.28f
 
-        val reliableCandidate =
+        val reliableEvidence =
             selectedBpm in 55f..190f &&
                 selectedEvidence >= 0.45f &&
-                selectedStability >= 0.58f &&
-                beatConfidence >= 0.46f
+                selectedStability >= 0.58f
+        val reliableCandidate = reliableEvidence && beatConfidence >= 0.46f
 
         if (tempoBpm <= 0f && reliableCandidate) {
             tempoBpm = selectedBpm
@@ -715,9 +716,28 @@ class DspEngine(
             pendingTempoCount in 1..3 &&
                 pendingTempoBpm > 0f &&
                 kotlin.math.abs(pendingTempoBpm - tempoBpm) > 16f
-        tempoReliable = reliableCandidate && !inPendingTransition
 
-        if (!tempoReliable || beatConfidence < 0.48f) {
+        // Reliability is a state, not a per-frame threshold. Enter only with
+        // strong evidence; once locked, tolerate short confidence dips so a
+        // steady drum pulse does not flicker between a meter and unknown.
+        if (reliableCandidate && !inPendingTransition) {
+            tempoReliabilityHold = 6
+        } else if (
+            tempoReliabilityHold > 0 &&
+            reliableEvidence &&
+            beatConfidence >= 0.32f &&
+            !inPendingTransition
+        ) {
+            tempoReliabilityHold = 6
+        } else if (tempoReliabilityHold > 0) {
+            tempoReliabilityHold -= 1
+        }
+        tempoReliable =
+            !inPendingTransition &&
+                reliableEvidence &&
+                (reliableCandidate || tempoReliabilityHold > 0)
+
+        if (!tempoReliable) {
             meter = "unknown"
             meterConfidence = 0f
             subdivisionSimple *= 0.82f

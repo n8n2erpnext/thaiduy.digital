@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { eq, sql } from 'drizzle-orm'
 import { isbot } from 'isbot'
@@ -24,6 +25,28 @@ const payloadSchema = z.object({
 
 const SID = 'td_sid'
 const VID = 'td_vid'
+const RATE_WINDOW_SECONDS = 60
+const RATE_MAX_EVENTS = 180
+
+function analyticsClientKey(request:NextRequest) {
+  const value=request.headers.get('cf-connecting-ip')
+    ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('x-real-ip')
+    ?? 'unknown'
+  return createHash('sha256').update(value).digest('hex').slice(0,24)
+}
+
+async function analyticsRateAllowed(request:NextRequest) {
+  try {
+    const redis=await ensureRedis()
+    const key='analytics:rate:'+analyticsClientKey(request)
+    const count=Number(await redis.incr(key))
+    if (count===1) await redis.expire(key,RATE_WINDOW_SECONDS)
+    return count<=RATE_MAX_EVENTS
+  } catch {
+    return true
+  }
+}
 function validUuid(value?: string) {
   return value && z.uuid().safeParse(value).success ? value : crypto.randomUUID()
 }
@@ -56,6 +79,12 @@ export async function POST(request: NextRequest) {
   if (!(await enabled())) return NextResponse.json({ accepted: false }, { status: 202 })
   const userAgent = request.headers.get('user-agent') ?? ''
   if (!userAgent || isbot(userAgent)) return NextResponse.json({ accepted: false }, { status: 202 })
+  if (!await analyticsRateAllowed(request)) {
+    return NextResponse.json(
+      { accepted:false },
+      { status:429, headers:{ 'Retry-After':String(RATE_WINDOW_SECONDS) } },
+    )
+  }
   let parsed: z.infer<typeof payloadSchema>
   try {
     parsed = payloadSchema.parse(await request.json())

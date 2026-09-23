@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db/client'
 import { contactMessages } from '@/db/schema'
 import { createContactChallenge, verifyContactChallenge } from '@/server/contact/challenge'
+import { ensureRedis } from '@/lib/redis'
 
 const WINDOW_MS=60*60*1000
 const MAX_REQUESTS=5
@@ -30,8 +32,7 @@ function clientKey(request:Request) {
     ?? 'unknown'
 }
 
-function allowRequest(key:string) {
-
+function allowRequestMemory(key:string) {
   const now=Date.now()
   const current=buckets.get(key)
   if (!current || current.resetAt<=now) {
@@ -42,6 +43,24 @@ function allowRequest(key:string) {
   current.count+=1
   buckets.set(key,current)
   return { ok:true, remaining:MAX_REQUESTS-current.count, resetAt:current.resetAt }
+}
+
+async function allowRequest(key:string) {
+  try {
+    const redis=await ensureRedis()
+    const digest=createHash('sha256').update(key).digest('hex').slice(0,24)
+    const rateKey='contact:rate:'+digest
+    const count=Number(await redis.incr(rateKey))
+    if (count===1) await redis.pexpire(rateKey,WINDOW_MS)
+    const ttl=Math.max(0,Number(await redis.pttl(rateKey)))
+    return {
+      ok:count<=MAX_REQUESTS,
+      remaining:Math.max(0,MAX_REQUESTS-count),
+      resetAt:Date.now()+ttl,
+    }
+  } catch {
+    return allowRequestMemory(key)
+  }
 }
 
 async function notifyDiscord(data:{name:string;email:string;phone?:string;message:string;locale:string}) {
@@ -91,9 +110,13 @@ export async function GET() {
 }
 
 export async function POST(request:Request) {
-  const rate=allowRequest(clientKey(request))
+  const rate=await allowRequest(clientKey(request))
   if (!rate.ok) {
-    return NextResponse.json({ok:false,code:'rate_limited'},{status:429})
+    const retryAfter=Math.max(1,Math.ceil((rate.resetAt-Date.now())/1000))
+    return NextResponse.json(
+      {ok:false,code:'rate_limited'},
+      {status:429,headers:{'Retry-After':String(retryAfter)}},
+    )
   }
 
   const parsed=contactSchema.safeParse(await request.json().catch(()=>null))

@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { assets, auditLogs } from '@/db/schema'
 import { auth } from '@/lib/auth'
+import { requestOriginAllowed } from '@/lib/request-security'
 
 type UnsplashPhoto = {
   id:string
@@ -23,22 +22,22 @@ function withUtm(value: string) {
 }
 
 async function owner(request: NextRequest) {
+  if (!requestOriginAllowed(request)) return null
   const session = await auth.api.getSession({ headers:request.headers })
   const email = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
   if (!session?.user || !email || session.user.email.toLowerCase() !== email) return null
   return session
 }
 function accessKey() {
-  const fromEnv = process.env.UNSPLASH_ACCESS_KEY?.trim()
-  if (fromEnv) return fromEnv
+  return process.env.UNSPLASH_ACCESS_KEY?.trim() ?? ''
+}
+
+function unsplashApiUrl(value:string) {
   try {
-    const lines = readFileSync(join(process.cwd(),'unsplash.txt'),'utf8')
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(Boolean)
-    return lines[1] ?? ''
+    const url=new URL(value)
+    return url.protocol==='https:' && url.hostname==='api.unsplash.com' ? url : null
   } catch {
-    return ''
+    return null
   }
 }
 
@@ -113,7 +112,11 @@ export async function POST(request: NextRequest) {
   let [asset] = await db.select().from(assets).where(eq(assets.storageKey,storageKey)).limit(1)
   const alt = photo.alt_description || photo.description || ('Photo by ' + photo.user.name)
 
-  const downloadResponse = await fetch(photo.links.download_location,{
+  const downloadUrl=unsplashApiUrl(photo.links.download_location)
+  if (!downloadUrl) {
+    return NextResponse.json({ error:'unsplash_download_url_invalid' },{ status:502 })
+  }
+  const downloadResponse = await fetch(downloadUrl,{
     headers:headers(),
     cache:'no-store',
   })

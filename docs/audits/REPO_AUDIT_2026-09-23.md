@@ -111,3 +111,8 @@ visual/API acceptance rather than combining them with this cleanup.
 This cleanup removes dead/orphan code and duplicated legacy implementations
 without removing backward-compatible public routes or changing intended user
 behavior. Production build and custom invariants remain green.
+
+A follow-up security pass is documented in
+`docs/audits/SECURITY_AUDIT_2026-09-23.md`. It adds response-header hardening,
+origin guards, abuse rate limits, auth/signup tightening, secret hygiene, and
+SSRF checks without changing the public information architecture.

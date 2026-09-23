@@ -4285,3 +4285,32 @@ If the owner says simply **“tiếp”**, continue from section `3.1` visual ac
 ---
 
 # END — 2026-09-23 FULL HANDOFF
+
+## Repo-wide security pass — 2026-09-23
+
+Security follow-up on branch `chore/repo-audit-cleanup-2026-09-23`:
+
+- added global CSP base/object/frame/form restrictions, referrer policy, nosniff,
+  X-Frame-Options DENY, Permissions-Policy and 1y HSTS; disabled X-Powered-By
+- disabled public email/password signup; owner fallback password remains
+  available through authenticated `/control/account`; Google social signup remains
+- added shared same-origin / Sec-Fetch-Site guard to browser-session mutation APIs
+  for Account, Discuss, Writing and Control asset/Unsplash flows
+- added Redis rate limit to Hub pairing: 30 attempts/IP/300s; verified attempt 31 => 429
+- added best-effort Redis rate limit to analytics: 180 events/IP/minute
+- upgraded contact rate limit to Redis-backed 5/hour/IP with memory fallback
+- migrated legacy `unsplash.txt` key into untracked `.env.local`, deleted the
+  legacy file, and removed runtime fallback; `.env.local` mode remains 600
+- added dedicated local `CONTACT_FORM_SECRET` without committing the value
+- pinned server-side Unsplash download-event fetch to HTTPS `api.unsplash.com`
+- public Music/Stack API payloads scanned clean for RFC1918/loopback/private paths
+  and credential-shaped values
+- tracked Git secret-pattern scan and built client-static secret-value scan PASS
+- no client component uses `process.env`; no wildcard CORS or user-controlled
+  open redirect/request-driven filesystem sink found
+- Writing/Discuss HTML sanitizer paths and fixed-binary `execFile` calls reviewed
+- `drizzle-kit` updated 0.31.10 -> 0.31.11; `bun audit` still reports one
+  moderate dev-only esbuild advisory through its legacy loader dependency
+- final `bun run audit:repo`, production build (55 static pages), diff check,
+  rate-limit behavior tests, and temporary production `next start` header smoke PASS
+- full report: `docs/audits/SECURITY_AUDIT_2026-09-23.md`

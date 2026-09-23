@@ -4,15 +4,10 @@ import { db } from '@/db/client'
 import { assets, auditLogs } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { storeAsset } from '@/lib/assets'
-
-function originAllowed(request: NextRequest) {
-  const origin = request.headers.get('origin')
-  if (!origin) return true
-  return origin === 'https://thaiduy.digital' || origin === 'http://localhost:3000'
-}
+import { requestOriginAllowed } from '@/lib/request-security'
 
 async function owner(request: NextRequest) {
-  if (!originAllowed(request)) return null
+  if (!requestOriginAllowed(request)) return null
   const session = await auth.api.getSession({ headers: request.headers })
   const ownerEmail = process.env.CONTROL_OWNER_EMAIL?.trim().toLowerCase()
   if (!session?.user || !ownerEmail || session.user.email.toLowerCase() !== ownerEmail) return null

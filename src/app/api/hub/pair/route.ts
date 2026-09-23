@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db/client'
@@ -12,10 +12,36 @@ const schema = z.object({
   platform: z.literal('android').default('android'),
 })
 
+const PAIR_RATE_WINDOW_SECONDS = 300
+const PAIR_RATE_MAX_ATTEMPTS = 30
+
+function pairClientKey(request:Request) {
+  const value = request.headers.get('cf-connecting-ip')
+    ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('x-real-ip')
+    ?? 'unknown'
+  return createHash('sha256').update(value).digest('hex').slice(0,24)
+}
+
+async function pairAttemptAllowed(request:Request) {
+  const redis=await ensureRedis()
+  const key='hub:pair:rate:'+pairClientKey(request)
+  const attempts=Number(await redis.incr(key))
+  if (attempts===1) await redis.expire(key,PAIR_RATE_WINDOW_SECONDS)
+  return attempts<=PAIR_RATE_MAX_ATTEMPTS
+}
+
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {
     return NextResponse.json({ paired:false }, { status:400 })
+  }
+
+  if (!await pairAttemptAllowed(request)) {
+    return NextResponse.json(
+      { paired:false },
+      { status:429, headers:{ 'Cache-Control':'no-store', 'Retry-After':String(PAIR_RATE_WINDOW_SECONDS) } },
+    )
   }
 
   const redis = await ensureRedis()

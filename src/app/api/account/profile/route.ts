@@ -4,12 +4,14 @@ import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { db } from '@/db/client'
 import { user } from '@/db/auth-schema'
+import { requestOriginAllowed } from '@/lib/request-security'
 
 const schema=z.object({
   name:z.string().trim().min(2).max(80),
 })
 
 export async function PATCH(request:NextRequest) {
+  if (!requestOriginAllowed(request)) return NextResponse.json({error:'origin_forbidden'},{status:403})
   const session=await auth.api.getSession({headers:request.headers})
   if (!session?.user) return NextResponse.json({error:'auth_required'},{status:401})
   const parsed=schema.safeParse(await request.json().catch(()=>null))

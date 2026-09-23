@@ -2,10 +2,12 @@ import { NextRequest,NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { submitCommunityReply } from '@/community/data'
+import { requestOriginAllowed } from '@/lib/request-security'
 
 type Props={params:Promise<{id:string}>}
 
 export async function POST(request:NextRequest,{params}:Props) {
+  if (!requestOriginAllowed(request)) return NextResponse.json({error:'origin_forbidden'},{status:403})
   const session=await auth.api.getSession({headers:request.headers})
   if (!session?.user) {
     return NextResponse.json({error:'auth_required'},{status:401})

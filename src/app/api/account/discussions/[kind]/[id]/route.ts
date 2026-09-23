@@ -5,6 +5,7 @@ import {
   deleteOwnedCommunityItem,
   updateOwnedCommunityItem,
 } from '@/community/data'
+import { requestOriginAllowed } from '@/lib/request-security'
 
 type Props={params:Promise<{kind:string;id:string}>}
 const payloadSchema=z.object({
@@ -17,6 +18,7 @@ function kindOf(value:string) {
   return value==='thread'||value==='reply'?value:null
 }
 export async function PATCH(request:NextRequest,{params}:Props) {
+  if (!requestOriginAllowed(request)) return NextResponse.json({error:'origin_forbidden'},{status:403})
   const session=await auth.api.getSession({headers:request.headers})
   if (!session?.user) return NextResponse.json({error:'auth_required'},{status:401})
   const {kind:rawKind,id}=await params
@@ -37,6 +39,7 @@ export async function PATCH(request:NextRequest,{params}:Props) {
   }
 }
 export async function DELETE(request:NextRequest,{params}:Props) {
+  if (!requestOriginAllowed(request)) return NextResponse.json({error:'origin_forbidden'},{status:403})
   const session=await auth.api.getSession({headers:request.headers})
   if (!session?.user) return NextResponse.json({error:'auth_required'},{status:401})
   const {kind:rawKind,id}=await params

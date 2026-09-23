@@ -34,18 +34,22 @@ object InboxScheduler {
     private const val JOB_ID = 4212
     private const val FIFTEEN_MINUTES = 15 * 60 * 1000L
 
-    fun schedule(context: Context) {
-        if (SecureStore.token(context) == null) return
-        val scheduler = context.getSystemService(JobScheduler::class.java)
-        val info = JobInfo.Builder(
-            JOB_ID,
-            ComponentName(context, InboxJobService::class.java),
-        )
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .setPeriodic(FIFTEEN_MINUTES)
-            .setPersisted(true)
-            .build()
-        scheduler.schedule(info)
+    fun schedule(context: Context): Boolean {
+        if (SecureStore.token(context) == null) return false
+        return runCatching {
+            val scheduler = context.getSystemService(JobScheduler::class.java)
+            val info = JobInfo.Builder(
+                JOB_ID,
+                ComponentName(context, InboxJobService::class.java),
+            )
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPeriodic(FIFTEEN_MINUTES)
+                .setPersisted(true)
+                .build()
+            scheduler.schedule(info) == JobScheduler.RESULT_SUCCESS
+        }.onFailure {
+            HubDiagnostics.error(context, "inbox.schedule", it)
+        }.getOrDefault(false)
     }
 }
 

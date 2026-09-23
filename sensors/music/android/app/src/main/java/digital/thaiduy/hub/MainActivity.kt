@@ -79,8 +79,8 @@ class MainActivity : Activity() {
         }
         setContentView(buildShell())
         registerDspReceiver()
-        InboxScheduler.schedule(this)
-        if (SecureStore.token(this) != null) requestNotificationPermissionIfNeeded()
+        runCatching { InboxScheduler.schedule(this) }
+            .onFailure { HubDiagnostics.error(this, "inbox.schedule.onCreate", it) }
         showTab(intent.getStringExtra(EXTRA_OPEN_TAB) ?: "home")
     }
 
@@ -460,6 +460,12 @@ class MainActivity : Activity() {
             INK,
             null,
         ))
+        root.addView(sectionCard(
+            "DIAGNOSTICS",
+            HubDiagnostics.summary(this),
+            MUTED,
+            null,
+        ))
         root.addView(actionButton("OPEN CONTROL IN SYSTEM BROWSER") {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://thaiduy.digital/control")))
         }, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(8) })
@@ -502,10 +508,18 @@ class MainActivity : Activity() {
             runOnUiThread {
                 pairButton?.isEnabled = true
                 result.onSuccess {
-                    SecureStore.save(this, it.token, it.deviceId, it.ownerEmail)
+                    HubDiagnostics.mark(this, "pair.response")
+                    val saved = SecureStore.save(this, it.token, it.deviceId, it.ownerEmail)
+                    if (!saved) {
+                        input.error = "Pairing succeeded, but Android secure storage failed. Reopen the app and check Diagnostics."
+                        pairButton?.text = "PAIR AGAIN"
+                        return@onSuccess
+                    }
+
                     input.text.clear()
-                    InboxScheduler.schedule(this)
-                    requestNotificationPermissionIfNeeded()
+                    runCatching { InboxScheduler.schedule(this) }
+                        .onFailure { error -> HubDiagnostics.error(this, "inbox.schedule.afterPair", error) }
+                    HubDiagnostics.mark(this, "pair.complete")
                     showTab("sensor")
                 }.onFailure {
                     input.error = "Pairing failed. Rotate the code and try again."
@@ -578,23 +592,30 @@ class MainActivity : Activity() {
     }
 
     private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
-        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+            }
+        }.onFailure { HubDiagnostics.error(this, "permission.notifications", it) }
     }
 
     private fun appNotificationsGranted(): Boolean =
-        Build.VERSION.SDK_INT < 33 ||
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        runCatching {
+            Build.VERSION.SDK_INT < 33 ||
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        }.getOrDefault(false)
 
-    private fun notificationAccessGranted(): Boolean {
-        val manager = getSystemService(NotificationManager::class.java)
-        return manager.isNotificationListenerAccessGranted(
-            ComponentName(this, ScrobbleService::class.java),
-        )
-    }
+    private fun notificationAccessGranted(): Boolean =
+        runCatching {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.isNotificationListenerAccessGranted(
+                ComponentName(this, ScrobbleService::class.java),
+            )
+        }.onFailure {
+            HubDiagnostics.error(this, "permission.notificationListener", it)
+        }.getOrDefault(false)
 
     private fun openAppDetails() {
         startActivity(

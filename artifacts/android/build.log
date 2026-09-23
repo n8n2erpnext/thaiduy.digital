@@ -22,25 +22,27 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:desugarReleaseFileDependencies
-> Task :app:processReleaseManifestForPackage
-> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseStartupProfile
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
+> Task :app:processReleaseManifestForPackage
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
-> Task :app:processReleaseResources
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:collectReleaseDependencies
+> Task :app:processReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
-> Task :app:optimizeReleaseResources
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:optimizeReleaseResources
 > Task :app:mergeExtDexRelease
 
 > Task :app:compileReleaseKotlin
+e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0. The daemon process output:
+    1. Kotlin compile daemon is ready
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:38:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:39:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:41:30 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
@@ -66,7 +68,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790157528216.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790158369205.json
 
-BUILD SUCCESSFUL in 54s
+BUILD SUCCESSFUL in 53s
 44 actionable tasks: 44 executed

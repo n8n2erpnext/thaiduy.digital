@@ -22,9 +22,40 @@ export type MusicDspFrame = {
   vocalProbability?: number
 }
 
+const clamp01 = (value:number) => Math.max(0,Math.min(1,value))
+
+export function estimateVocalProbability(
+  frame:Pick<MusicDspFrame,'rms'|'bass'|'lowMid'|'mid'|'presence'|'air'|'spectralCentroid'>,
+) {
+  if (frame.rms < .03) return 0
+
+  const vocalCore=frame.lowMid*.34 + frame.mid*.42 + frame.presence*.24
+  const support=frame.bass*.55 + frame.air*.45
+  const balance=clamp01(.55 + (vocalCore-support)*.35)
+
+  const centroid=frame.spectralCentroid ?? 0
+  const centroidFit=centroid<=700
+    ? .15
+    : centroid<2200
+      ? .15 + ((centroid-700)/1500)*.85
+      : centroid<=4200
+        ? 1
+        : centroid<8000
+          ? 1 - ((centroid-4200)/3800)*.75
+          : .25
+
+  return clamp01(.06 + vocalCore*.62 + centroidFit*.18 + balance*.14)
+}
+
+export function normalizeMusicDspFrame(frame:MusicDspFrame):MusicDspFrame {
+  if (typeof frame.vocalProbability==='number') return frame
+  return { ...frame, vocalProbability:estimateVocalProbability(frame) }
+}
+
 export async function publishMusicDspFrame(frame: MusicDspFrame) {
   const client = await ensureRedis()
-  const payload = JSON.stringify(frame)
+  const normalized=normalizeMusicDspFrame(frame)
+  const payload = JSON.stringify(normalized)
   const multi = client.multi()
   multi.set(MUSIC_SIGNAL_KEY, payload, 'EX', MUSIC_SIGNAL_TTL_SECONDS)
   multi.publish(MUSIC_SIGNAL_CHANNEL, payload)

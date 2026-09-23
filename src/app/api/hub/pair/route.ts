@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { db } from '@/db/client'
 import { auditLogs, hubDevices } from '@/db/schema'
 import { ensureRedis } from '@/lib/redis'
-import { hubDeviceTokenHash, MUSIC_SENSOR_SCOPE } from '@/lib/hub-device-auth'
+import { HUB_INBOX_SCOPE, hubDeviceTokenHash, MUSIC_SENSOR_SCOPE } from '@/lib/hub-device-auth'
 
 const schema = z.object({
   code: z.string().regex(/^\d{6}$/),
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
   const token = randomBytes(32).toString('base64url')
   const tokenHash = hubDeviceTokenHash(token)
-  const scopes = [MUSIC_SENSOR_SCOPE]
+  const scopes = [MUSIC_SENSOR_SCOPE, HUB_INBOX_SCOPE]
   const [device] = await db.insert(hubDevices).values({
     name:parsed.data.name,
     platform:parsed.data.platform,
@@ -83,5 +83,6 @@ export async function POST(request: Request) {
     scopes,
     ingestUrl:'https://thaiduy.digital/api/music/sensor/ingest',
     playbackUrl:'https://thaiduy.digital/api/hub/music/playback',
+    inboxUrl:'https://thaiduy.digital/api/hub/inbox',
   }, { headers:{ 'Cache-Control':'no-store' } })
 }

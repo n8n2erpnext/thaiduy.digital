@@ -5,6 +5,7 @@ import { hubDevices } from '@/db/schema'
 import { ensureRedis } from '@/lib/redis'
 
 export const MUSIC_SENSOR_SCOPE = 'music:sensor:write'
+export const HUB_INBOX_SCOPE = 'hub:inbox:read'
 
 function sha256(value: string) {
   return createHash('sha256').update(value).digest('hex')

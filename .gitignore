@@ -48,3 +48,7 @@ unsplash.txt
 
 # generated runtime state
 /runtime/
+
+# Android local build state
+/sensors/music/android/.gradle/
+/sensors/music/android/**/build/

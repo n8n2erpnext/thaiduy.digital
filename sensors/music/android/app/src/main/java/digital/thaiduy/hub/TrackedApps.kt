@@ -1,6 +1,7 @@
 package digital.thaiduy.hub
 
 import android.content.Context
+import android.content.pm.PackageManager
 
 object TrackedApps {
     private const val PREFS = "thaiduy_hub"
@@ -18,4 +19,19 @@ object TrackedApps {
             .putStringSet(KEY, packages)
             .apply()
     }
+
+    fun uids(context: Context): Set<Int> =
+        get(context).mapNotNullTo(linkedSetOf()) { packageName ->
+            runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    context.packageManager.getApplicationInfo(
+                        packageName,
+                        PackageManager.ApplicationInfoFlags.of(0),
+                    ).uid
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.packageManager.getApplicationInfo(packageName, 0).uid
+                }
+            }.getOrNull()
+        }
 }

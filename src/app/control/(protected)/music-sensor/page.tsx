@@ -17,7 +17,7 @@ export default async function MusicSensorControlPage() {
       <header className="control-page-head">
         <p>CONTROL / MUSIC SENSOR</p>
         <h1>Hub device pairing</h1>
-        <span>Pair Thái Duy Hub devices with scoped permissions. Music Sensor is the first module.</span>
+        <span>Pair Thái Duy Hub devices with bounded capabilities: Music Sensor write plus read-only Contact Inbox access.</span>
       </header>
 
       <div className="control-split">

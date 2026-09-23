@@ -771,3 +771,13 @@ This is the authoritative continuation point.
 - Experimental server-only reliability patch increased beatConfidence/reliability but exposed unstable harmonic selection; a guarded low-BPM double rule then caused additional 187.5 BPM harmonic errors. Both experimental patches were rolled back before commit.
 - 30 s ring-buffer spectrum showed multiple strong periodicities in full-song material (including ~187.5, ~127.8, ~122.3, ~93.75, ~76 BPM depending on section). This confirms that single-best-lag autocorrelation is structurally insufficient for full-song tempo tracking.
 - Next tempo direction: multi-candidate / multi-window consensus with harmonic-family scoring and continuity, using the server ring buffer for replay. Do not add more one-off tempo thresholds.
+
+### Server DSP tempo/meter core after 0.6.0
+- Tempo no longer uses a single winning autocorrelation lag. Server now scores multiple windows, groups harmonic-family candidates, resolves low half-time with faster-pulse/meter evidence, resolves high subdivision candidates through 3:2 and half-time family support, and adds continuity only after a family is established.
+- New tempoCandidates diagnostics are published with BPM, score, and support.
+- Offline regressions on PCM: 60 BPM 2/4 -> ~59.89; 80 BPM 2/4 -> ~80.22; 120 BPM 4/4 -> ~120.64; Billie Jean snapshot -> ~118.49. No 59/187 harmonic collapse in the Billie snapshot.
+- Meter now has two explicit 4/4 evidence paths: four-beat accent structure and broadband four-beat persistence when two-beat accent is weak.
+- Weak corr2 alone can no longer publish 2/4; ambiguous cases remain unknown.
+- Meter requires two consecutive confirmations before public output.
+- Offline meter regressions after hysteresis: 60/2 -> 14 2/4, 2 unknown, 0 wrong 4/4; 80/2 -> 36 2/4, 1 unknown; 120/4 -> 16 4/4, 1 unknown; Billie snapshot -> 6 4/4, 20 unknown, 0 wrong 2/4.
+- Active server commits: 58cd6e66 tempo harmonic families; 6277b503 conservative four-beat meter.

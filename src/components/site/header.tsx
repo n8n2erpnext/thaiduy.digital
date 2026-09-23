@@ -6,6 +6,7 @@ import { HeaderCommand } from '@/components/site/header-command'
 import { LanguageSwitch } from '@/components/site/language-switch'
 import { SiteSearch } from '@/components/site/site-search'
 import { ThemeSwitch } from '@/components/site/theme-switch'
+import { MobileNav } from '@/components/site/mobile-nav'
 import { getRegistry } from '@/content/repository'
 import { textFor } from '@/content/types'
 import type { Locale } from '@/i18n/config'
@@ -30,6 +31,11 @@ export async function SiteHeader({ locale }: Props) {
   const brandName = identity.name?.trim() || 'Thái Duy'
   const brandLab = identity.lab?.[locale]?.trim() || t.lab
   const homeLabel = t.homeLabel.replace('Thái Duy', brandName)
+  const mobileNavItems=nav.map((item)=>({
+    id:item.id,
+    href:String(item.meta?.href ?? '/'),
+    label:textFor(item.label,locale),
+  }))
 
   return (
     <header className="site-header">
@@ -66,6 +72,7 @@ export async function SiteHeader({ locale }: Props) {
             isOwner:isCommunityAdminEmail(session.user.email),
           }:null}
         />
+        <MobileNav items={mobileNavItems} locale={locale} ariaLabel={t.primaryNav}/>
       </div>
     </header>
   )

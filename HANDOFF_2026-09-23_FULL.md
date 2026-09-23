@@ -80,6 +80,15 @@ Homepage footer-gap follow-up:
 - follow-up: removed the footer `border-top` only when it directly follows `.home-public-page`, so the ticker flows into the footer menu without a second separator line; the footer base divider remains intact
 - TypeScript/layout/theme PASS; typography remains at the same 2 historical Stack icon outliers; local `/` returns 200
 
+Mobile primary-nav follow-up:
+
+- added a hamburger trigger to the mobile header while preserving search/theme/language/command controls
+- desktop primary nav remains unchanged; only the direct desktop `<nav>` is hidden under `760px`
+- hamburger opens a dropdown panel directly under the sticky header using the same `nav` registry as desktop, so links are not duplicated/hard-coded
+- panel shows indexed links, highlights the active route, and closes on link click, outside pointer, or `Escape`
+- mobile header action gap reduced slightly to keep the fifth control fitting cleanly
+- TypeScript/targeted ESLint/layout/theme PASS; typography unchanged at the same 2 historical Stack icon outliers; SSR includes one mobile-nav trigger; local `/` returns 200
+
 ---
 
 # 0. READ THIS FIRST

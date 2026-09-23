@@ -90,6 +90,28 @@ Mobile primary-nav follow-up:
 - follow-up bugfix: the initial mobile `display:flex` rule appeared earlier than the base `.mobile-nav{display:none}` declaration and was being overridden by CSS cascade; the responsive visibility rule is now placed after the base mobile-nav styles (`none` by default, `flex` under 760px)
 - TypeScript/targeted ESLint/layout/theme PASS; typography unchanged at the same 2 historical Stack icon outliers; SSR includes one mobile-nav trigger; local `/` returns 200
 
+Android Hub V2 thaw / Music DSP + Control + Inbox follow-up:
+
+- work moved to branch `feat/android-hub-v2`; do not confuse this with the stripped scrobble-only release `0.3.0`
+- Android app bumped to `0.4.0` / versionCode 5
+- restored the previously removed FFT/DSP engine and AudioPlaybackCapture foreground service
+- Live DSP now filters Android playback capture by the UID(s) of the music apps selected in the Hub; raw PCM never leaves the phone
+- DSP publishes roughly every 100ms into the existing `POST /api/music/sensor/ingest` path; the existing Redis/SSE `/api/music/stream` path continues to drive the public music wave
+- Android platform constraint remains explicit: background MediaSession metadata/scrobble needs no projection consent, but true cross-app playback DSP requires Android MediaProjection consent for each new capture session; protected/DRM apps may expose metadata while refusing playback capture
+- native Hub shell rebuilt around five surfaces: HOME / SENSOR / CONTROL / INBOX / SETTINGS with a light card-based mobile UI and raised active bottom-nav state
+- Source picker was rebuilt to match the V2 light shell, shows app icons/package names, and drives both scrobble selection and DSP UID filtering
+- CONTROL is embedded as `https://thaiduy.digital/control` in a bounded WebView with an escape to the system browser; mutation authority remains the normal Better Auth owner session and is never granted to the Hub device token
+- Hub pairing now grants exactly `music:sensor:write` plus `hub:inbox:read`
+- added authenticated read-only `GET /api/hub/inbox` for About contact-form messages; anonymous request returns 401
+- app Inbox reads contact messages natively; Android JobScheduler checks in background at the platform minimum periodic cadence (~15m) and raises local notifications for new contact messages; opening Inbox refreshes immediately
+- device token cannot mutate content, settings, runtime or Control state
+- ARM cannot execute Google's x86_64 AAPT2, so Android compile is validated on GitHub Actions `ubuntu-latest`; no emulator/QEMU was added to the VPS
+- first true Kotlin compile found/fixed the JobScheduler import namespace; subsequent build `35814569949` passed
+- final post-UI-polish build `35814704086` passed for commit `c14f76b3419d9b88b7ece53549bf7c0f11b7f899`
+- final CI artifact: `thaiduy-hub-v2-debug` (artifact id `10731685010`); generated APK is `app-debug.apk`
+- server-side validation before Android UI polish: TypeScript PASS, `git diff --check` PASS, unauthenticated `/api/hub/inbox` -> 401
+- next acceptance step: install the V2 debug APK on the real Android device, re-pair once so the token receives the new inbox scope, choose a music source, verify background scrobble, then start Live DSP and visually confirm the web wave follows playback; test Control login and About-contact notification/inbox flow on-device
+
 ---
 
 # 0. READ THIS FIRST

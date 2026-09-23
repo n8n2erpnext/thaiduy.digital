@@ -3,8 +3,8 @@ name: Android Hub V2
 on:
   push:
     branches:
+      - main
       - feat/android-hub-v2
-      - fix/android-hub-pair-crash
     paths:
       - "sensors/music/android/**"
       - ".github/workflows/android-hub-v2.yml"

@@ -4438,3 +4438,43 @@ Validation/artifact:
   artifacts/android/thaiduy-hub-0.4.1-release.apk
 - APK SHA-256:
   0ca6851c059a22462ed98ebe63124fe5928ba088bdd33311d14085cddc158a9b
+
+## Android Hub V2 · 0.4.2 post-pair crash hardening — 2026-09-23
+
+Observed on the owner's Pixel 7 Pro after successful 0.4.1 pairing:
+
+- Control / Music Sensor showed the newly paired device with both scopes:
+  music:sensor:write and hub:inbox:read
+- the Android app exited immediately after pair
+- paired device rows still showed LAST SEEN NEVER, narrowing the failure to the
+  Android post-pair path before the first authenticated Hub request
+- no Android logcat was available from the physical phone, so the exact thrown
+  exception was not claimed; the highest-risk post-pair stages were hardened
+
+0.4.2 changes:
+
+- SecureStore token persistence is now crash-safe:
+  - encrypted token write returns success/failure instead of throwing through UI
+  - if the existing Android Keystore alias is invalid/corrupt, the app deletes
+    that alias, regenerates the AES/GCM key and retries the new pair token once
+  - secure-store read/write failures are recorded in local Hub diagnostics
+- post-pair flow no longer requests POST_NOTIFICATIONS automatically
+  - pairing completes first and returns to Sensor
+  - notification permission is requested only from the explicit UI action
+- Inbox JobScheduler scheduling is fail-soft on launch and after pairing
+- Notification permission and Notification Listener status checks are fail-soft
+- Settings now exposes a small Diagnostics card with the latest stage/error so
+  another physical-device issue can be identified without adb/logcat
+- version bumped to versionCode 7 / versionName 0.4.2
+- Android CI run 35820360816: SUCCESS
+- CI now builds Android changes on main as well as the Android feature branch
+- signed release artifact:
+  artifacts/android/thaiduy-hub-0.4.2-release.apk
+- APK signer certificate matches 0.3.0/0.4.1 release certificate:
+  SHA-256 3841c39b2fe3b27bb5a836e9a55b7723f72160ae1e0e05c8d51050f336720eb0
+- APK SHA-256:
+  cc8f4b62a425e4f5ac280502dab676e6e08a2d8382469b673cf4cee505cb6351
+
+After installing 0.4.2 over 0.4.1, pair once again with a fresh one-time code.
+Stale LAST SEEN NEVER device rows from failed 0.4.1 attempts can be revoked after
+the 0.4.2 device successfully reports activity.

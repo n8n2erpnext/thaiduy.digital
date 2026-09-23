@@ -7,14 +7,13 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:checkReleaseAarMetadata
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:generateReleaseResources
-> Task :app:mergeReleaseResources
 > Task :app:packageReleaseResources
+> Task :app:mergeReleaseResources
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease
 > Task :app:parseReleaseLocalResources
 > Task :app:processReleaseMainManifest
 > Task :app:processReleaseManifest
-> Task :app:processReleaseManifestForPackage
 > Task :app:javaPreCompileRelease
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseJniLibFolders
@@ -22,6 +21,7 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:stripReleaseDebugSymbols NO-SOURCE
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:processReleaseManifestForPackage
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
 > Task :app:checkReleaseDuplicateClasses
@@ -29,9 +29,9 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:processReleaseResources
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
+> Task :app:processReleaseResources
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:collectReleaseDependencies
 > Task :app:optimizeReleaseResources
@@ -66,7 +66,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790166690923.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790167182237.json
 
-BUILD SUCCESSFUL in 51s
+BUILD SUCCESSFUL in 47s
 44 actionable tasks: 44 executed

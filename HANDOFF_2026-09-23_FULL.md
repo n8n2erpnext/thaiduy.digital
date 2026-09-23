@@ -4814,3 +4814,62 @@ Important limitation kept explicit:
   audio rather than reconstructing the literal PCM waveform.
 - exact title/artist requires Android-local media metadata access; DSP spectral
   features do not identify a recording by themselves.
+
+## Music Sensor Live DSP visual/tempo closeout · Android 0.5.1 — 2026-09-23
+
+Combined fixes from live observation:
+
+- Live DSP header no longer stacks all six bands on centerY=12.
+- Header uses six independent lanes inside the 24px viewBox:
+  bass 3.2, lowMid 6.7, mid 10.2, vocal 13.8, presence 17.3, air 20.8.
+- Music Organ Live DSP uses six wider lanes (13 + row*20).
+- Live DSP geometry now uses absolute measured layer level to open the lane;
+  temporal delta adds movement/shape.
+- semantic/LastFM renderer remains unchanged and procedural.
+- crest/highlight is now adaptive to the local rolling signal distribution
+  (median / ~88th percentile) rather than absolute peak >0.85.
+- a continuously mastered/loud signal does not remain permanently in crest;
+  local relative climax plus transient flux activates resonance.
+- Live DSP CSS drop-shadow was removed. Glow is now a separate colored
+  stroke-only SVG path behind each signal path.
+- halo paths explicitly use fill:none/filter:none, fixing black fill/glow in
+  normal/day theme.
+
+Android 0.5.1:
+
+- versionCode 11 / versionName 0.5.1.
+- peak normalization keeps headroom instead of pinning mastered peaks at 1.0.
+- tempo autocorrelation now checks half/double-time harmonics, prefers a slower
+  coherent pulse for >145 BPM double-time candidates, can promote very slow
+  candidates when the double pulse is coherent, and slews BPM gradually once
+  locked.
+- metadata local path still uses MediaSession; NotificationListener now also
+  parses media notification title/artist as a fallback.
+- this fallback still requires Android to grant Notification Listener access;
+  AudioPlaybackCapture itself does not contain title/artist metadata.
+
+Validation:
+
+- Live DSP visual contract PASS.
+- quiet activity ~0.098; loud activity ~0.837.
+- relative crest test PASS; constant mastered signal crest = 0.
+- distinct lane-center geometry contract PASS.
+- DSP V2 classifier contract PASS.
+- TypeScript / layout / theme / typography / music-expression PASS.
+- ESLint 0 errors; historical 22 img warnings only.
+- production Next build PASS, 58/58.
+- Android Hub V2 CI run 35836203986 SUCCESS.
+- signed release certificate unchanged:
+  SHA-256 3841c39b2fe3b27bb5a836e9a55b7723f72160ae1e0e05c8d51050f336720eb0
+- signed APK:
+  artifacts/android/thaiduy-hub-0.5.1-release.apk
+- APK SHA-256:
+  e65afb0465cb682110000e92d4678447b07c6d806bd5d06eb0167451c96633ce
+
+Live smoke before installing 0.5.1:
+- DSP authority HOT
+- public state signal=dsp, genre/style=null
+- playback metadata still null because the installed app has no permitted
+  MediaSession/Notification metadata path
+- currently installed DSP reported ~54 BPM with low beat confidence, so tempo
+  must be re-evaluated only after installing 0.5.1.

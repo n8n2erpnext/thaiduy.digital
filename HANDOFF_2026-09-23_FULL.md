@@ -4941,3 +4941,41 @@ Validation:
 - bun dev remains on port 3000
 - local / => 200
 - public / => 200
+
+## Live DSP amplifier live tuning — 2026-09-23
+
+Tracked audible Android DSP directly and tuned the web-side amplifier without
+changing the LastFM semantic renderer.
+
+Observed active source window:
+- RMS ~0.78-0.84
+- tempo lock ~63.9 BPM with beat confidence ~0.92-0.99
+- bass ~0.78-0.87
+- low-mid ~0.80-0.87
+- mid ~0.68-0.74
+- vocal ~0.77-0.80
+- presence ~0.59-0.68
+- air ~0.28-0.46
+
+Tuning:
+- replaced one shared band gain curve with band-specific amplifier input ranges
+- bass/low-mid keep headroom instead of pinning full
+- mid/vocal/presence/air receive appropriate visual amplification for their
+  naturally lower measured ranges
+- tempo carrier now uses median reliable BPM from the recent DSP buffer instead
+  of dropping to transient fallback when one frame has weak beat confidence
+
+Measured header geometry after tuning on the live source:
+- bass span ~9.3px
+- low-mid ~11.6px
+- mid ~11.4px
+- vocal ~10.7px
+- presence ~12.2px
+- air ~8.7px
+- carrier tempo ~63.9 BPM
+
+Validation:
+- Live DSP amplified sine contract PASS
+- DSP V2 classifier contract PASS
+- TypeScript PASS
+- production Next build PASS, 58/58

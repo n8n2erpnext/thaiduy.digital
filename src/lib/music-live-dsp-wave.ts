@@ -27,13 +27,13 @@ const carrierPhase:Record<MusicLayerName,number>={
   air:4.10,
 }
 
-const layerGain:Record<MusicLayerName,number>={
-  bass:1.05,
-  lowMid:.98,
-  mid:1.02,
-  vocal:1.10,
-  presence:.94,
-  air:.88,
+const amplifierRange:Record<MusicLayerName,readonly [floor:number,ceiling:number,trim:number]>={
+  bass:[.38,.98,.94],
+  lowMid:[.30,.95,.98],
+  mid:[.22,.90,1.00],
+  vocal:[.22,.90,1.03],
+  presence:[.14,.80,1.02],
+  air:[.08,.72,.98],
 }
 
 export const liveDspLayerColors={
@@ -206,11 +206,12 @@ export function liveDspWavePath({
   // DSP acts as an amplifier/envelope, not as the geometry itself.
   // The nonlinear gain gives small source movement enough visual headroom while
   // preserving the measured loud/quiet relationship.
-  const sourceLevel=clamp01((smoothLayer-.08)/.84)
-  const amplified=Math.pow(sourceLevel,.62)
-  const energyAmp=Math.pow(clamp01((smoothEnergy-.025)/.93),.70)
+  const [inputFloor,inputCeiling,trim]=amplifierRange[layer]
+  const sourceLevel=clamp01((smoothLayer-inputFloor)/(inputCeiling-inputFloor))
+  const amplified=Math.pow(sourceLevel,.68)
+  const energyAmp=Math.pow(clamp01((smoothEnergy-.025)/.93),.72)
   const gain=clamp01(
-    (amplified*(.46+energyAmp*.72)+dynamic*.08)*layerGain[layer],
+    (amplified*(.62+energyAmp*.44)+dynamic*.055)*trim,
   )
 
   const activity=clamp01(
@@ -231,12 +232,21 @@ export function liveDspWavePath({
   })
   const crest=Math.max(0,...crestSamples)
 
-  const beatConfidence=clamp01(current.beatConfidence??0)
-  const measuredTempo=current.tempoBpm&&current.tempoBpm>=45&&current.tempoBpm<=210
-    ? current.tempoBpm
-    : 0
+  const reliableTempoFrames=useful.filter(frame=>
+    !!frame.tempoBpm
+    &&frame.tempoBpm>=45
+    &&frame.tempoBpm<=210
+    &&(frame.beatConfidence??0)>=.18,
+  )
+  const beatConfidence=reliableTempoFrames.length
+    ? mean(reliableTempoFrames.map(frame=>clamp01(frame.beatConfidence??0)))
+    : clamp01(current.beatConfidence??0)
+  const tempoValues=reliableTempoFrames
+    .map(frame=>frame.tempoBpm??0)
+    .filter(value=>value>0)
+  const measuredTempo=tempoValues.length?quantile(tempoValues,.5):0
   // If beat lock is weak, movement still follows measured transients/energy.
-  const tempo=measuredTempo&&beatConfidence>=.18
+  const tempo=measuredTempo
     ? measuredTempo
     : 58+smoothFlux*82+smoothEnergy*24
 

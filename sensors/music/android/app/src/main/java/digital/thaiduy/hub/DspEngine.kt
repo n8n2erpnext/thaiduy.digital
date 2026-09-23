@@ -263,6 +263,73 @@ class DspEngine(
         return (numerator / denom).toFloat().coerceIn(-1f, 1f)
     }
 
+    private fun median(values: List<Float>): Float {
+        if (values.isEmpty()) return 0f
+        val sorted = values.sorted()
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 0) {
+            (sorted[mid - 1] + sorted[mid]) * 0.5f
+        } else sorted[mid]
+    }
+
+    private fun peakIntervalTempo(
+        onset: FloatArray,
+        secondsPerWindow: Double,
+    ): Pair<Float, Float> {
+        if (onset.size < 32) return 0f to 0f
+
+        val sorted = onset.sorted()
+        val medianOnset = if (sorted.size % 2 == 0) {
+            (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) * 0.5f
+        } else {
+            sorted[sorted.size / 2]
+        }
+        val p75 = sorted[((sorted.size - 1) * 3) / 4]
+        val threshold = medianOnset + (p75 - medianOnset) * 0.55f
+
+        val peaks = mutableListOf<Int>()
+        var lastPeak = -99
+        for (i in 1 until onset.size - 1) {
+            val isPeak = onset[i] >= threshold &&
+                onset[i] >= onset[i - 1] &&
+                onset[i] > onset[i + 1]
+            if (!isPeak) continue
+
+            if (i - lastPeak < 2) {
+                if (peaks.isNotEmpty() && onset[i] > onset[peaks.last()]) {
+                    peaks[peaks.lastIndex] = i
+                    lastPeak = i
+                }
+                continue
+            }
+            peaks += i
+            lastPeak = i
+        }
+        if (peaks.size < 4) return 0f to 0f
+
+        val bpmCandidates = mutableListOf<Float>()
+        for (i in 1 until peaks.size) {
+            val interval = (peaks[i] - peaks[i - 1]) * secondsPerWindow
+            if (interval <= 0.0) continue
+            var bpm = (60.0 / interval).toFloat()
+            while (bpm > 145f) bpm /= 2f
+            while (bpm < 58f) bpm *= 2f
+            if (bpm in 58f..145f) bpmCandidates += bpm
+        }
+        if (bpmCandidates.size < 3) return 0f to 0f
+
+        val center = median(bpmCandidates)
+        val close = bpmCandidates.filter { kotlin.math.abs(it - center) <= 10f }
+        if (close.size < 3) return 0f to 0f
+
+        val bpm = median(close)
+        val spread = median(close.map { kotlin.math.abs(it - bpm) })
+        val consistency = (1f - spread / 16f).coerceIn(0f, 1f)
+        val coverage = (close.size.toFloat() / bpmCandidates.size.toFloat()).coerceIn(0f, 1f)
+        val confidence = (consistency * 0.65f + coverage * 0.35f).coerceIn(0f, 1f)
+        return bpm to confidence
+    }
+
     private fun updateRhythm() {
         val onset = chronological(onsetHistory)
         if (onset.size < 40) return
@@ -314,18 +381,29 @@ class DspEngine(
         var candidateBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
             .coerceIn(55f, 190f)
 
-        // Once locked, prefer the harmonic closest to the established pulse.
-        if (tempoBpm > 0f) {
-            val candidates = listOf(candidateBpm, candidateBpm / 2f, candidateBpm * 2f)
-                .filter { it in 55f..190f }
-            candidateBpm = candidates.minByOrNull { kotlin.math.abs(it - tempoBpm) } ?: candidateBpm
-        }
-
         val harmonicPenalty = (chosenCorrelation / bestCorrelation.coerceAtLeast(1e-4f))
             .coerceIn(0.65f, 1f)
-        val confidence = (
+        var confidence = (
             ((bestCorrelation - 0.08f) / 0.52f).coerceIn(0f, 1f) * harmonicPenalty
         ).coerceIn(0f, 1f)
+
+        val (peakBpm, peakConfidence) = peakIntervalTempo(onset, secondsPerWindow)
+        if (peakBpm > 0f && peakConfidence >= 0.58f) {
+            val disagreement = kotlin.math.abs(peakBpm - candidateBpm)
+            if (disagreement >= 14f && peakConfidence >= confidence * 0.92f) {
+                candidateBpm = peakBpm
+                confidence = maxOf(confidence * 0.78f, peakConfidence)
+            } else if (disagreement < 14f) {
+                candidateBpm = candidateBpm * 0.58f + peakBpm * 0.42f
+                confidence = maxOf(confidence, peakConfidence * 0.92f)
+            }
+        }
+
+        // Do not let an unrelated previous false lock pull the new estimator
+        // back toward it. Only blend when both estimates are already close.
+        if (tempoBpm > 0f && kotlin.math.abs(candidateBpm - tempoBpm) < 18f) {
+            candidateBpm = candidateBpm * 0.72f + tempoBpm * 0.28f
+        }
 
         beatConfidence = beatConfidence * 0.78f + confidence * 0.22f
         if (confidence >= 0.18f) {

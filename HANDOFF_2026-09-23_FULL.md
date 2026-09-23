@@ -4416,3 +4416,25 @@ Validation/artifact:
 - APK size ~2.1 MiB
 - release-signed 0.3.0 installations can update in place; a debug-signed test
   installation may require one uninstall before installing the release-signed APK
+
+## Android Hub V2 · 0.4.1 production merge — 2026-09-23
+
+- feature branch feat/android-hub-v2 fast-forwarded into main
+- code/artifact merge baseline: 91ba57397f154bf8ff60d1a213597c2aa88a0dfc
+- origin/main matches local main
+- Bun/Next dev runtime restarted after merge; fresh Next.js 16.3.5 process listens on 3000
+- local/public / => 200
+- local/public /api/hub/inbox without device bearer => 401 as expected
+- Hub User-Agent /control/login after restart:
+  - SIGN IN WITH PASSWORD present
+  - Google sign-in absent
+- normal browser /control/login still exposes Google sign-in
+- official Material Icons are used for Hub navigation/bell; no hand-drawn SVG icon path
+- NotificationListenerService is system-bindable with exported=true plus
+  BIND_NOTIFICATION_LISTENER_SERVICE protection
+- Android UI contains sideload restricted-settings recovery guidance and direct
+  notification-listener detail settings intent
+- final signed release remains:
+  artifacts/android/thaiduy-hub-0.4.1-release.apk
+- APK SHA-256:
+  0ca6851c059a22462ed98ebe63124fe5928ba088bdd33311d14085cddc158a9b

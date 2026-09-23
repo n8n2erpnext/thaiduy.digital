@@ -43,6 +43,12 @@ A second owner visual check showed the ticker could still expose blank space on 
 - every item owns its trailing separator, so set boundaries are visually identical to internal boundaries
 - validation: TypeScript PASS, targeted ESLint 0 errors (same pre-existing `<img>` warning), layout/theme/music-expression PASS, typography unchanged at the same 8 pre-existing hero/Stack outliers, SSR renders 36 signal items, local `/` 200, public `/` 200
 
+Command palette follow-up:
+
+- added `Control` / `Bảng điều khiển` under the Account / Tài khoản group
+- entry routes to `/control`; unauthenticated local request correctly redirects `307 -> /control/login`
+- added a dedicated control-panel icon; TypeScript, targeted ESLint and `git diff --check` PASS
+
 ---
 
 # 0. READ THIS FIRST

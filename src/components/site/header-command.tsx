@@ -10,7 +10,7 @@ type CommandItem={
   id:string
   group:string
   label:string
-  icon:'login'|'link'|'code'|'github'
+  icon:'login'|'control'|'link'|'code'|'github'
   action:()=>unknown|Promise<unknown>
 }
 
@@ -24,6 +24,7 @@ function CommandIcon() {
 
 function ItemIcon({kind}:{kind:CommandItem['icon']}) {
   if(kind==='login') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v14h-5M11 8l4 4-4 4M15 12H4"/></svg>
+  if(kind==='control') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
   if(kind==='link') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5 14.5 9M7.2 17.7l-1 .9a4 4 0 0 1-5.6-5.6l3-3a4 4 0 0 1 5.6 0M16.8 6.3l1-.9a4 4 0 0 1 5.6 5.6l-3 3a4 4 0 0 1-5.6 0"/></svg>
   if(kind==='code') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7M16 5l6 7-6 7"/></svg>
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2.3c-3.4.7-4.1-1.4-4.1-1.4-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.4-5.5-6a4.7 4.7 0 0 1 1.2-3.2 4.3 4.3 0 0 1 .1-3.2s1-.3 3.2 1.2a11.1 11.1 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2a4.3 4.3 0 0 1 .1 3.2 4.7 4.7 0 0 1 1.2 3.2c0 4.6-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .7Z"/></svg>
@@ -60,6 +61,11 @@ export function HeaderCommand({locale}:Props) {
       }),
     },
     {
+      id:'control',group:vi?'Tài khoản':'Account',
+      label:vi?'Bảng điều khiển':'Control',icon:'control',
+      action:()=>{setOpen(false);router.push('/control')},
+    },
+    {
       id:'copy-link',group:vi?'Chung':'General',
       label:vi?'Sao chép liên kết':'Copy link',icon:'link',
       action:async()=>{await navigator.clipboard.writeText(window.location.href);setOpen(false)},
@@ -74,7 +80,7 @@ export function HeaderCommand({locale}:Props) {
       label:'GitHub',icon:'github',
       action:()=>window.open('https://github.com/n8n2erpnext','_blank','noopener,noreferrer'),
     },
-  ],[vi])
+  ],[router,vi])
 
   const normalized=query.trim().toLowerCase()
   const visible=normalized

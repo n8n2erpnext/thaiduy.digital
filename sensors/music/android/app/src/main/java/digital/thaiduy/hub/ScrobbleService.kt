@@ -1,5 +1,6 @@
 package digital.thaiduy.hub
 
+import android.app.Notification
 import android.content.ComponentName
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -8,6 +9,7 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -72,6 +74,48 @@ class ScrobbleService : NotificationListenerService() {
         }
         requestRebind(listenerComponent)
         super.onListenerDisconnected()
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        val posted = sbn ?: return
+        if (posted.packageName !in TrackedApps.get(this)) return
+
+        val notification = posted.notification ?: return
+        val extras = notification.extras ?: return
+        val looksLikeMedia =
+            notification.category == Notification.CATEGORY_TRANSPORT ||
+                extras.containsKey(Notification.EXTRA_MEDIA_SESSION)
+        if (!looksLikeMedia) return
+
+        val title = firstText(
+            extras.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
+            extras.getCharSequence(Notification.EXTRA_TITLE_BIG)?.toString(),
+        )
+        if (title.isBlank()) return
+
+        val artist = firstText(
+            extras.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
+            extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString(),
+        )
+        val album = extras.getCharSequence(Notification.EXTRA_INFO_TEXT)
+            ?.toString()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
+        val snapshot = Snapshot(
+            packageName = posted.packageName,
+            artist = artist,
+            title = title,
+            album = album,
+            state = "playing",
+            positionMs = null,
+            durationMs = null,
+            priority = 95,
+        )
+        if (lastSentKey == snapshot.dedupeKey) return
+        lastSentKey = snapshot.dedupeKey
+        lastPublished = snapshot
+        send(snapshot)
     }
 
     private fun bindControllers(controllers: List<MediaController>) {

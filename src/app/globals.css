@@ -358,6 +358,14 @@ main {
 .header-wave:hover, .header-wave:focus-visible { border-color: var(--line); background: rgba(255,255,255,.02); outline: none; }
 .header-wave svg { width: 104px; height: 22px; overflow: visible; }
 .header-wave-base, .header-wave-layer { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.header-wave-live-glow,
+.music-layer-live-glow {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  filter: none;
+}
 .header-wave-base { stroke-width: .8; }
 .header-wave-layer {
   opacity: .68;

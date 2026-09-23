@@ -60,6 +60,18 @@ const loudBass=timeline(
     }
   }),
 )
+const mastered=timeline(
+  Array.from({length:18},()=>({
+    rms:.88,
+    peak:.98,
+    bass:.78,
+    mid:.70,
+    spectralFlux:.10,
+    percussiveProbability:.48,
+    dynamicRange:.16,
+  })),
+)
+
 const vocal=timeline(
   Array.from({length:18},(_,index)=>{
     const lift=index>5&&index<14
@@ -88,12 +100,23 @@ const midWave=liveDspWavePath({
 const vocalWave=liveDspWavePath({
   layer:'vocal',frames:vocal,now,width:104,centerY:12,amplitude:6.2,points:42,
 })
+const masteredWave=liveDspWavePath({
+  layer:'bass',frames:mastered,now,width:104,centerY:12,amplitude:6.2,points:42,
+})
+const bassTopLane=liveDspWavePath({
+  layer:'bass',frames:loudBass,now,width:104,centerY:3.2,amplitude:1.55,points:42,
+})
+const bassBottomLane=liveDspWavePath({
+  layer:'bass',frames:loudBass,now,width:104,centerY:20.8,amplitude:1.55,points:42,
+})
 
 assert(!quietWave.path.includes('NaN'),'quiet path contains NaN')
 assert(!loudWave.path.includes('NaN'),'loud path contains NaN')
 assert(loudWave.stats.activity>quietWave.stats.activity+.25,'loud signal must create more activity')
 assert(quietWave.stats.crest===0,'quiet signal must not enter crest mode')
-assert(loudWave.stats.crest>.5,'>85% signal must enter crest mode')
+assert(loudWave.stats.crest>.5,'relative climax must enter crest mode')
+assert(masteredWave.stats.crest<.08,'constant mastered signal must not remain in crest mode')
+assert(bassTopLane.path!==bassBottomLane.path,'live lanes must have distinct vertical geometry')
 assert(loudWave.path!==midWave.path,'bass and mid must follow their own measured timelines')
 assert(vocalWave.path!==midWave.path,'vocal must follow its own measured timeline')
 assert(loudWave.path!==quietWave.path,'real signal change must change geometry')
@@ -104,4 +127,5 @@ console.log(JSON.stringify({
   loudActivity:loudWave.stats.activity,
   loudCrest:loudWave.stats.crest,
   vocalActivity:vocalWave.stats.activity,
+  masteredCrest:masteredWave.stats.crest,
 },null,2))

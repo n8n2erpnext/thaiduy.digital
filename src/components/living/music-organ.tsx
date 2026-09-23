@@ -108,7 +108,7 @@ export function MusicOrgan({locale}:Props) {
         >
           <svg viewBox="0 0 620 124" role="img" aria-label={t.waveAria}>
             {bars.map((item,row)=>{
-              const y=20+row*17
+              const y=liveDsp ? 13+row*20 : 20+row*17
               const dominant=state.dominantLayer===item.layer
               let path='M 0 '+y
               let activity=item.weight
@@ -122,7 +122,7 @@ export function MusicOrgan({locale}:Props) {
                   delayMs:state.dspVisualDelayMs??900,
                   width:620,
                   centerY:y,
-                  amplitude:10.5,
+                  amplitude:6.4,
                   points:62,
                 })
                 path=live.path
@@ -159,26 +159,34 @@ export function MusicOrgan({locale}:Props) {
               const strokeWidth=liveDsp
                 ? (dominant?1.55:1.02)+crest*.72
                 : (dominant?1.7:1.05)*expression.motion.stroke
-              const glow=liveDsp
-                ? (dominant||crest>.35)
-                  ? 'drop-shadow(0 0 '+String(2.5+crest*8)+'px '+color+')'
-                  : 'none'
-                : dominant
-                  ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
-                  : 'none'
+              const glow=!liveDsp&&dominant
+                ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
+                : 'none'
 
               return (
-                <path
-                  key={item.layer}
-                  d={path}
-                  className={'music-layer music-layer-'+item.layer+(dominant?' is-dominant':'')+(crest>.35?' is-crest':'')}
-                  style={{
-                    stroke:color,
-                    opacity,
-                    strokeWidth,
-                    filter:glow,
-                  }}
-                />
+                <g key={item.layer}>
+                  {liveDsp&&(
+                    <path
+                      d={path}
+                      className="music-layer-live-glow"
+                      style={{
+                        stroke:color,
+                        opacity:theme==='normal' ? .07+crest*.06 : .12+crest*.10,
+                        strokeWidth:strokeWidth+(theme==='normal'?3.0:4.2),
+                      }}
+                    />
+                  )}
+                  <path
+                    d={path}
+                    className={'music-layer music-layer-'+item.layer+(dominant?' is-dominant':'')+(crest>.35?' is-crest':'')}
+                    style={{
+                      stroke:color,
+                      opacity,
+                      strokeWidth,
+                      filter:liveDsp?'none':glow,
+                    }}
+                  />
+                </g>
               )
             })}
           </svg>

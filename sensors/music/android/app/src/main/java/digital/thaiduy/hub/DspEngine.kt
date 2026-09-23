@@ -104,7 +104,7 @@ class DspEngine(
 
         val rawRms = sqrt(rmsSum / frames.coerceAtLeast(1))
         val rms = amplitudeLevel(rawRms)
-        val peakLevel = amplitudeLevel(peak.toDouble())
+        val peakLevel = peakAmplitudeLevel(peak.toDouble())
         val bass = bandLevel(magnitudes, 20.0, 180.0)
         val lowMid = bandLevel(magnitudes, 180.0, 800.0)
         val mid = bandLevel(magnitudes, 800.0, 2_000.0)
@@ -252,15 +252,54 @@ class DspEngine(
         }
         if (bestLag <= 0) return
 
-        val candidateBpm = (60.0 / (bestLag * secondsPerWindow)).toFloat()
-        val confidence = ((bestCorrelation - 0.08f) / 0.52f).coerceIn(0f, 1f)
+        // Autocorrelation often locks to a harmonic (especially double-time).
+        // Prefer the slower pulse when the doubled lag is nearly as coherent.
+        var chosenLag = bestLag
+        var chosenCorrelation = bestCorrelation
+        val rawBpm = (60.0 / (bestLag * secondsPerWindow)).toFloat()
 
-        beatConfidence = beatConfidence * 0.72f + confidence * 0.28f
+        val halfTempoLag = bestLag * 2
+        if (rawBpm > 145f && halfTempoLag <= maxLag) {
+            val halfCorrelation = correlation(onset, halfTempoLag)
+            if (halfCorrelation >= bestCorrelation * 0.72f) {
+                chosenLag = halfTempoLag
+                chosenCorrelation = halfCorrelation
+            }
+        }
+
+        val chosenRawBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
+        val doubleTempoLag = chosenLag / 2
+        if (chosenRawBpm < 72f && doubleTempoLag >= minLag) {
+            val doubleCorrelation = correlation(onset, doubleTempoLag)
+            if (doubleCorrelation >= chosenCorrelation * 0.90f) {
+                chosenLag = doubleTempoLag
+                chosenCorrelation = doubleCorrelation
+            }
+        }
+
+        var candidateBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
+            .coerceIn(55f, 190f)
+
+        // Once locked, prefer the harmonic closest to the established pulse.
+        if (tempoBpm > 0f) {
+            val candidates = listOf(candidateBpm, candidateBpm / 2f, candidateBpm * 2f)
+                .filter { it in 55f..190f }
+            candidateBpm = candidates.minByOrNull { kotlin.math.abs(it - tempoBpm) } ?: candidateBpm
+        }
+
+        val harmonicPenalty = (chosenCorrelation / bestCorrelation.coerceAtLeast(1e-4f))
+            .coerceIn(0.65f, 1f)
+        val confidence = (
+            ((bestCorrelation - 0.08f) / 0.52f).coerceIn(0f, 1f) * harmonicPenalty
+        ).coerceIn(0f, 1f)
+
+        beatConfidence = beatConfidence * 0.78f + confidence * 0.22f
         if (confidence >= 0.18f) {
             tempoBpm = if (tempoBpm <= 0f) {
                 candidateBpm
             } else {
-                tempoBpm * 0.82f + candidateBpm * 0.18f
+                val delta = (candidateBpm - tempoBpm).coerceIn(-8f, 8f)
+                tempoBpm + delta * 0.22f
             }
         }
 
@@ -324,6 +363,11 @@ class DspEngine(
     private fun amplitudeLevel(value: Double): Float {
         val db = 20.0 * log10(value + 1e-9)
         return ((db + 60.0) / 54.0).toFloat().coerceIn(0f, 1f)
+    }
+
+    private fun peakAmplitudeLevel(value: Double): Float {
+        val db = 20.0 * log10(value + 1e-9)
+        return ((db + 30.0) / 30.0).toFloat().coerceIn(0f, 1f)
     }
 
     private fun fft(re: FloatArray, im: FloatArray) {

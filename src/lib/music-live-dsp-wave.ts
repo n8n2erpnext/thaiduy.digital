@@ -10,12 +10,12 @@ const lerp=(a:number,b:number,t:number)=>a+(b-a)*t
 const LIVE_HISTORY_MS=1_450
 
 const slopeGain:Record<MusicLayerName,number>={
-  bass:.72,
-  lowMid:.84,
-  mid:1,
-  vocal:1.04,
-  presence:1.16,
-  air:1.28,
+  bass:.68,
+  lowMid:.78,
+  mid:.92,
+  vocal:1,
+  presence:1.12,
+  air:1.24,
 }
 
 export const liveDspLayerColors={
@@ -100,10 +100,21 @@ function sampleAt(
   }
 }
 
+function quantile(values:number[],q:number) {
+  if(!values.length) return 0
+  const sorted=[...values].sort((a,b)=>a-b)
+  const index=(sorted.length-1)*clamp01(q)
+  const lo=Math.floor(index)
+  const hi=Math.ceil(index)
+  if(lo===hi) return sorted[lo]
+  return lerp(sorted[lo],sorted[hi],index-lo)
+}
+
 export type LiveDspWaveStats={
   activity:number
   crest:number
   latest:number
+  baseline:number
 }
 
 export function liveDspWavePath({
@@ -127,10 +138,10 @@ export function liveDspWavePath({
   amplitude:number
   points?:number
 }):{path:string;stats:LiveDspWaveStats} {
-  if(frames.length<2) {
+  if(frames.length<2||!now) {
     return {
       path:`M ${xStart} ${centerY} L ${xStart+width} ${centerY}`,
-      stats:{activity:0,crest:0,latest:0},
+      stats:{activity:0,crest:0,latest:0,baseline:0},
     }
   }
 
@@ -147,15 +158,20 @@ export function liveDspWavePath({
   if(samples.length<2) {
     return {
       path:`M ${xStart} ${centerY} L ${xStart+width} ${centerY}`,
-      stats:{activity:0,crest:0,latest:0},
+      stats:{activity:0,crest:0,latest:0,baseline:0},
     }
   }
 
   const values=samples.map(sample=>sample.value)
-  const mean=values.reduce((sum,value)=>sum+value,0)/values.length
-  const min=Math.min(...values)
-  const max=Math.max(...values)
-  const spread=Math.max(.14,max-min)
+  const drives=samples.map(sample=>clamp01(
+    sample.frame.rms*.48
+    +sample.value*.32
+    +sample.frame.spectralFlux*.20,
+  ))
+  const baseline=quantile(drives,.50)
+  const high=quantile(drives,.88)
+  const crestThreshold=Math.max(baseline+.055,high)
+  const crestRange=Math.max(.055,quantile(drives,.98)-crestThreshold)
 
   let maxActivity=0
   let maxCrest=0
@@ -168,49 +184,49 @@ export function liveDspWavePath({
     const frame=sample.frame
     const value=sample.value
     const energy=clamp01(frame.rms)
-    const peak=clamp01(frame.peak)
     const flux=clamp01(frame.spectralFlux)
     const percussive=clamp01(frame.percussiveProbability??0)
     const harmonic=clamp01(frame.harmonicProbability??0)
     const dynamic=clamp01(frame.dynamicRange??0)
 
-    // True temporal contour: level around its local mean + the measured slope.
-    // There is deliberately no archetype, seed or autonomous oscillator here.
-    const centered=(value-mean)/spread
-    const slope=(value-previous)/spread
+    const slope=value-previous
     previous=value
 
+    // Absolute measured layer level opens the lane. Temporal delta adds motion.
+    // There is no autonomous oscillator or genre archetype in this contour.
+    const absolute=(value-.50)*1.55
+    const temporal=slope*slopeGain[layer]*2.25
+    const sharpness=1+percussive*.55-harmonic*.20
+    const contour=Math.tanh((absolute+temporal)*sharpness)
+
     const activity=clamp01(
-      energy*.46
-      +peak*.24
-      +value*.22
-      +dynamic*.08,
+      energy*.50
+      +value*.34
+      +dynamic*.10
+      +flux*.06,
     )
     maxActivity=Math.max(maxActivity,activity)
 
-    const sharpness=1+percussive*.8-harmonic*.28
-    const contour=Math.tanh(
-      (centered*.82+slope*slopeGain[layer]*.58)*sharpness,
-    )
+    const energyScale=.24+energy*.76
+    let offset=contour*amplitude*energyScale
 
-    const levelScale=.12+activity*.88
-    let offset=contour*amplitude*levelScale
-
-    // Crest mode is the only intentional sine enhancement in Live DSP.
-    // It activates only above the measured 85% zone and rides the real contour.
-    const crestSource=Math.max(peak,energy,value)
-    const crest=clamp01((crestSource-.85)/.13)
+    // Adaptive crest uses the local 88th-percentile zone. Mastered tracks with
+    // consistently high normalized peaks therefore do not stay in "climax".
+    const drive=drives[index]
+    const relativeCrest=clamp01((drive-crestThreshold)/crestRange)
+    const transientGate=clamp01((flux-.08)/.35)
+    const crest=relativeCrest*(.55+.45*transientGate)
     maxCrest=Math.max(maxCrest,crest)
+
     if(crest>0) {
       const bpm=frame.tempoBpm&&frame.tempoBpm>0?frame.tempoBpm:90
-      const cycles=5+percussive*7+clamp01((bpm-60)/140)*3
+      const cycles=4.5+percussive*6+clamp01((bpm-60)/140)*2.5
       const phase=(startAt+r*LIVE_HISTORY_MS)/1000
-      const ripple=Math.sin(r*Math.PI*2*cycles+phase*(2.1+flux*4.2))
-      offset+=ripple*amplitude*crest*(.08+flux*.12)
+      const ripple=Math.sin(r*Math.PI*2*cycles+phase*(1.8+flux*3.4))
+      offset+=ripple*amplitude*crest*(.055+flux*.085)
     }
 
-    // Slight edge easing prevents clipping without creating the movement.
-    const edge=.58+.42*Math.pow(Math.sin(Math.PI*r),.32)
+    const edge=.62+.38*Math.pow(Math.sin(Math.PI*r),.34)
     const y=centerY+offset*edge
     path+=(index?' L ':'M ')+x.toFixed(2)+' '+y.toFixed(2)
   })
@@ -221,6 +237,7 @@ export function liveDspWavePath({
       activity:maxActivity,
       crest:maxCrest,
       latest:values[values.length-1]??0,
+      baseline,
     },
   }
 }

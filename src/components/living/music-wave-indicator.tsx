@@ -19,6 +19,14 @@ const layerOrder:MusicLayerName[]=['bass','lowMid','mid','vocal','presence','air
 const phase:Record<MusicLayerName,number>={bass:.2,lowMid:1.1,mid:2.2,vocal:.7,presence:2.9,air:4.1}
 const freq:Record<MusicLayerName,number>={bass:1.2,lowMid:1.8,mid:2.6,vocal:1.6,presence:3.4,air:4.4}
 const layerIndex:Record<MusicLayerName,number>={bass:0,lowMid:1,mid:2,vocal:3,presence:4,air:5}
+const liveLaneCenter:Record<MusicLayerName,number>={
+  bass:3.2,
+  lowMid:6.7,
+  mid:10.2,
+  vocal:13.8,
+  presence:17.3,
+  air:20.8,
+}
 
 function phraseAt(composition:HummingComposition|null,time:number) {
   if (!composition || !composition.notes.length || !time) return null
@@ -220,7 +228,10 @@ export function MusicWaveIndicator({locale}:Props) {
             <path
               d="M 4 12 L 108 12"
               className="header-wave-base"
-              style={{stroke:liveDsp?(theme==='dark'?'#65727A':'#A6AFAB'):expression.baseColor}}
+              style={{
+                stroke:liveDsp?(theme==='dark'?'#65727A':'#A6AFAB'):expression.baseColor,
+                opacity:liveDsp?0:1,
+              }}
             />
             {layerOrder.map(layer=>{
               const dominant=state.dominantLayer===layer
@@ -232,8 +243,8 @@ export function MusicWaveIndicator({locale}:Props) {
                     delayMs:state.dspVisualDelayMs??900,
                     xStart:4,
                     width:104,
-                    centerY:12,
-                    amplitude:6.2,
+                    centerY:liveLaneCenter[layer],
+                    amplitude:1.55,
                     points:42,
                   })
                 : null
@@ -246,34 +257,45 @@ export function MusicWaveIndicator({locale}:Props) {
                 ? (dominant?1.36:1.0)+live.stats.crest*.62
                 : (dominant?1.42:1.02)*displayMotion.stroke
               const color=live?liveColors[layer]:expression.colors[layer]
-              const glow=live
-                ? (dominant||live.stats.crest>.35)
-                  ? 'drop-shadow(0 0 '+String(1.6+live.stats.crest*6.2)+'px '+color+')'
-                  : 'none'
-                : dominant
-                  ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
-                  : 'none'
+              const glow=!live&&dominant
+                ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
+                : 'none'
+              const path=live?.path??pathFor(
+                layer,
+                state.layers[layer].weight,
+                time,
+                active,
+                composition,
+                displayMotion,
+                expression.archetype,
+                expression.seed,
+              )
               return (
-                <path
-                  key={layer}
-                  d={live?.path??pathFor(
-                    layer,
-                    state.layers[layer].weight,
-                    time,
-                    active,
-                    composition,
-                    displayMotion,
-                    expression.archetype,
-                    expression.seed,
+                <g key={layer}>
+                  {live&&(
+                    <path
+                      d={path}
+                      className="header-wave-live-glow"
+                      style={{
+                        stroke:color,
+                        opacity:theme==='normal'
+                          ? .08+live.stats.crest*.06
+                          : .13+live.stats.crest*.10,
+                        strokeWidth:width+(theme==='normal'?2.0:2.8),
+                      }}
+                    />
                   )}
-                  className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')+(live&&live.stats.crest>.35?' is-crest':'')}
-                  style={{
-                    stroke:color,
-                    opacity,
-                    strokeWidth:width,
-                    filter:glow,
-                  }}
-                />
+                  <path
+                    d={path}
+                    className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')+(live&&live.stats.crest>.35?' is-crest':'')}
+                    style={{
+                      stroke:color,
+                      opacity,
+                      strokeWidth:width,
+                      filter:live?'none':glow,
+                    }}
+                  />
+                </g>
               )
             })}
           </svg>

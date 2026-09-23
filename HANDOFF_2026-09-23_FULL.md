@@ -33,6 +33,16 @@ Owner visual follow-up then found two remaining presentation issues and they wer
 - each ticker copy ends with the same separator dot and spacing as internal items so the loop seam is structurally identical to a normal item boundary
 - validation after this fix: TypeScript PASS, targeted ESLint 0 errors (one pre-existing `<img>` warning), layout/theme/music-expression PASS, typography unchanged at the same 8 pre-existing hero/Stack outliers, local `/` 200, local `/music-sensor` 200, public `/` 200
 
+A second owner visual check showed the ticker could still expose blank space on wide viewports because one signal set was shorter than the viewport. The implementation was therefore replaced with adaptive repetition:
+
+- new client component: `src/components/home/public-signal-ticker.tsx`
+- measures container width and one canonical signal-set width with `ResizeObserver`
+- renders `max(4, ceil(containerWidth / setWidth) + 2)` identical sets, starting from 6 SSR copies
+- computes the animation shift as exactly one set (`-100 / copies %`) in JS
+- animation waits until the first measurement is complete to avoid a hydration-time jump
+- every item owns its trailing separator, so set boundaries are visually identical to internal boundaries
+- validation: TypeScript PASS, targeted ESLint 0 errors (same pre-existing `<img>` warning), layout/theme/music-expression PASS, typography unchanged at the same 8 pre-existing hero/Stack outliers, SSR renders 36 signal items, local `/` 200, public `/` 200
+
 ---
 
 # 0. READ THIS FIRST

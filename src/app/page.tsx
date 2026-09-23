@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { GitHubPublicPulseView } from '@/components/home/github-public-pulse'
+import { PublicSignalTicker } from '@/components/home/public-signal-ticker'
 import { MusicOrgan } from '@/components/living/music-organ'
 import { RackServerVisual } from '@/components/home/rack-server-visual/rack-server-visual'
 import { TopAtmosphere } from '@/components/home/top-atmosphere'
@@ -335,26 +336,16 @@ export default async function Home() {
             </div>
             <GitHubPublicPulseView locale={locale} pulse={githubPulse}/>
 
-            <div className="home-public-signal-ticker" aria-label={locale==='vi'?'Tín hiệu công khai đang chạy':'Live public signals'}>
-              <div className="home-public-signal-track">
-                {[0,1].map(copy=>(
-                  <div className="home-public-signal-set" aria-hidden={copy===1} key={copy}>
-                    <span>{githubPulse.repoCount} {locale==='vi'?'REPO CÔNG KHAI':'PUBLIC REPOS'}</span>
-                    <i/>
-                    <span>{githubPulse.activity.total} {locale==='vi'?'COMMIT / 53 TUẦN':'COMMITS / 53W'}</span>
-                    <i/>
-                    <span>{online}/{organism.nodes.length} {locale==='vi'?'NODE ONLINE':'NODES ONLINE'}</span>
-                    <i/>
-                    <span>{organism.links.length} {locale==='vi'?'LIÊN KẾT LIVE':'LIVE LINKS'}</span>
-                    <i/>
-                    <span>{githubPulse.active30d} {locale==='vi'?'REPO HOẠT ĐỘNG / 30 NGÀY':'ACTIVE REPOS / 30D'}</span>
-                    <i/>
-                    <span>{locale==='vi'?'PUSH GẦN NHẤT':'LATEST PUSH'} · {currentRepo?.name ?? '—'}</span>
-                    <i/>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PublicSignalTicker
+              locale={locale}
+              repoCount={githubPulse.repoCount}
+              commitCount={githubPulse.activity.total}
+              online={online}
+              nodeCount={organism.nodes.length}
+              linkCount={organism.links.length}
+              active30d={githubPulse.active30d}
+              currentRepoName={currentRepo?.name ?? '—'}
+            />
           </section>
 
           <section className="home-public-close">

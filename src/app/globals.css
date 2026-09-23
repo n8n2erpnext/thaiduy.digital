@@ -6098,21 +6098,32 @@ html[data-theme='normal'] .home-public-page{
 .home-public-signal-track{
   display:flex;
   width:max-content;
-  animation:home-public-signal-flow 36s linear infinite;
   will-change:transform;
+}
+.home-public-signal-track[data-ready='true']{
+  animation:home-public-signal-flow 36s linear infinite;
 }
 .home-public-signal-set{
   display:flex;
   flex:none;
   align-items:center;
+  white-space:nowrap;
+}
+.home-public-signal-item{
+  display:flex;
+  flex:none;
+  align-items:center;
   gap:24px;
   padding:12px 24px 12px 0;
-  white-space:nowrap;
   font:var(--type-meta)/1 var(--font-terminal),monospace;
   letter-spacing:.055em;
 }
-.home-public-signal-set span{color:var(--demo-meta)}
-.home-public-signal-set i{
+.home-public-signal-item b{
+  color:var(--demo-meta);
+  font:inherit;
+  font-weight:400;
+}
+.home-public-signal-item i{
   width:4px;
   height:4px;
   flex:none;
@@ -6121,7 +6132,7 @@ html[data-theme='normal'] .home-public-page{
   box-shadow:0 0 8px color-mix(in srgb,var(--demo-live) 34%,transparent);
 }
 @keyframes home-public-signal-flow{
-  to{transform:translate3d(-50%,0,0)}
+  to{transform:translate3d(var(--home-signal-shift),0,0)}
 }
 @media(prefers-reduced-motion:reduce){
   .home-public-signal-track{animation:none}

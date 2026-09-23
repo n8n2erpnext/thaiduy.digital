@@ -4979,3 +4979,26 @@ Validation:
 - DSP V2 classifier contract PASS
 - TypeScript PASS
 - production Next build PASS, 58/58
+
+## Authoritative Music Sensor continuation handoff — 2026-09-23
+
+A dedicated current-state handoff has been written for the active Android Hub /
+Music Sensor live DSP tuning work:
+
+- HANDOFF_2026-09-23_MUSIC_SENSOR_DSP_TUNING.md
+
+That file is the authoritative continuation point for the next session. It
+contains the complete source-arbiter architecture, Live DSP visual model,
+Android 0.5.1–0.5.7 tuning history, exact 80 BPM / Basic 2/4 / Drum-only
+measurements, current open issues, signed APK state, relevant files, validation
+discipline, do-not-regress rules, and the exact next-session procedure.
+
+At the time of writing:
+- user has Android Hub 0.5.6 installed
+- reference loop is still 80 BPM / Basic 2/4 / Drum only
+- 0.5.6 showed autocorrelation ~80.3 BPM but onset ~117 BPM, with the final
+  tempo drifting upward because onset incorrectly overrode stable autocorrelation
+- Android Hub 0.5.7 is already built/released in the repo and specifically fixes
+  the tempo arbiter so unrelated onset estimates cannot pull stable autocorrelation
+- next action is to install 0.5.7 and re-measure before changing amplifier,
+  visual renderer, meter, or other classifiers

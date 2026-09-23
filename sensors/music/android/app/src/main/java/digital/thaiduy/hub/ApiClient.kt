@@ -45,6 +45,16 @@ object ApiClient {
             }
         }
 
+    private fun audioConnection(path: String): HttpURLConnection =
+        (URL(BASE + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 4_000
+            readTimeout = 6_000
+            doOutput = true
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Content-Type", "audio/aac")
+        }
+
     fun pair(code: String, name: String): PairResult {
         val payload = JSONObject()
             .put("code", code)
@@ -167,6 +177,29 @@ object ApiClient {
 
         return postAuthorized("/api/music/sensor/ingest", token, payload) == 202
     }
+
+    fun sendAudioChunk(
+        token: String,
+        seq: Long,
+        bytes: ByteArray,
+        sampleRate: Int = 48_000,
+        channels: Int = 2,
+        bitrate: Int = 128_000,
+    ): Boolean = runCatching {
+        val conn = audioConnection("/api/music/sensor/audio")
+        conn.setRequestProperty("Authorization", "Bearer $token")
+        conn.setRequestProperty("X-Audio-Seq", seq.toString())
+        conn.setRequestProperty("X-Sample-Rate", sampleRate.toString())
+        conn.setRequestProperty("X-Channels", channels.toString())
+        conn.setRequestProperty("X-Bitrate", bitrate.toString())
+        conn.setFixedLengthStreamingMode(bytes.size)
+        conn.outputStream.use { it.write(bytes) }
+        val code = conn.responseCode
+        runCatching { conn.inputStream?.close() }
+        runCatching { conn.errorStream?.close() }
+        conn.disconnect()
+        code == 202
+    }.getOrDefault(false)
 
     fun fetchInbox(token: String, after: String? = null, limit: Int = 20): InboxResult {
         val safeLimit = limit.coerceIn(1, 50)

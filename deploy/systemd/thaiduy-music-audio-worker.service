@@ -1,0 +1,18 @@
+[Unit]
+Description=Thaiduy Music Audio DSP Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/n8n2erpnext/thaiduy.digital
+Environment=NODE_ENV=production
+EnvironmentFile=/home/ubuntu/n8n2erpnext/thaiduy.digital/.env.local
+ExecStart=/home/ubuntu/.bun/bin/bun scripts/music-audio-worker.ts
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

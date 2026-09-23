@@ -66,7 +66,7 @@ class AppSelectionActivity : Activity() {
         })
         root.addView(label(
             "Metadata and Live DSP are restricted to the apps selected here. " +
-                "Raw audio never leaves the device.",
+                "Audio is sent as AAC 128 kbps over TLS for transient server analysis and is not persisted.",
             13,
             MUTED,
         ).apply { setLineSpacing(0f, 1.18f) })

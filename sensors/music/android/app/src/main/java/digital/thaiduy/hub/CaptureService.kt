@@ -17,10 +17,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
 class CaptureService : Service() {
     companion object {
@@ -38,8 +38,8 @@ class CaptureService : Service() {
     private var projection: MediaProjection? = null
     private var recorder: AudioRecord? = null
     private val captureExecutor = Executors.newSingleThreadExecutor()
-    private val sendExecutor = Executors.newSingleThreadScheduledExecutor()
-    private val latest = AtomicReference<DspFeatures?>(null)
+    private val sendExecutor = Executors.newSingleThreadExecutor()
+    private val audioQueue = ArrayBlockingQueue<ByteArray>(64)
     private val sequence = AtomicLong(0)
     @Volatile private var running = false
 
@@ -50,7 +50,7 @@ class CaptureService : Service() {
             "Thái Duy Hub · Live DSP",
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Live local playback analysis for thaiduy.digital"
+            description = "Live playback capture with transient server DSP for thaiduy.digital"
             setShowBadge(false)
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
@@ -76,7 +76,7 @@ class CaptureService : Service() {
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle("Thái Duy Hub · Live DSP")
-            .setContentText("$sourceCount selected source app(s) · raw audio stays on device")
+            .setContentText("$sourceCount source app(s) · AAC 128 kbps · server DSP")
             .setContentIntent(pending)
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -179,44 +179,69 @@ class CaptureService : Service() {
         sendBroadcast(Intent(ACTION_STATE).setPackage(packageName))
         audioRecord.startRecording()
 
-        captureExecutor.execute {
-            val engine = DspEngine(SAMPLE_RATE, FFT_SIZE)
-            val buffer = ShortArray(8_192)
-            var silentWindows = 0
-            while (running) {
-                val read = audioRecord.read(
-                    buffer,
-                    0,
-                    buffer.size,
-                    AudioRecord.READ_BLOCKING,
+        audioQueue.clear()
+        sequence.set(0)
+
+        sendExecutor.execute {
+            var consecutiveFailures = 0
+            while (running || audioQueue.isNotEmpty()) {
+                val chunk = audioQueue.poll(500, TimeUnit.MILLISECONDS) ?: continue
+                val ok = ApiClient.sendAudioChunk(
+                    token = token,
+                    seq = sequence.incrementAndGet(),
+                    bytes = chunk,
+                    sampleRate = SAMPLE_RATE,
+                    channels = 2,
+                    bitrate = 128_000,
                 )
-                if (read <= 0) continue
-                val features = engine.process(buffer, read, 2)
-                latest.set(features)
-                SensorState.frame(this, features)
-                silentWindows = if (features.peak < 0.01f) silentWindows + 1 else 0
-                if (silentWindows == 30) {
-                    SensorState.error(
-                        this,
-                        "No capturable audio yet. The source may be paused, protected, or blocking playback capture.",
-                    )
+                if (ok) {
+                    consecutiveFailures = 0
+                } else {
+                    consecutiveFailures += 1
+                    if (consecutiveFailures == 5) {
+                        SensorState.error(
+                            this,
+                            "Server audio transport is unavailable. Capture remains active.",
+                        )
+                    }
                 }
             }
         }
 
-        val windowMs = FFT_SIZE * 1_000 / SAMPLE_RATE
-        sendExecutor.scheduleWithFixedDelay({
-            if (!running) return@scheduleWithFixedDelay
-            val features = latest.getAndSet(null) ?: return@scheduleWithFixedDelay
-            ApiClient.sendFrame(
-                token = token,
-                deviceId = deviceId,
-                seq = sequence.incrementAndGet(),
-                sampleRate = SAMPLE_RATE,
-                windowMs = windowMs,
-                features = features,
-            )
-        }, 0, 100, TimeUnit.MILLISECONDS)
+        captureExecutor.execute {
+            val encoder = runCatching {
+                AacTransportEncoder(
+                    sampleRate = SAMPLE_RATE,
+                    channels = 2,
+                    bitrate = 128_000,
+                ) { chunk ->
+                    if (!audioQueue.offer(chunk)) {
+                        audioQueue.poll()
+                        audioQueue.offer(chunk)
+                    }
+                }
+            }.getOrElse {
+                SensorState.error(this, "AAC encoder is unavailable on this device.")
+                stopCapture()
+                return@execute
+            }
+
+            val buffer = ShortArray(8_192)
+            try {
+                while (running) {
+                    val read = audioRecord.read(
+                        buffer,
+                        0,
+                        buffer.size,
+                        AudioRecord.READ_BLOCKING,
+                    )
+                    if (read <= 0) continue
+                    encoder.offer(buffer, read)
+                }
+            } finally {
+                encoder.close()
+            }
+        }
     }
 
     private fun stopCapture() {

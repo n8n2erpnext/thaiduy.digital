@@ -48,6 +48,15 @@ export type MusicDspFrame = {
   harmonicProbability?: number
   dynamicRange?: number
   vocalProbability?: number
+  transport?: 'android-dsp'|'server-aac'
+  sourceAudioSeq?: number
+  rawLeftRmsDbfs?: number
+  rawRightRmsDbfs?: number
+  rawMonoRmsDbfs?: number
+  rawPeakDbfs?: number
+  rawClipFraction?: number
+  stereoCorrelation?: number
+  monoCancellationRatio?: number
 }
 
 const clamp01 = (value:number) => Math.max(0,Math.min(1,value))

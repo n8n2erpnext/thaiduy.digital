@@ -1,3 +1,9 @@
+export type TempoFamilyCandidate = {
+  bpm:number
+  score:number
+  support:number
+}
+
 export type ServerDspFeatures = {
   rms:number; peak:number; bass:number; lowMid:number; mid:number; presence:number; air:number
   spectralFlux:number; spectralCentroid:number; spectralFlatness:number; zeroCrossingRate:number
@@ -12,6 +18,7 @@ export type ServerDspFeatures = {
   percussiveProbability:number; harmonicProbability:number; dynamicRange:number
   rawLeftRmsDbfs:number; rawRightRmsDbfs:number; rawMonoRmsDbfs:number
   rawPeakDbfs:number; rawClipFraction:number; stereoCorrelation:number; monoCancellationRatio:number
+  tempoCandidates:TempoFamilyCandidate[]
 }
 
 const clamp=(v:number,lo=0,hi=1)=>Math.max(lo,Math.min(hi,v))
@@ -71,6 +78,7 @@ export class ServerDspEngine {
   private subdivisionSimple=0
   private subdivisionTriplet=0
   private swingness=0
+  private tempoCandidates:TempoFamilyCandidate[]=[]
 
   constructor(sampleRate=48000,fftSize=4096){
     this.sampleRate=sampleRate
@@ -170,7 +178,8 @@ export class ServerDspEngine {
       percussiveProbability:percussive,harmonicProbability:harmonic,dynamicRange:this.dynamicRange(),
       rawLeftRmsDbfs:db20(leftRms),rawRightRmsDbfs:db20(rightRms),rawMonoRmsDbfs:db20(rawMonoRms),
       rawPeakDbfs:db20(peak),rawClipFraction:clips/Math.max(1,frames*channels),
-      stereoCorrelation,monoCancellationRatio
+      stereoCorrelation,monoCancellationRatio,
+      tempoCandidates:this.tempoCandidates
     }
   }
 
@@ -307,6 +316,126 @@ export class ServerDspEngine {
     return{bpm:center,stability,evidence:clamp(median(q)*.62+stability*.28+coverage*.10),count:bpms.length}
   }
 
+  private buildTempoFamilies(
+    onset:Float64Array,
+    energy:Float64Array,
+    secondsPerWindow:number,
+    minLag:number,
+    maxLag:number,
+  ){
+    const windowWeights=new Map<number,number>()
+    for(const [size,weight] of [[192,.25],[320,.30],[512,.45]] as const){
+      const actual=Math.min(size,onset.length)
+      if(actual<96)continue
+      windowWeights.set(actual,(windowWeights.get(actual)??0)+weight)
+    }
+
+    const scoreByLag=new Map<number,number>()
+    for(let lag=minLag;lag<=maxLag;lag++){
+      let weighted=0,totalWeight=0
+      for(const [size,weight] of windowWeights){
+        const o=onset.subarray(onset.length-size)
+        const e=energy.subarray(energy.length-size)
+        const onsetCorr=Math.max(0,this.correlation(o,lag))
+        const energyCorr=Math.max(0,this.correlation(e,lag))
+        weighted+=(onsetCorr*.72+energyCorr*.28)*weight
+        totalWeight+=weight
+      }
+      scoreByLag.set(lag,totalWeight>0?weighted/totalWeight:0)
+    }
+
+    const contributions:{bpm:number;score:number}[]=[]
+    for(let lag=minLag;lag<=maxLag;lag++){
+      const directScore=scoreByLag.get(lag)??0
+      if(directScore<=0)continue
+      const directBpm=60/(lag*secondsPerWindow)
+      let familyBpm=directBpm
+      let familyScore=directScore
+
+      if(directBpm<72){
+        const fasterLag=Math.round(lag/2)
+        if(fasterLag>=minLag){
+          const fasterScore=scoreByLag.get(fasterLag)??0
+          const fasterBpm=60/(fasterLag*secondsPerWindow)
+          const slowAccent2=this.accentPeriodicity(energy,lag,2)
+          const fastAccent4=this.accentPeriodicity(energy,fasterLag,4)
+          const fasterHasStructure=
+            fasterScore>=.28 &&
+            fasterScore>=directScore*.35 &&
+            fastAccent4>=.20
+          const slowLooksLikeHalfTime=
+            fasterScore>=directScore*.65 &&
+            slowAccent2<.20
+          if(
+            fasterBpm<=145 &&
+            (fasterHasStructure||slowLooksLikeHalfTime)
+          ){
+            familyBpm=fasterBpm
+            familyScore=directScore+fasterScore*.35
+          }
+        }
+      }else if(directBpm>150){
+        const twoThirdsLag=Math.round(lag*1.5)
+        const halfLag=lag*2
+        const twoThirdsScore=twoThirdsLag<=maxLag?(scoreByLag.get(twoThirdsLag)??0):0
+        const halfScore=halfLag<=maxLag?(scoreByLag.get(halfLag)??0):0
+        if(twoThirdsScore>=directScore*.45 && twoThirdsScore>=halfScore*.80){
+          familyBpm=60/(twoThirdsLag*secondsPerWindow)
+          familyScore=directScore+twoThirdsScore*.30
+        }else if(halfScore>=directScore*.45){
+          familyBpm=60/(halfLag*secondsPerWindow)
+          familyScore=directScore+halfScore*.25
+        }
+      }
+
+      contributions.push({bpm:familyBpm,score:familyScore})
+    }
+
+    contributions.sort((a,b)=>b.score-a.score)
+    const groups:{weightedBpm:number;weight:number;scores:number[]}[]=[]
+    for(const item of contributions){
+      let group=groups.find(g=>Math.abs(g.weightedBpm/g.weight-item.bpm)<=7)
+      if(!group){
+        group={weightedBpm:0,weight:0,scores:[]}
+        groups.push(group)
+      }
+      group.weightedBpm+=item.bpm*item.score
+      group.weight+=item.score
+      group.scores.push(item.score)
+    }
+
+    const families=groups.map(group=>{
+      const ranked=[...group.scores].sort((a,b)=>b-a)
+      const familyScore=
+        (ranked[0]??0)+
+        (ranked[1]??0)*.35+
+        (ranked[2]??0)*.15
+      const bpm=group.weightedBpm/Math.max(1e-6,group.weight)
+      const distance=this.tempoBpm>0?Math.abs(bpm-this.tempoBpm):999
+      const continuity=this.tempoBpm<=0
+        ? 0
+        : distance<=8
+          ? .14
+          : distance<=16
+            ? .08
+            : distance<=24
+              ? .03
+              : 0
+      return {
+        bpm,
+        score:familyScore+continuity,
+        support:ranked.filter(v=>v>=(ranked[0]??0)*.45).length,
+      }
+    }).sort((a,b)=>b.score-a.score)
+
+    this.tempoCandidates=families.slice(0,4).map(candidate=>({
+      bpm:candidate.bpm,
+      score:candidate.score,
+      support:candidate.support,
+    }))
+    return families
+  }
+
   private updateRhythm(){
     const onset=this.chronologicalRhythm(this.rhythmOnsetHistory)
     if(onset.length<96)return
@@ -315,21 +444,13 @@ export class ServerDspEngine {
     const minLag=Math.max(3,Math.round(60/(190*sec)))
     const maxLag=Math.min(Math.floor(onset.length/3),Math.round(60/(55*sec)))
     if(maxLag<=minLag)return
-    let bestLag=0,bestCorr=-1
-    for(let lag=minLag;lag<=maxLag;lag++){
-      const c=this.correlation(onset,lag)
-      if(c>bestCorr){bestCorr=c;bestLag=lag}
-    }
-    if(bestLag<=0)return
-    let autoLag=bestLag,autoCorr=bestCorr
-    const rawAuto=60/(bestLag*sec),slower=bestLag*2
-    if(rawAuto>145&&slower<=maxLag){
-      const c=this.correlation(onset,slower)
-      if(c>=bestCorr*.72){autoLag=slower;autoCorr=c}
-    }
-    const autoBpm=clamp(60/(autoLag*sec),55,190)
-    const harmonicPenalty=clamp(autoCorr/Math.max(1e-4,bestCorr),.65,1)
-    const autoConf=clamp(clamp((bestCorr-.08)/.52)*harmonicPenalty)
+    const families=this.buildTempoFamilies(onset,energy,sec,minLag,maxLag)
+    const winner=families[0]
+    if(!winner)return
+    const autoBpm=clamp(winner.bpm,55,190)
+    const autoLag=clamp(Math.round(60/(autoBpm*sec)),minLag,maxLag)
+    const supportFactor=clamp(.72+Math.min(3,winner.support)*.10,.72,1)
+    const autoConf=clamp((winner.score-.10)/.70)*supportFactor
     const [onsetBpm,onsetConf]=this.peakIntervalTempo(onset,sec)
     this.tempoAutocorrBpm=autoBpm;this.tempoOnsetBpm=onsetBpm
     this.tempoAutocorrConfidence=autoConf;this.tempoOnsetConfidence=onsetConf

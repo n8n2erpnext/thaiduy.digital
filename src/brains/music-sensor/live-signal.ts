@@ -57,6 +57,7 @@ export type MusicDspFrame = {
   rawClipFraction?: number
   stereoCorrelation?: number
   monoCancellationRatio?: number
+  tempoCandidates?: Array<{ bpm:number; score:number; support:number }>
 }
 
 const clamp01 = (value:number) => Math.max(0,Math.min(1,value))

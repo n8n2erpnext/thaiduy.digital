@@ -11,6 +11,22 @@
 
 ---
 
+## POST-HANDOFF CONTINUATION — 2026-09-23
+
+After reopening this handoff, the next session re-verified section `3.1` against the live repo and GitHub.
+
+- code baseline before this addendum-doc commit: `403d83e162a963c1ee1d373eaf79eb88f72c93f3`
+- commit: `fix: align wave tooltip typography token`
+- `main == origin/main` before this addendum-doc commit
+- runtime port `3000` healthy
+- selected smoke routes `/`, `/music-sensor`, `/writing`, `/projects`, `/stack`, `/about`, `/discuss`, `/control/login` all returned `200`
+- TypeScript, layout, theme, music-expression and `git diff --check` PASS
+- targeted ESLint: 0 errors, one pre-existing `<img>` warning in `src/app/page.tsx`
+- typography audit now reports only 8 pre-existing hero/Stack outliers; the new header-wave tooltip violation was fixed by using `var(--type-meta)` instead of raw `10px`
+- source/runtime acceptance supports all four section `3.1` fixes; final owner visual feel check remains appropriate for animation smoothness/balance because the ARM host has no browser automation installed
+
+---
+
 # 0. READ THIS FIRST
 
 ## 0.1 Authoritative current state
@@ -49,8 +65,10 @@ Use this `HANDOFF_2026-09-23_FULL.md` first.
 
 ## 0.2 Recent commit line
 
-Newest commits at closeout:
+Newest commits around closeout / continuation:
 
+- `403d83e1` — fix: align wave tooltip typography token
+- `5268356b` — docs: add full handoff 2026-09-23
 - `076776d5` — fix: polish command overlay and music signal surfaces
 - `43315f77` — feat: replace bootstrap with command palette
 - `507fa079` — style: tighten homepage manifesto spacing

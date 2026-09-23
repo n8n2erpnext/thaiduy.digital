@@ -41,6 +41,11 @@ class DspEngine(
     private val previousSpectrum = FloatArray(fftSize / 2 + 1)
     private val onsetHistory = FloatArray(160)
     private val energyHistory = FloatArray(160)
+    private val rhythmOnsetHistory = FloatArray(512)
+    private val rhythmEnergyHistory = FloatArray(512)
+    private var rhythmHistoryCount = 0
+    private var rhythmHistoryIndex = 0
+    private var previousRhythmEnergy = 0f
     private val processIntervalHistory = FloatArray(64)
     private var processIntervalCount = 0
     private var processIntervalIndex = 0
@@ -62,6 +67,8 @@ class DspEngine(
         val re = FloatArray(fftSize)
         val im = FloatArray(fftSize)
         val frames = minOf(count / channels, fftSize)
+        val rhythmSums = DoubleArray(4)
+        val rhythmCounts = IntArray(4)
         var rmsSum = 0.0
         var peak = 0f
         var zeroCrossings = 0
@@ -74,6 +81,9 @@ class DspEngine(
             }
             mixed /= channels.toFloat()
             rmsSum += mixed * mixed
+            val rhythmBucket = minOf(3, (i * 4) / frames.coerceAtLeast(1))
+            rhythmSums[rhythmBucket] += mixed * mixed
+            rhythmCounts[rhythmBucket] += 1
             peak = max(peak, kotlin.math.abs(mixed))
             if (i > 0 && ((mixed >= 0f) != (previousSample >= 0f))) zeroCrossings += 1
             previousSample = mixed
@@ -163,9 +173,10 @@ class DspEngine(
                 (1f - zcrShape) * 0.14f
             ).coerceIn(0f, 1f)
 
+        appendRhythmSubwindows(rhythmSums, rhythmCounts)
         appendHistory(spectralFlux, rms)
         processCount += 1
-        if (processCount % 6L == 0L && historyCount >= 40) {
+        if (processCount % 6L == 0L && rhythmHistoryCount >= 96) {
             updateRhythm()
         }
 
@@ -225,6 +236,31 @@ class DspEngine(
         } else {
             values[mid].toDouble()
         }
+    }
+
+    private fun appendRhythmSubwindows(sums: DoubleArray, counts: IntArray) {
+        for (index in sums.indices) {
+            val energy = if (counts[index] > 0) {
+                sqrt(sums[index] / counts[index]).toFloat()
+            } else 0f
+            val onset = maxOf(0f, energy - previousRhythmEnergy * 0.90f)
+            previousRhythmEnergy = energy
+
+            rhythmOnsetHistory[rhythmHistoryIndex] = onset
+            rhythmEnergyHistory[rhythmHistoryIndex] = energy
+            rhythmHistoryIndex = (rhythmHistoryIndex + 1) % rhythmOnsetHistory.size
+            rhythmHistoryCount = minOf(rhythmHistoryCount + 1, rhythmOnsetHistory.size)
+        }
+    }
+
+    private fun chronologicalRhythm(source: FloatArray): FloatArray {
+        val size = rhythmHistoryCount
+        val output = FloatArray(size)
+        val start = if (rhythmHistoryCount < source.size) 0 else rhythmHistoryIndex
+        for (i in 0 until size) {
+            output[i] = source[(start + i) % source.size]
+        }
+        return output
     }
 
     private fun appendHistory(onset: Float, energy: Float) {
@@ -339,10 +375,10 @@ class DspEngine(
     }
 
     private fun updateRhythm() {
-        val onset = chronological(onsetHistory)
-        if (onset.size < 40) return
+        val onset = chronologicalRhythm(rhythmOnsetHistory)
+        if (onset.size < 96) return
 
-        val secondsPerWindow = measuredProcessIntervalSeconds()
+        val secondsPerWindow = measuredProcessIntervalSeconds() / 4.0
         val minLag = maxOf(3, (60.0 / (190.0 * secondsPerWindow)).roundToInt())
         val maxLag = minOf(
             onset.size / 3,
@@ -431,7 +467,7 @@ class DspEngine(
             return
         }
 
-        val energy = chronological(energyHistory)
+        val energy = chronologicalRhythm(rhythmEnergyHistory)
         val corr2 = correlation(energy, chosenLag * 2)
         val corr3 = correlation(energy, chosenLag * 3)
         val corr4 = correlation(energy, chosenLag * 4)

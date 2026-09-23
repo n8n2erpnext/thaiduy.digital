@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { runMusicSensorLearningCycle } from '@/brains/music-sensor/service'
-import { getLatestMusicDspFrame } from '@/brains/music-sensor/live-signal'
+import { getMusicDspAuthority } from '@/brains/music-sensor/live-signal'
 import { getLatestHubPlayback } from '@/brains/music-sensor/playback-signal'
 import type { MusicTagSource } from '@/brains/music-sensor/types'
 import { isFeatureEnabled } from '@/lib/feature-flags'
@@ -369,70 +369,128 @@ export async function GET() {
     return noStore(resting(false))
   }
 
-  const [hubPlayback, live] = await Promise.all([
+  const [hubPlayback, dspAuthority] = await Promise.all([
     getLatestHubPlayback(90_000),
-    getLatestMusicDspFrame(5_000),
+    getMusicDspAuthority(),
   ])
-
+  const live=dspAuthority.frame
   const localActive = hubPlayback && (
     hubPlayback.state === 'playing' || hubPlayback.state === 'buffering'
   )
 
-  if (localActive) {
+  // DSP authority is exclusive. While HOT or GRACE, no LastFM tags, semantic
+  // memory, or catalog wave hints are allowed to influence the analysis.
+  if (live) {
     await markRealPlayback()
-    const artist = hubPlayback.artist.trim() || 'Unknown Artist'
-    const title = hubPlayback.title.trim()
-    if(!live){
-      const cached=await loadSemanticState(artist,title)
-      if(cached){
-        return noStore(semanticListeningState(
-          {artist,title,url:''},
-          cached,
-          hubPlayback.at,
-        ))
-      }
-    }
-    const tags = process.env.LASTFM_API_KEY
-      ? await loadTags(artist, title)
-      : fallbackTags(title)
 
-    const cycle = await runMusicSensorLearningCycle({
+    const artist=localActive ? (hubPlayback.artist.trim() || 'Unknown Artist') : undefined
+    const title=localActive ? hubPlayback.title.trim() : undefined
+
+    const cycle=await runMusicSensorLearningCycle({
+      semanticMode:'disabled',
       artist,
       title,
-      tags,
+      tags:[],
       playback:{ active:true, source:'local' },
-      positionMs:hubPlayback.positionMs,
-      identity:{ durationMs:hubPlayback.durationMs },
-      audio:live ? {
+      positionMs:localActive ? hubPlayback.positionMs : undefined,
+      identity:localActive ? { durationMs:hubPlayback.durationMs } : undefined,
+      audio:{
         rms:live.rms, peak:live.peak,
         bass:live.bass, lowMid:live.lowMid, mid:live.mid,
         presence:live.presence, air:live.air,
         spectralFlux:live.spectralFlux,
         spectralCentroid:live.spectralCentroid,
         vocalProbability:live.vocalProbability,
-      } : undefined,
+      },
+    })
+    if (!cycle.enabled) return noStore(resting(true))
+
+    const state=cycle.decision.state
+    const style=state.performedStyle
+    await rememberAfterglow({
+      at:Date.now(),
+      mood:state.mood,
+      genre:null,
+      style,
+      texture:state.texture,
+      dominantLayer:state.dominantLayer,
+      energy:live.rms,
+      swingness:style==='swing' ? .34 : .08,
+      meter:style==='waltz' ? '3/4' : '4/4',
+      modeFamily:abstractModeFamily(null,style,state.mood),
+    })
+
+    return noStore({
+      mode:state.mode,
+      connected:true,
+      signal:'dsp',
+      track:localActive
+        ? { artist:artist!, title:title!, url:'' }
+        : null,
+      genre:null,
+      style,
+      arrangement:null,
+      texture:state.texture,
+      mood:state.mood,
+      reinterpretation:false,
+      dominantLayer:state.dominantLayer,
+      energy:live.rms,
+      confidence:cycle.decision.confidence,
+      layers:state.layers,
+      composition:null,
+      updatedAt:live.at,
+    })
+  }
+
+  // No authoritative DSP frame remains. Local playback metadata can still drive
+  // semantic analysis, with cached state first and LastFM tags second.
+  if (localActive) {
+    await markRealPlayback()
+    const artist = hubPlayback.artist.trim() || 'Unknown Artist'
+    const title = hubPlayback.title.trim()
+
+    const cached=await loadSemanticState(artist,title)
+    if(cached){
+      return noStore(semanticListeningState(
+        {artist,title,url:''},
+        cached,
+        hubPlayback.at,
+      ))
+    }
+
+    const tags = process.env.LASTFM_API_KEY
+      ? await loadTags(artist, title)
+      : fallbackTags(title)
+
+    const cycle = await runMusicSensorLearningCycle({
+      semanticMode:'enabled',
+      artist,
+      title,
+      tags,
+      playback:{ active:true, source:'local' },
+      positionMs:hubPlayback.positionMs,
+      identity:{ durationMs:hubPlayback.durationMs },
     })
     if (!cycle.enabled) return noStore(resting(true))
 
     const state = cycle.decision.state
     const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
-    if(!live){
-      await cacheSemanticState(
-        artist,
-        title,
-        semanticSnapshotFromDecision(state,cycle.decision.confidence),
-      )
-    }
+    await cacheSemanticState(
+      artist,
+      title,
+      semanticSnapshotFromDecision(state,cycle.decision.confidence),
+    )
     await rememberAfterglow({
       at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
-      dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,
+      dominantLayer:state.dominantLayer, energy:.18,
       swingness:style==='swing' || state.catalogGenre==='jazz' ? .34 : .08,
-      meter:style==='waltz' ? '3/4' : '4/4', modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
+      meter:style==='waltz' ? '3/4' : '4/4',
+      modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
     })
     return noStore({
       mode:state.mode,
       connected:true,
-      signal:live ? 'dsp' : 'semantic',
+      signal:'semantic',
       track:{ artist, title, url:'' },
       genre:state.catalogGenre,
       style,
@@ -441,11 +499,11 @@ export async function GET() {
       mood:state.mood,
       reinterpretation:state.reinterpretation,
       dominantLayer:state.dominantLayer,
-      energy:live?.rms ?? 0,
+      energy:0,
       confidence:cycle.decision.confidence,
       layers:state.layers,
       composition:null,
-      updatedAt:live?.at ?? hubPlayback.at,
+      updatedAt:hubPlayback.at,
     })
   }
 
@@ -453,6 +511,7 @@ export async function GET() {
     return noStore(await idleMusicState(true))
   }
 
+  // LastFM owns the semantic path only after DSP is LOST.
   const apiKey = process.env.LASTFM_API_KEY
   const username = process.env.LASTFM_USERNAME
   if (!apiKey || !username) return noStore(await idleMusicState(Boolean(hubPlayback)))
@@ -469,55 +528,58 @@ export async function GET() {
   await markRealPlayback()
   const artist = current.artist?.['#text']?.trim() || 'Unknown Artist'
   const title = current.name.trim()
-  if(!live){
-    const cached=await loadSemanticState(artist,title)
-    if(cached){
-      return noStore(semanticListeningState(
-        {artist,title,url:current.url ?? ''},
-        cached,
-        new Date().toISOString(),
-      ))
-    }
+
+  const cached=await loadSemanticState(artist,title)
+  if(cached){
+    return noStore(semanticListeningState(
+      {artist,title,url:current.url ?? ''},
+      cached,
+      new Date().toISOString(),
+    ))
   }
+
   const tags = await loadTags(artist, title)
   const cycle = await runMusicSensorLearningCycle({
-    artist, title, tags,
-    playback:{ active:true, source:live ? 'local' : 'lastfm' },
+    semanticMode:'enabled',
+    artist,
+    title,
+    tags,
+    playback:{ active:true, source:'lastfm' },
     identity:{ recordingMbid:current.mbid || undefined },
-    audio:live ? {
-      rms:live.rms, peak:live.peak,
-      bass:live.bass, lowMid:live.lowMid, mid:live.mid,
-      presence:live.presence, air:live.air,
-      spectralFlux:live.spectralFlux,
-      spectralCentroid:live.spectralCentroid,
-      vocalProbability:live.vocalProbability,
-    } : undefined,
   })
   if (!cycle.enabled) return noStore(resting(true))
 
   const state = cycle.decision.state
   const style = state.performedStyle ?? state.catalogStyle ?? state.catalogGenre
-  if(!live){
-    await cacheSemanticState(
-      artist,
-      title,
-      semanticSnapshotFromDecision(state,cycle.decision.confidence),
-    )
-  }
+  await cacheSemanticState(
+    artist,
+    title,
+    semanticSnapshotFromDecision(state,cycle.decision.confidence),
+  )
   await rememberAfterglow({
     at:Date.now(), mood:state.mood, genre:state.catalogGenre, style, texture:state.texture,
-    dominantLayer:state.dominantLayer, energy:live?.rms ?? .18,
+    dominantLayer:state.dominantLayer, energy:.18,
     swingness:style==='swing' || state.catalogGenre==='jazz' ? .34 : .08,
-    meter:style==='waltz' ? '3/4' : '4/4', modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
+    meter:style==='waltz' ? '3/4' : '4/4',
+    modeFamily:abstractModeFamily(state.catalogGenre,style,state.mood),
   })
   return noStore({
-    mode:state.mode, connected:true, signal:live ? 'dsp' : 'semantic',
+    mode:state.mode,
+    connected:true,
+    signal:'semantic',
     track:{ artist, title, url:current.url ?? '' },
-    genre:state.catalogGenre, style, arrangement:state.arrangement, texture:state.texture,
-    mood:state.mood, reinterpretation:state.reinterpretation, dominantLayer:state.dominantLayer,
-    energy:live?.rms ?? 0, confidence:cycle.decision.confidence, layers:state.layers,
+    genre:state.catalogGenre,
+    style,
+    arrangement:state.arrangement,
+    texture:state.texture,
+    mood:state.mood,
+    reinterpretation:state.reinterpretation,
+    dominantLayer:state.dominantLayer,
+    energy:0,
+    confidence:cycle.decision.confidence,
+    layers:state.layers,
     composition:null,
-    updatedAt:live?.at ?? new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
   })
 }
 

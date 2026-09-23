@@ -4568,3 +4568,57 @@ from the paired device token.
 - after that re-pair, Android Control automatically renews short-lived owner sessions and never prompts for Google/password inside the app
 - signed 0.4.4 APK remains artifacts/android/thaiduy-hub-0.4.4-release.apk
 - APK SHA-256 bc0e21ad4b817d18b6a3c13a5e9faab504713f81124cb60d56b3c667f7ce54cc
+
+## Music Sensor source authority isolation — 2026-09-23
+
+Owner requirement: never blend LastFM semantic analysis with live DSP analysis.
+
+Implemented strict source arbiter:
+
+- DSP authority now depends on audible signal, not merely frame arrival
+- audible frame threshold: rms >= 0.025 OR peak >= 0.05
+- DSP HOT: audible latest frame age <= 2.5s
+- DSP GRACE: most recent audible frame age <= 10s
+  - tolerates network jitter/high ping/brief packet gaps
+  - keeps the last acoustic decision authoritative
+  - LastFM remains excluded during grace
+- DSP LOST: no audible frame for >10s
+  - LastFM/local semantic path becomes authoritative
+- zero/silent DSP frames can continue arriving without blocking LastFM fallback
+- live signal Redis TTL raised from 8s to 15s; a separate latest-active frame is retained
+- when DSP is HOT/GRACE:
+  - no LastFM top-tag requests
+  - no semantic memory injection from prior track analysis
+  - no catalog/semantic wave hints
+  - genre stays null unless future acoustic DSP classifier supplies one
+  - style is only an acoustically inferred performed style, currently usually null
+  - track/artist metadata is used only from local Hub playback when available
+  - DSP analysis owns texture, mood, dominant layer, energy and wave layers
+- when DSP is LOST:
+  - local playback semantic cache/LastFM tags may own analysis
+  - if local metadata is absent, LastFM recent-track + semantic tags may own the state
+- DSP-only decision confidence now uses the acoustic/right-ear confidence directly
+  instead of averaging with an empty semantic hemisphere
+
+Current DSP capability truth:
+
+- reliable live features: RMS/peak, bass/low-mid/mid/presence/air, spectral centroid
+- vocal likelihood: heuristic from bands + centroid, with silence gate
+- acoustic texture: vocal-led / instrumental / mixed
+- dominant spectral layer, energy and coarse acoustic mood
+- not yet a reliable genre classifier
+- not yet a specific instrument classifier (piano/guitar/violin/sax/etc.)
+- knowledge rules already exist for tempo/meter/swing/rhythm styles, but Android
+  DSP does not yet publish tempoBpm, beatConfidence, meter, swingness,
+  percussive/harmonic probabilities or rhythmHints, so those rules are not
+  currently available for live genre/style inference
+- title/artist cannot be inferred from band DSP alone; local media metadata or
+  an audio fingerprint system is required
+
+Validation:
+
+- zero-frame case tested live: DSP authority LOST and semantic/LastFM state took over
+- TypeScript PASS
+- repository audit PASS
+- production Next build PASS, 58/58 routes/pages
+- music-expression/layout/theme/typography audits PASS

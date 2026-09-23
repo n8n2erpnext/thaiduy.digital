@@ -1,6 +1,7 @@
 export type MusicMeter = '2/4' | '3/4' | '4/4' | '6/8' | 'unknown'
 export type MusicTagSource = 'lastfm-track' | 'lastfm-artist' | 'musicbrainz' | 'listenbrainz' | 'memory' | 'heuristic' | 'unknown'
 export type MusicSensorInput = {
+  semanticMode?: 'enabled' | 'disabled'
   artist?: string
   title?: string
   positionMs?: number

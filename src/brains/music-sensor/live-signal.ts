@@ -2,7 +2,8 @@ import { ensureRedis } from '@/lib/redis'
 
 export const MUSIC_SIGNAL_KEY = 'music:sensor:latest'
 export const MUSIC_SIGNAL_CHANNEL = 'music:sensor:frames'
-export const MUSIC_SIGNAL_TTL_SECONDS = 8
+export const MUSIC_SIGNAL_ACTIVE_KEY = 'music:sensor:latest-active'
+export const MUSIC_SIGNAL_TTL_SECONDS = 15
 
 export type MusicDspFrame = {
   deviceId: string
@@ -52,12 +53,19 @@ export function normalizeMusicDspFrame(frame:MusicDspFrame):MusicDspFrame {
   return { ...frame, vocalProbability:estimateVocalProbability(frame) }
 }
 
+function hasAudibleSignal(frame:Pick<MusicDspFrame,'rms'|'peak'>) {
+  return frame.rms >= .025 || frame.peak >= .05
+}
+
 export async function publishMusicDspFrame(frame: MusicDspFrame) {
   const client = await ensureRedis()
   const normalized=normalizeMusicDspFrame(frame)
   const payload = JSON.stringify(normalized)
   const multi = client.multi()
   multi.set(MUSIC_SIGNAL_KEY, payload, 'EX', MUSIC_SIGNAL_TTL_SECONDS)
+  if (hasAudibleSignal(normalized)) {
+    multi.set(MUSIC_SIGNAL_ACTIVE_KEY, payload, 'EX', MUSIC_SIGNAL_TTL_SECONDS)
+  }
   multi.publish(MUSIC_SIGNAL_CHANNEL, payload)
   await multi.exec()
 }
@@ -74,4 +82,38 @@ export async function getLatestMusicDspFrame(maxAgeMs = 2_500) {
   } catch {
     return null
   }
+}
+
+export type MusicDspAuthority = {
+  mode:'hot'|'grace'|'lost'
+  frame:MusicDspFrame|null
+  ageMs:number|null
+}
+
+function parseFrame(payload:string|null,maxAgeMs:number) {
+  if (!payload) return null
+  try {
+    const frame=JSON.parse(payload) as MusicDspFrame
+    const ageMs=Date.now()-Date.parse(frame.at)
+    if (!Number.isFinite(ageMs) || ageMs < -5_000 || ageMs > maxAgeMs) return null
+    return { frame, ageMs:Math.max(0,ageMs) }
+  } catch {
+    return null
+  }
+}
+
+export async function getMusicDspAuthority():Promise<MusicDspAuthority> {
+  const client=await ensureRedis()
+  const [latestRaw,activeRaw]=await client.mget(MUSIC_SIGNAL_KEY,MUSIC_SIGNAL_ACTIVE_KEY)
+  const latest=parseFrame(latestRaw,2_500)
+  if (latest && hasAudibleSignal(latest.frame)) {
+    return { mode:'hot', frame:latest.frame, ageMs:latest.ageMs }
+  }
+
+  const active=parseFrame(activeRaw,10_000)
+  if (active) {
+    return { mode:'grace', frame:active.frame, ageMs:active.ageMs }
+  }
+
+  return { mode:'lost', frame:null, ageMs:null }
 }

@@ -23,6 +23,7 @@ function memoryCap(config: Record<string, unknown>, key: string, fallback: numbe
 }
 
 async function enrichFromSemanticMemory(input: MusicSensorInput) {
+  if (input.semanticMode === 'disabled') return input
   if (input.tags?.length) return input
   const key = musicTrackMemoryKey(input)
   if (!key) return input
@@ -45,7 +46,7 @@ export async function runMusicSensorLearningCycle(rawInput: MusicSensorInput) {
   const key = musicTrackMemoryKey(input)
   const memoryConfig = profile.memoryConfig as Record<string, unknown>
 
-  if (key && cycle.left.evidence[0]) {
+  if (input.semanticMode !== 'disabled' && key && cycle.left.evidence[0]) {
     await rememberBrainMemory({
       brainKey: BRAIN_KEY,
       hemisphere: 'left',

@@ -185,7 +185,16 @@ export const musicSensorKernel: LunaKernel<MusicSensorInput, SemanticEarState, A
         release:clamp01((policy.releaseBase ?? 0.66) + (1 - energy) * (policy.releaseQuietGain ?? 0.22)),
         layers,
       }
-      const confidence = clamp01(((left.evidence[0]?.confidence ?? 0) + (right.evidence[0]?.confidence ?? 0)) / 2)
+      const hasSemanticEvidence=!!semantic && [
+        semantic.genreVotes,
+        semantic.styleVotes,
+        semantic.moodVotes,
+        semantic.textureVotes,
+        semantic.arrangementVotes,
+      ].some(votes => Object.keys(votes).length > 0)
+      const confidence = hasSemanticEvidence
+        ? clamp01(((left.evidence[0]?.confidence ?? 0) + (right.evidence[0]?.confidence ?? 0)) / 2)
+        : clamp01(right.evidence[0]?.confidence ?? 0)
       const decision: CortexDecision<MusicCortexDecision> = {
         cycleId,
         confidence,

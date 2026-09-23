@@ -22,9 +22,9 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:processReleaseManifestForPackage
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
-> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
@@ -66,7 +66,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790167182237.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790167711999.json
 
-BUILD SUCCESSFUL in 47s
+BUILD SUCCESSFUL in 52s
 44 actionable tasks: 44 executed

@@ -3,8 +3,8 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:checkReleaseAarMetadata
 > Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:generateReleaseResources
 > Task :app:packageReleaseResources
@@ -22,8 +22,8 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:desugarReleaseFileDependencies
-> Task :app:mergeReleaseStartupProfile
 > Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseStartupProfile
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
@@ -32,19 +32,25 @@ Starting a Gradle Daemon (subsequent builds will be faster)
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
-> Task :app:processReleaseResources
 > Task :app:collectReleaseDependencies
+> Task :app:processReleaseResources
 > Task :app:sdkReleaseDependencyData
-> Task :app:optimizeReleaseResources
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:optimizeReleaseResources
 > Task :app:mergeExtDexRelease
 
 > Task :app:compileReleaseKotlin
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:26:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:27:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:36:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:37:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:38:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:39:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:41:30 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:42:35 'static field SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/AppSelectionActivity.kt:43:39 'static field SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:74:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:75:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:77:30 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:78:22 'static field SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/android/app/src/main/java/digital/thaiduy/hub/MainActivity.kt:78:62 'static field SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR: Int' is deprecated. Deprecated in Java.
 
 > Task :app:compileReleaseJavaWithJavac NO-SOURCE
 > Task :app:generateReleaseLintVitalReportModel
@@ -60,7 +66,7 @@ w: file:///home/runner/work/thaiduy.digital/thaiduy.digital/sensors/music/androi
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1789698706519.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/apk-1790136141532.json
 
-BUILD SUCCESSFUL in 34s
+BUILD SUCCESSFUL in 45s
 44 actionable tasks: 44 executed

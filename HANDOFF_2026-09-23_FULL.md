@@ -4362,3 +4362,57 @@ The repository audit/security branch was fast-forwarded into `main` and pushed.
   or application error entries
 - public GitHub commit verification confirms `fe9e6ad6` is present on the repo
 - repo/worktree clean at closeout before this documentation-only commit
+
+## Android Hub V2 · 0.4.1 permission/auth closeout — 2026-09-23
+
+Owner feedback after installing the first 0.4 build:
+
+- replace hand-made/text-glyph UI icons with official Google Material Icons
+- Notification access could not be enabled
+- embedded /control login failed
+
+Resolution:
+
+- bottom navigation now uses official Google Material Icons Android vector assets:
+  Home, Equalizer, Dashboard, Email, Settings; top inbox bell also uses the
+  official Notifications asset. Icon geometry is from Google's official
+  material-design-icons repository; no custom SVG drawing is used
+- ScrobbleService NotificationListenerService changed to exported=true while
+  retaining android.permission.BIND_NOTIFICATION_LISTENER_SERVICE, allowing
+  Android Settings/system to bind to the listener without exposing it to
+  ordinary apps
+- Sensor permission card now distinguishes:
+  - POST_NOTIFICATIONS app notification permission
+  - Notification Listener / playback metadata access
+- sideload-restricted-settings recovery is explicit:
+  App info -> top-right menu -> Allow restricted settings -> Notification access
+- API 30+ opens ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS directly for the
+  ScrobbleService component, with generic listener settings fallback
+- /control login detects User-Agent ThaiDuyHub/*:
+  - embedded Hub session hides Google OAuth
+  - owner password fallback becomes the primary embedded authentication path
+  - normal browser /control login continues to use Google OAuth as primary
+  - Hub CONTROL header retains BROWSER external escape for Google/browser auth
+- pairing response now includes ownerEmail so re-paired Hub installations retain
+  the owner identity locally for future native surfaces
+- Android version bumped to versionCode 6 / versionName 0.4.1
+
+Validation/artifact:
+
+- GitHub Actions run 35816331603: SUCCESS
+- CI compiles both debug and unsigned release APKs on ubuntu-latest, then
+  zipaligns the release artifact
+- web bun run audit:repo PASS; production Next build PASS with 55 static pages
+- Hub User-Agent login smoke:
+  Owner password/HUB SESSION present, Google button count 0
+- normal browser login smoke: Google sign-in remains present
+- signed release APK:
+  artifacts/android/thaiduy-hub-0.4.1-release.apk
+- signed with the existing private release keystore (not committed)
+- signer certificate matches 0.3.0 release exactly:
+  SHA-256 3841c39b2fe3b27bb5a836e9a55b7723f72160ae1e0e05c8d51050f336720eb0
+- APK SHA-256:
+  0ca6851c059a22462ed98ebe63124fe5928ba088bdd33311d14085cddc158a9b
+- APK size ~2.1 MiB
+- release-signed 0.3.0 installations can update in place; a debug-signed test
+  installation may require one uninstall before installing the release-signed APK

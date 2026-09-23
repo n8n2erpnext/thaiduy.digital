@@ -28,6 +28,9 @@ export type MusicDspFrame = {
   processIntervalMs?: number
   beatConfidence?: number
   meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  meterCorr2?: number
+  meterCorr3?: number
+  meterCorr4?: number
   swingness?: number
   percussiveProbability?: number
   harmonicProbability?: number

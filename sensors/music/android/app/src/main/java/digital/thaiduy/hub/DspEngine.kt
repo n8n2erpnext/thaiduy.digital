@@ -28,6 +28,9 @@ data class DspFeatures(
     val processIntervalMs: Float,
     val beatConfidence: Float,
     val meter: String,
+    val meterCorr2: Float,
+    val meterCorr3: Float,
+    val meterCorr4: Float,
     val swingness: Float,
     val percussiveProbability: Float,
     val harmonicProbability: Float,
@@ -60,6 +63,9 @@ class DspEngine(
     private var tempoOnsetBpm = 0f
     private var beatConfidence = 0f
     private var meter = "unknown"
+    private var meterCorr2 = 0f
+    private var meterCorr3 = 0f
+    private var meterCorr4 = 0f
     private var swingness = 0f
 
     fun process(interleaved: ShortArray, count: Int, channels: Int = 2): DspFeatures {
@@ -202,6 +208,9 @@ class DspEngine(
             processIntervalMs = (measuredProcessIntervalSeconds() * 1_000.0).toFloat(),
             beatConfidence = beatConfidence,
             meter = meter,
+            meterCorr2 = meterCorr2,
+            meterCorr3 = meterCorr3,
+            meterCorr4 = meterCorr4,
             swingness = swingness,
             percussiveProbability = percussive,
             harmonicProbability = harmonic,
@@ -484,6 +493,9 @@ class DspEngine(
         val corr2 = correlation(energy, chosenLag * 2)
         val corr3 = correlation(energy, chosenLag * 3)
         val corr4 = correlation(energy, chosenLag * 4)
+        meterCorr2 = corr2
+        meterCorr3 = corr3
+        meterCorr4 = corr4
         meter = when {
             corr2 >= 0.24f && corr2 >= corr3 + 0.07f && corr2 >= corr4 * 0.90f -> "2/4"
             corr3 >= 0.24f && corr3 >= corr4 + 0.10f -> "3/4"

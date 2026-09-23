@@ -4314,3 +4314,29 @@ Security follow-up on branch `chore/repo-audit-cleanup-2026-09-23`:
 - final `bun run audit:repo`, production build (55 static pages), diff check,
   rate-limit behavior tests, and temporary production `next start` header smoke PASS
 - full report: `docs/audits/SECURITY_AUDIT_2026-09-23.md`
+
+## Audit + security production closeout — 2026-09-23
+
+The repository audit/security branch was fast-forwarded into `main` and pushed.
+
+- merged code/security baseline: `fe9e6ad6c09c1d5cdc6907cc055e95975cb2e23b`
+- merge method: fast-forward; no merge commit
+- runtime `bun dev -> next dev` was fully restarted after merge so `.env.local`
+  and `next.config.ts` hardening are loaded by a fresh process
+- startup log confirms Next.js 16.3.5, `.env.local`, and current config loaded
+- local route smoke: `/`, `/writing`, `/projects`, `/stack`,
+  `/music-sensor`, `/about`, `/discuss`, `/privacy`, `/terms`,
+  `/search`, `/control/login` => 200
+- anonymous `/account` => 307 to `/discuss`
+- legacy `/guestbook` => 308 to `/discuss`
+- public smoke: `/`, `/discuss`, `/stack`, `/control/login` => 200
+- public headers confirmed: CSP, Permissions-Policy, Referrer-Policy, HSTS,
+  nosniff, DENY frame policy, X-XSS-Protection=0; X-Powered-By absent
+- post-restart CSRF sanity: cross-site account mutation => 403; same-origin
+  unauthenticated mutation => 401
+- runtime confirms `CONTACT_FORM_SECRET` and `UNSPLASH_ACCESS_KEY` keys are
+  present in `.env.local` (values were not printed)
+- post-restart log review found no 500/502/503, uncaught, unhandled, exception,
+  or application error entries
+- public GitHub commit verification confirms `fe9e6ad6` is present on the repo
+- repo/worktree clean at closeout before this documentation-only commit

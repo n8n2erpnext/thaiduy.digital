@@ -71,6 +71,14 @@ Homepage closeout simplification:
 - typography audit now reports only 2 historical Stack icon raw-size outliers
 - TypeScript/layout/theme PASS and local `/` returns 200 after removal
 
+Homepage footer-gap follow-up:
+
+- after removing the closeout poster, the remaining blank gap was traced to the final `.home-public-section` bottom padding (`96px`) plus the global footer top margin (`58px`)
+- scoped fix for homepage only: `.home-public-code` bottom padding reduced to `28px` desktop / `24px` mobile
+- `.home-public-page + .global-site-footer` now removes the extra global top margin only when the footer follows the homepage
+- no negative margins or global footer behavior changes were introduced
+- TypeScript/layout/theme PASS; typography remains at the same 2 historical Stack icon outliers; local `/` returns 200
+
 ---
 
 # 0. READ THIS FIRST

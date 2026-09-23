@@ -5760,7 +5760,8 @@ html[data-theme='normal'] .home-public-page{
   padding:96px 0;
   border-bottom:1px solid var(--demo-line);
 }
-.home-public-code{border-bottom:0}
+.home-public-code{border-bottom:0;padding-bottom:28px}
+.home-public-page + .global-site-footer{margin-top:0}
 .home-public-section-head{
   display:grid;
   grid-template-columns:minmax(0,560px) auto;
@@ -6203,6 +6204,7 @@ html[data-theme='normal'] .home-public-page{
   .home-public-hero-lede{font-size:var(--type-body)}
   .home-public-hero-runtime{gap:12px}
   .home-public-section{padding:68px 0}
+  .home-public-code{padding-bottom:24px}
   .home-public-project-row{
     grid-template-columns:34px minmax(0,1fr) 24px;
     gap:12px;

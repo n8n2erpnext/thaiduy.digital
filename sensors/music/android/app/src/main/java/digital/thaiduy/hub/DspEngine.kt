@@ -605,7 +605,7 @@ class DspEngine(
             val disagreement = kotlin.math.abs(autoStats.bpm - onsetStats.bpm)
             val ratio = relationRatio(autoStats.bpm, onsetStats.bpm)
             when {
-                disagreement <= 12f -> {
+                disagreement <= 6f -> {
                     val autoWeight = autoStats.evidence.coerceAtLeast(0.05f)
                     val onsetWeight = onsetStats.evidence.coerceAtLeast(0.05f)
                     selectedBpm = (

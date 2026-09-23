@@ -20,6 +20,15 @@ export type MusicDspFrame = {
   air: number
   spectralFlux: number
   spectralCentroid?: number
+  spectralFlatness?: number
+  zeroCrossingRate?: number
+  tempoBpm?: number
+  beatConfidence?: number
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  swingness?: number
+  percussiveProbability?: number
+  harmonicProbability?: number
+  dynamicRange?: number
   vocalProbability?: number
 }
 

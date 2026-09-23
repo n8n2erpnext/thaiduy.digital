@@ -70,6 +70,8 @@ export function MusicOrgan({locale}:Props) {
     {label:'style',value:displayValue(state.style)},
     {label:locale==='vi'?'tâm trạng':'mood',value:displayValue(state.mood)},
     {label:locale==='vi'?'kết cấu':'texture',value:displayValue(state.texture)},
+    {label:locale==='vi'?'nhạc cụ':'instrument',value:displayValue(state.instrumentFamily)},
+    {label:'tempo',value:state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'},
   ]
 
   return (

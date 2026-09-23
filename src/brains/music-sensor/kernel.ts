@@ -1,6 +1,6 @@
 import type { LunaKernel } from '@/brains/core/luna-kernel'
 import type { BrainEvidence, CortexDecision, HemisphereResult } from '@/brains/core/types'
-import { classifyMusicTags, loadMusicAcousticArchetypes, loadMusicCortexPolicy, loadMusicSemanticKnowledge, sameMusicalFamily, topVote, waveHintFor } from './knowledge'
+import { ACOUSTIC_GENRE_PROFILES, ACOUSTIC_INSTRUMENT_PROFILES, classifyMusicTags, loadMusicAcousticArchetypes, loadMusicCortexPolicy, loadMusicSemanticKnowledge, sameMusicalFamily, topVote, waveHintFor, type AcousticDspProfile, type AcousticProfileFeature } from './knowledge'
 import type { AcousticEarState, MusicCortexDecision, MusicSensorInput, SemanticEarState, WaveLayers } from './types'
 
 const now = () => new Date().toISOString()
@@ -9,6 +9,94 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 function numberField(source: Record<string, unknown> | undefined, key: string, fallback: number) {
   const value = Number(source?.[key])
   return Number.isFinite(value) ? value : fallback
+}
+
+type AcousticVector=Record<AcousticProfileFeature,number>
+
+function acousticVector(audio:NonNullable<MusicSensorInput['audio']>):AcousticVector {
+  return {
+    bass:clamp01(audio.bass),
+    lowMid:clamp01(audio.lowMid),
+    mid:clamp01(audio.mid),
+    presence:clamp01(audio.presence),
+    air:clamp01(audio.air),
+    vocal:clamp01(audio.vocalProbability ?? 0),
+    percussive:clamp01(audio.percussiveProbability ?? 0),
+    harmonic:clamp01(audio.harmonicProbability ?? 0),
+    dynamic:clamp01(audio.dynamicRange ?? 0),
+    flatness:clamp01(audio.spectralFlatness ?? 0),
+    zcr:clamp01((audio.zeroCrossingRate ?? 0)*4),
+    swing:clamp01(audio.swingness ?? 0),
+    beat:clamp01(audio.beatConfidence ?? 0),
+  }
+}
+
+function acousticProfileScore(
+  profile:AcousticDspProfile,
+  vector:AcousticVector,
+  tempoBpm:number|null,
+  beatConfidence:number,
+) {
+  let weighted=0
+  let totalWeight=0
+  for (const [name,target] of Object.entries(profile.targets) as Array<[AcousticProfileFeature,readonly [number,number,number]]>) {
+    const [center,tolerance,weight]=target
+    const score=clamp01(1-Math.abs(vector[name]-center)/Math.max(.05,tolerance))
+    weighted+=score*weight
+    totalWeight+=weight
+  }
+
+  if (profile.tempo && tempoBpm && tempoBpm>0 && beatConfidence>.18) {
+    const [min,max,weight]=profile.tempo
+    const distance=tempoBpm<min ? min-tempoBpm : tempoBpm>max ? tempoBpm-max : 0
+    const tolerance=Math.max(18,(max-min)*.45)
+    const score=distance===0 ? 1 : clamp01(1-distance/tolerance)
+    const trustedWeight=weight*clamp01(.3+beatConfidence*.7)
+    weighted+=score*trustedWeight
+    totalWeight+=trustedWeight
+  }
+
+  return totalWeight>0 ? clamp01(weighted/totalWeight) : 0
+}
+
+export function classifyAcousticProfiles(
+  profiles:readonly AcousticDspProfile[],
+  vector:AcousticVector,
+  tempoBpm:number|null,
+  beatConfidence:number,
+) {
+  const ranked=profiles
+    .map(profile=>({ profile, score:acousticProfileScore(profile,vector,tempoBpm,beatConfidence) }))
+    .sort((a,b)=>b.score-a.score)
+  const best=ranked[0]
+  const second=ranked[1]
+  if (!best) return { votes:{} as Record<string,number>, confidence:0 }
+  const gap=best.score-(second?.score ?? 0)
+  if (best.score<best.profile.threshold || gap<best.profile.margin) {
+    return { votes:{} as Record<string,number>, confidence:best.score }
+  }
+  return {
+    votes:{ [best.profile.id]:best.score },
+    confidence:best.score,
+  }
+}
+
+export function classifyAcousticGenre(audio:NonNullable<MusicSensorInput['audio']>) {
+  return classifyAcousticProfiles(
+    ACOUSTIC_GENRE_PROFILES,
+    acousticVector(audio),
+    audio.tempoBpm ?? null,
+    audio.beatConfidence ?? 0,
+  )
+}
+
+export function classifyAcousticInstrument(audio:NonNullable<MusicSensorInput['audio']>) {
+  return classifyAcousticProfiles(
+    ACOUSTIC_INSTRUMENT_PROFILES,
+    acousticVector(audio),
+    audio.tempoBpm ?? null,
+    audio.beatConfidence ?? 0,
+  )
 }
 
 function inferAcousticState(input: MusicSensorInput, archetypes: Record<string, unknown>[]): AcousticEarState {
@@ -56,10 +144,36 @@ function inferAcousticState(input: MusicSensorInput, archetypes: Record<string, 
       : instrumentalRule && vocal <= instrumentalMax
         ? 'instrumental'
         : 'mixed'
+  const genre=a
+    ? classifyAcousticGenre(a)
+    : { votes:{} as Record<string,number>, confidence:0 }
+  const instrument=a
+    ? classifyAcousticInstrument(a)
+    : { votes:{} as Record<string,number>, confidence:0 }
+
   return {
-    bands, dominantBand, vocalProbability:vocal, energy:a?.rms ?? 0, flux:a?.spectralFlux ?? 0,
-    tempoBpm:a?.tempoBpm ?? null, meter:a?.meter ?? 'unknown', performedStyleVotes:votes, texture,
-    playbackActive:input.playback?.active ?? false, hasLiveAudio:!!a,
+    bands,
+    dominantBand,
+    vocalProbability:vocal,
+    energy:a?.rms ?? 0,
+    flux:a?.spectralFlux ?? 0,
+    spectralFlatness:a?.spectralFlatness ?? 0,
+    zeroCrossingRate:a?.zeroCrossingRate ?? 0,
+    tempoBpm:a?.tempoBpm && a.tempoBpm>0 ? a.tempoBpm : null,
+    beatConfidence:a?.beatConfidence ?? 0,
+    meter:a?.meter ?? 'unknown',
+    swingness:a?.swingness ?? 0,
+    percussiveProbability:a?.percussiveProbability ?? 0,
+    harmonicProbability:a?.harmonicProbability ?? 0,
+    dynamicRange:a?.dynamicRange ?? 0,
+    performedStyleVotes:votes,
+    genreVotes:genre.votes,
+    instrumentVotes:instrument.votes,
+    genreConfidence:genre.confidence,
+    instrumentConfidence:instrument.confidence,
+    texture,
+    playbackActive:input.playback?.active ?? false,
+    hasLiveAudio:!!a,
   }
 }
 
@@ -135,7 +249,13 @@ export const musicSensorKernel: LunaKernel<MusicSensorInput, SemanticEarState, A
       const archetypes = await loadMusicAcousticArchetypes()
       const state = inferAcousticState(input, archetypes)
       const confidence = input.audio
-        ? clamp01(0.6 + (input.audio.beatConfidence ?? 0) * 0.25 + (input.audio.rhythmHints ? 0.1 : 0))
+        ? clamp01(
+            .52
+            + (input.audio.beatConfidence ?? 0)*.14
+            + Math.max(state.genreConfidence,state.instrumentConfidence)*.20
+            + (input.audio.dynamicRange != null ? .05 : 0)
+            + (input.audio.percussiveProbability != null && input.audio.harmonicProbability != null ? .05 : 0),
+          )
         : 0
       return {
         side:'right', cycleId,
@@ -151,6 +271,10 @@ export const musicSensorKernel: LunaKernel<MusicSensorInput, SemanticEarState, A
       const [policy, semanticKnowledge] = await Promise.all([loadMusicCortexPolicy(), loadMusicSemanticKnowledge()])
       const catalogGenre = semanticCatalogGenre(semantic)
       const catalogStyle = semantic ? topVote(semantic.styleVotes)?.[0] ?? null : null
+      const acousticGenreVote=acoustic ? topVote(acoustic.genreVotes) : null
+      const acousticGenre=acousticGenreVote?.[0] ?? null
+      const instrumentVote=acoustic ? topVote(acoustic.instrumentVotes) : null
+      const instrumentFamily=instrumentVote?.[0] ?? null
       const acousticStyle = acoustic ? topVote(acoustic.performedStyleVotes) : null
       const performedStyle = acousticStyle && acousticStyle[1] >= (policy.styleOverrideMin ?? 0.55)
         ? acousticStyle[0]
@@ -178,8 +302,25 @@ export const musicSensorKernel: LunaKernel<MusicSensorInput, SemanticEarState, A
         : semanticDominant
       const state: MusicCortexDecision = {
         mode:acoustic?.playbackActive || energy > 0.01 ? 'listening' : 'resting',
-        catalogGenre, catalogStyle, performedStyle, arrangement, texture,
-        mood:moodFrom(semantic, acoustic, policy), reinterpretation, dominantLayer,
+        catalogGenre,
+        catalogStyle,
+        acousticGenre,
+        acousticGenreConfidence:acoustic?.genreConfidence ?? 0,
+        performedStyle,
+        instrumentFamily,
+        instrumentConfidence:acoustic?.instrumentConfidence ?? 0,
+        arrangement,
+        texture,
+        mood:moodFrom(semantic, acoustic, policy),
+        reinterpretation,
+        dominantLayer,
+        tempoBpm:acoustic?.tempoBpm ?? null,
+        beatConfidence:acoustic?.beatConfidence ?? 0,
+        meter:acoustic?.meter ?? 'unknown',
+        swingness:acoustic?.swingness ?? 0,
+        percussiveProbability:acoustic?.percussiveProbability ?? 0,
+        harmonicProbability:acoustic?.harmonicProbability ?? 0,
+        dynamicRange:acoustic?.dynamicRange ?? 0,
         smoothing:clamp01((policy.smoothingBase ?? 0.84) - energy * (policy.smoothingEnergySlope ?? 0.3)),
         attack:clamp01((policy.attackBase ?? 0.24) + (acoustic?.flux ?? 0) * (policy.attackFluxGain ?? 0.55)),
         release:clamp01((policy.releaseBase ?? 0.66) + (1 - energy) * (policy.releaseQuietGain ?? 0.22)),

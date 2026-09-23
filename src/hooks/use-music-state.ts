@@ -24,26 +24,71 @@ function emit(next: MusicCortexState) {
 }
 
 function applyDsp(frame: MusicDspPublicFrame) {
-  if (baseSnapshot.mode !== 'listening' || !baseSnapshot.connected) return
-  const layers = { ...baseSnapshot.layers }
-  for (const name of signalLayers) {
-    const live = Math.max(0, Math.min(1, frame[name]))
-    const weight = Math.max(0, Math.min(1, baseSnapshot.layers[name].weight * 0.22 + live * 0.78))
-    layers[name] = { weight, gain:Math.max(0, Math.min(1, 0.35 + weight * 0.8)) }
-  }
-  if (typeof frame.vocalProbability === 'number') {
-    const live = Math.max(0, Math.min(1, frame.vocalProbability))
-    const weight = Math.max(0, Math.min(1, baseSnapshot.layers.vocal.weight * 0.22 + live * 0.78))
-    layers.vocal = { weight, gain:Math.max(0, Math.min(1, 0.35 + weight * 0.8)) }
+  const audible=frame.rms>=.025 || frame.peak>=.05
+  if (!audible) {
+    if (staleTimer) clearTimeout(staleTimer)
+    staleTimer=setTimeout(()=>void poll(),500)
+    return
   }
 
-  const candidates: Array<[MusicLayerName, number]> = signalLayers.map(name => [name, layers[name].weight])
-  if (typeof frame.vocalProbability === 'number') candidates.push(['vocal', layers.vocal.weight])
-  const dominantLayer = candidates.sort((a,b) => b[1] - a[1])[0]?.[0] ?? baseSnapshot.dominantLayer
-  emit({ ...baseSnapshot, signal:'dsp', energy:frame.rms, dominantLayer, layers, updatedAt:frame.at })
+  const dspBase:MusicCortexState=baseSnapshot.signal==='dsp'
+    ? baseSnapshot
+    : {
+        ...baseSnapshot,
+        mode:'listening',
+        connected:true,
+        signal:'dsp',
+        track:null,
+        genre:null,
+        style:null,
+        arrangement:null,
+        instrumentFamily:null,
+        acousticGenreConfidence:0,
+        instrumentConfidence:0,
+        texture:typeof frame.vocalProbability==='number' && frame.vocalProbability>=.64
+          ? 'vocal-led'
+          : typeof frame.vocalProbability==='number' && frame.vocalProbability<=.15
+            ? 'instrumental'
+            : 'mixed',
+        mood:'unresolved',
+        reinterpretation:false,
+        confidence:.52,
+      }
+
+  const layers={ ...dspBase.layers }
+  for (const name of signalLayers) {
+    const weight=Math.max(0,Math.min(1,frame[name]))
+    layers[name]={ weight, gain:Math.max(0,Math.min(1,.35+weight*.8)) }
+  }
+  if (typeof frame.vocalProbability==='number') {
+    const weight=Math.max(0,Math.min(1,frame.vocalProbability))
+    layers.vocal={ weight, gain:Math.max(0,Math.min(1,.35+weight*.8)) }
+  }
+
+  const candidates:Array<[MusicLayerName,number]>=signalLayers.map(name=>[name,layers[name].weight])
+  if (typeof frame.vocalProbability==='number') candidates.push(['vocal',layers.vocal.weight])
+  const dominantLayer=candidates.sort((a,b)=>b[1]-a[1])[0]?.[0] ?? dspBase.dominantLayer
+
+  if (baseSnapshot.signal!=='dsp') void poll()
+
+  emit({
+    ...dspBase,
+    signal:'dsp',
+    energy:frame.rms,
+    tempoBpm:frame.tempoBpm && frame.tempoBpm>0 ? frame.tempoBpm : dspBase.tempoBpm,
+    beatConfidence:frame.beatConfidence ?? dspBase.beatConfidence,
+    meter:frame.meter ?? dspBase.meter,
+    swingness:frame.swingness ?? dspBase.swingness,
+    percussiveProbability:frame.percussiveProbability ?? dspBase.percussiveProbability,
+    harmonicProbability:frame.harmonicProbability ?? dspBase.harmonicProbability,
+    dynamicRange:frame.dynamicRange ?? dspBase.dynamicRange,
+    dominantLayer,
+    layers,
+    updatedAt:frame.at,
+  })
 
   if (staleTimer) clearTimeout(staleTimer)
-  staleTimer = setTimeout(() => emit(baseSnapshot), 2_500)
+  staleTimer=setTimeout(()=>void poll(),2_500)
 }
 
 function startStream() {
@@ -65,7 +110,7 @@ async function poll() {
       const response = await fetch('/api/music/state', { cache:'no-store' })
       if (response.ok) {
         baseSnapshot = await response.json() as MusicCortexState
-        if (snapshot.signal !== 'dsp') emit(baseSnapshot)
+        if (baseSnapshot.signal==='dsp' || snapshot.signal!=='dsp') emit(baseSnapshot)
       }
     } catch {
       baseSnapshot = restingMusicState

@@ -46,10 +46,10 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
     {
       key:'semantic',
       title:e.semantic,
-      state:state.signal==='offline' ? (vi?'ĐANG CHỜ':'waiting') : (vi?'ĐANG HOẠT ĐỘNG':'ACTIVE'),
+      state:state.signal==='dsp' ? (vi?'DỰ PHÒNG':'STANDBY') : state.signal==='offline' ? (vi?'ĐANG CHỜ':'WAITING') : (vi?'ĐANG HOẠT ĐỘNG':'ACTIVE'),
       copy:vi
-        ? 'Đọc tag của bài hát và nghệ sĩ, ngữ cảnh cùng knowledge graph; bằng chứng từ bài đang phát được ưu tiên hơn dữ liệu nền về nghệ sĩ.'
-        : 'Reads track/artist tags, context and the knowledge graph; track evidence outranks artist priors.',
+        ? 'Chỉ làm chủ khi DSP mất tín hiệu đủ lâu. Khi DSP đang sống, LastFM và semantic memory không tham gia quyết định âm học.'
+        : 'Owns analysis only after DSP is truly lost. While DSP is authoritative, LastFM and semantic memory do not vote in the acoustic decision.',
       facts:[['genre',displayValue(state.genre)],['style',displayValue(state.style)]],
     },
     {
@@ -57,17 +57,21 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
       title:e.acoustic,
       state:state.signal==='dsp' ? 'LIVE DSP' : (vi?'CHỈ DÙNG NGỮ NGHĨA':'SEMANTIC ONLY'),
       copy:vi
-        ? 'Tách các dải bass, low-mid, mid, vocal, presence và air. Khi DSP offline, bộ cảm biến không giả lập tín hiệu âm thanh.'
-        : 'Separates bass, low-mid, mid, vocal, presence and air. When DSP is offline, the organ does not fake acoustic input.',
-      facts:[[vi?'dải nổi bật':'dominant',displayValue(state.dominantLayer)],[vi?'tín hiệu':'signal',displayValue(state.signal)]],
+        ? 'DSP V2 đo phổ, onset, tempo, beat, meter, swing, harmonic/percussive và dynamic range; classifier chỉ phát nhãn khi vượt ngưỡng tin cậy.'
+        : 'DSP V2 measures spectrum, onset, tempo, beat, meter, swing, harmonic/percussive balance and dynamic range; classifiers emit labels only above confidence thresholds.',
+      facts:[
+        [vi?'dải nổi bật':'dominant',displayValue(state.dominantLayer)],
+        [vi?'nhạc cụ':'instrument',displayValue(state.instrumentFamily)],
+        ['tempo',state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'],
+      ],
     },
     {
       key:'cortex',
       title:e.cortex,
       state:vi?'ĐƯỢC QUẢN TRỊ':'GOVERNED',
       copy:vi
-        ? 'Kết hợp bằng chứng ngữ nghĩa và âm học, đồng thời giữ riêng genre, style, arrangement, texture và mood.'
-        : 'Combines semantic and acoustic evidence while keeping genre, style, arrangement, texture and mood separate.',
+        ? 'Arbiter chọn đúng một chủ nguồn: DSP HOT/GRACE hoặc semantic fallback. Không pha trộn hai nguồn trong cùng một quyết định.'
+        : 'The arbiter selects exactly one authority: DSP HOT/GRACE or semantic fallback. The two sources are never blended into one decision.',
       facts:[[vi?'tâm trạng':'mood',displayValue(state.mood)],[vi?'chất âm':'texture',displayValue(state.texture)]],
     },
     {

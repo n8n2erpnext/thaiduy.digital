@@ -33,6 +33,16 @@ type PublicMusicState = {
   genre: string | null
   style: string | null
   arrangement: string | null
+  instrumentFamily?: string | null
+  acousticGenreConfidence?: number
+  instrumentConfidence?: number
+  tempoBpm?: number | null
+  beatConfidence?: number
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  swingness?: number
+  percussiveProbability?: number
+  harmonicProbability?: number
+  dynamicRange?: number
   texture: string
   mood: string
   reinterpretation: boolean
@@ -400,6 +410,15 @@ export async function GET() {
         presence:live.presence, air:live.air,
         spectralFlux:live.spectralFlux,
         spectralCentroid:live.spectralCentroid,
+        spectralFlatness:live.spectralFlatness,
+        zeroCrossingRate:live.zeroCrossingRate,
+        tempoBpm:live.tempoBpm,
+        beatConfidence:live.beatConfidence,
+        meter:live.meter,
+        swingness:live.swingness,
+        percussiveProbability:live.percussiveProbability,
+        harmonicProbability:live.harmonicProbability,
+        dynamicRange:live.dynamicRange,
         vocalProbability:live.vocalProbability,
       },
     })
@@ -410,14 +429,14 @@ export async function GET() {
     await rememberAfterglow({
       at:Date.now(),
       mood:state.mood,
-      genre:null,
+      genre:state.acousticGenre,
       style,
       texture:state.texture,
       dominantLayer:state.dominantLayer,
       energy:live.rms,
       swingness:style==='swing' ? .34 : .08,
       meter:style==='waltz' ? '3/4' : '4/4',
-      modeFamily:abstractModeFamily(null,style,state.mood),
+      modeFamily:abstractModeFamily(state.acousticGenre,style,state.mood),
     })
 
     return noStore({
@@ -427,9 +446,19 @@ export async function GET() {
       track:localActive
         ? { artist:artist!, title:title!, url:'' }
         : null,
-      genre:null,
+      genre:state.acousticGenre,
       style,
       arrangement:null,
+      instrumentFamily:state.instrumentFamily,
+      acousticGenreConfidence:state.acousticGenreConfidence,
+      instrumentConfidence:state.instrumentConfidence,
+      tempoBpm:state.tempoBpm,
+      beatConfidence:state.beatConfidence,
+      meter:state.meter,
+      swingness:state.swingness,
+      percussiveProbability:state.percussiveProbability,
+      harmonicProbability:state.harmonicProbability,
+      dynamicRange:state.dynamicRange,
       texture:state.texture,
       mood:state.mood,
       reinterpretation:false,

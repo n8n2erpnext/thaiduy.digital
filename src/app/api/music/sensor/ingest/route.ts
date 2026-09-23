@@ -21,6 +21,15 @@ const frameSchema = z.object({
   air: unit,
   spectralFlux: unit,
   spectralCentroid: z.number().finite().min(0).max(48_000).optional(),
+  spectralFlatness: unit.optional(),
+  zeroCrossingRate: unit.optional(),
+  tempoBpm: z.number().finite().min(0).max(300).optional(),
+  beatConfidence: unit.optional(),
+  meter: z.enum(['2/4','3/4','4/4','6/8','unknown']).optional(),
+  swingness: unit.optional(),
+  percussiveProbability: unit.optional(),
+  harmonicProbability: unit.optional(),
+  dynamicRange: unit.optional(),
   vocalProbability: unit.optional(),
 })
 

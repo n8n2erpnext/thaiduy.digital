@@ -26,6 +26,8 @@ export type MusicSensorInput = {
     vocalProbability?: number
     spectralFlux: number
     spectralCentroid?: number
+    spectralFlatness?: number
+    zeroCrossingRate?: number
     tempoBpm?: number
     beatConfidence?: number
     meter?: MusicMeter
@@ -54,9 +56,20 @@ export type AcousticEarState = {
   vocalProbability: number | null
   energy: number
   flux: number
+  spectralFlatness: number
+  zeroCrossingRate: number
   tempoBpm: number | null
+  beatConfidence: number
   meter: MusicMeter
+  swingness: number
+  percussiveProbability: number
+  harmonicProbability: number
+  dynamicRange: number
   performedStyleVotes: Record<string, number>
+  genreVotes: Record<string, number>
+  instrumentVotes: Record<string, number>
+  genreConfidence: number
+  instrumentConfidence: number
   texture: 'vocal-led' | 'instrumental' | 'mixed'
   playbackActive: boolean
   hasLiveAudio: boolean
@@ -68,12 +81,23 @@ export type MusicCortexDecision = {
   mode: 'resting' | 'listening' | 'humming'
   catalogGenre: string | null
   catalogStyle: string | null
+  acousticGenre: string | null
+  acousticGenreConfidence: number
   performedStyle: string | null
+  instrumentFamily: string | null
+  instrumentConfidence: number
   arrangement: string | null
   texture: string
   mood: string
   reinterpretation: boolean
   dominantLayer: 'bass' | 'lowMid' | 'mid' | 'vocal' | 'presence' | 'air'
+  tempoBpm: number | null
+  beatConfidence: number
+  meter: MusicMeter
+  swingness: number
+  percussiveProbability: number
+  harmonicProbability: number
+  dynamicRange: number
   smoothing: number
   attack: number
   release: number

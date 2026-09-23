@@ -2,7 +2,7 @@ import { classifyMusicTags, MUSIC_KNOWLEDGE_VERSION, MUSIC_NODES } from '@/brain
 import { findMusicK2Concept, MUSIC_K2_CONCEPTS, musicK2Neighborhood } from '@/brains/music-sensor/k2-general'
 
 const assert = (ok:boolean, message:string) => { if (!ok) throw new Error(message) }
-assert(MUSIC_KNOWLEDGE_VERSION === 'music-k2.0', 'wrong knowledge version')
+assert(MUSIC_KNOWLEDGE_VERSION === 'music-k2.1-dsp', 'wrong knowledge version')
 assert(MUSIC_K2_CONCEPTS.length >= 2500, 'general graph too small')
 for (const term of ['secondary dominant','polyrhythm','Cmaj7','đàn bầu','sidechain compression','VST3']) {
   assert(Boolean(findMusicK2Concept(term)), `missing concept: ${term}`)

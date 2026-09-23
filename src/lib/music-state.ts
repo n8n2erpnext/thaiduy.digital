@@ -53,6 +53,15 @@ export type MusicDspPublicFrame = {
   air: number
   spectralFlux: number
   spectralCentroid?: number
+  spectralFlatness?: number
+  zeroCrossingRate?: number
+  tempoBpm?: number
+  beatConfidence?: number
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  swingness?: number
+  percussiveProbability?: number
+  harmonicProbability?: number
+  dynamicRange?: number
   vocalProbability?: number
 }
 
@@ -64,6 +73,16 @@ export type MusicCortexState = {
   genre: string | null
   style: string | null
   arrangement: string | null
+  instrumentFamily?: string | null
+  acousticGenreConfidence?: number
+  instrumentConfidence?: number
+  tempoBpm?: number | null
+  beatConfidence?: number
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  swingness?: number
+  percussiveProbability?: number
+  harmonicProbability?: number
+  dynamicRange?: number
   texture: string
   mood: string
   reinterpretation: boolean

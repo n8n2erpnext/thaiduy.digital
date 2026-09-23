@@ -137,6 +137,15 @@ object ApiClient {
             .put("air", features.air)
             .put("spectralFlux", features.spectralFlux)
             .put("spectralCentroid", features.spectralCentroid)
+            .put("spectralFlatness", features.spectralFlatness)
+            .put("zeroCrossingRate", features.zeroCrossingRate)
+            .put("tempoBpm", features.tempoBpm)
+            .put("beatConfidence", features.beatConfidence)
+            .put("meter", features.meter)
+            .put("swingness", features.swingness)
+            .put("percussiveProbability", features.percussiveProbability)
+            .put("harmonicProbability", features.harmonicProbability)
+            .put("dynamicRange", features.dynamicRange)
 
         return postAuthorized("/api/music/sensor/ingest", token, payload) == 202
     }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "audit:repo": "bunx tsc --noEmit && bun run lint && bun run layout:check && bun run theme:check && bun run typography:check && bun run music:expression-check",
+    "audit:repo": "bunx tsc --noEmit && bun run lint && bun run layout:check && bun run theme:check && bun run typography:check && bun run music:expression-check && bun run music:dsp-v2-check",
     "typography:check": "bun scripts/audit-typography.ts",
     "theme:check": "bun scripts/audit-theme-contrast.ts",
     "layout:check": "bun scripts/audit-layout-invariants.ts",
@@ -17,7 +17,8 @@
     "stack:units:install": "sh scripts/install-stack-refresh-user-units.sh",
     "seed:public": "bun scripts/seed-public-sections.ts",
     "seed:organism": "bun scripts/seed-organism-registry.ts",
-    "seed:runtime": "bun scripts/seed-stack-runtime-bindings.ts"
+    "seed:runtime": "bun scripts/seed-stack-runtime-bindings.ts",
+    "music:dsp-v2-check": "bun scripts/test-music-dsp-v2.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1134.0",

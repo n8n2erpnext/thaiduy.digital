@@ -8,7 +8,7 @@ export type MusicKnowledgeNode = {
   wave?: Partial<Record<'bass'|'lowMid'|'mid'|'vocal'|'presence'|'air', number>>
 }
 
-export const MUSIC_KNOWLEDGE_VERSION = 'music-k2.0'
+export const MUSIC_KNOWLEDGE_VERSION = 'music-k2.1-dsp'
 
 export const SOURCE_WEIGHT: Record<string, number> = {
   'lastfm-track': 1, musicbrainz: 0.95, listenbrainz: 0.9,
@@ -275,6 +275,180 @@ export const ACOUSTIC_ARCHETYPES = [
   { id:'ballad', cue:'tempo+vocal+energy', maxTempo:92, minVocal:0.58, maxRms:0.5, confidence:0.45 },
 ] as const
 
+
+
+export type AcousticProfileFeature =
+  | 'bass' | 'lowMid' | 'mid' | 'presence' | 'air'
+  | 'vocal' | 'percussive' | 'harmonic' | 'dynamic'
+  | 'flatness' | 'zcr' | 'swing' | 'beat'
+
+export type AcousticDspProfile = {
+  id:string
+  threshold:number
+  margin:number
+  targets:Partial<Record<AcousticProfileFeature, readonly [center:number, tolerance:number, weight:number]>>
+  tempo?:readonly [min:number,max:number,weight:number]
+}
+
+export const ACOUSTIC_GENRE_PROFILES:readonly AcousticDspProfile[] = [
+  {
+    id:'classical', threshold:.69, margin:.045,
+    targets:{
+      bass:[.34,.38,.55], lowMid:[.62,.35,.8], mid:[.72,.30,1],
+      presence:[.56,.38,.55], air:[.48,.42,.35], vocal:[.16,.55,.45],
+      percussive:[.20,.34,.9], harmonic:[.84,.28,1], dynamic:[.68,.38,.8],
+      flatness:[.20,.28,.65],
+    },
+    tempo:[55,165,.25],
+  },
+  {
+    id:'jazz', threshold:.67, margin:.04,
+    targets:{
+      bass:[.52,.34,.7], lowMid:[.66,.30,.8], mid:[.73,.28,.9],
+      presence:[.61,.34,.6], vocal:[.35,.60,.35], percussive:[.44,.32,.65],
+      harmonic:[.76,.30,.9], dynamic:[.54,.40,.5], swing:[.66,.38,1],
+      flatness:[.24,.30,.45],
+    },
+    tempo:[70,185,.45],
+  },
+  {
+    id:'rock', threshold:.68, margin:.045,
+    targets:{
+      bass:[.62,.30,.8], lowMid:[.62,.32,.7], mid:[.76,.26,1],
+      presence:[.78,.24,1], air:[.48,.40,.35], vocal:[.50,.52,.55],
+      percussive:[.66,.30,.8], harmonic:[.58,.38,.55], dynamic:[.46,.42,.35],
+      flatness:[.38,.36,.4],
+    },
+    tempo:[85,175,.45],
+  },
+  {
+    id:'metal', threshold:.70, margin:.05,
+    targets:{
+      bass:[.70,.28,.85], lowMid:[.67,.30,.65], mid:[.80,.22,1],
+      presence:[.88,.18,1], air:[.62,.34,.5], vocal:[.42,.58,.35],
+      percussive:[.82,.22,1], harmonic:[.53,.40,.4], flatness:[.48,.34,.5],
+      beat:[.72,.35,.65],
+    },
+    tempo:[115,205,.55],
+  },
+  {
+    id:'pop', threshold:.67, margin:.035,
+    targets:{
+      bass:[.55,.34,.65], lowMid:[.57,.34,.6], mid:[.72,.28,.85],
+      presence:[.72,.28,.85], air:[.56,.38,.45], vocal:[.70,.34,1],
+      percussive:[.54,.34,.55], harmonic:[.58,.38,.45], dynamic:[.34,.38,.35],
+      beat:[.62,.42,.4],
+    },
+    tempo:[80,155,.35],
+  },
+  {
+    id:'electronic', threshold:.69, margin:.045,
+    targets:{
+      bass:[.80,.22,1], lowMid:[.54,.38,.45], mid:[.56,.38,.45],
+      presence:[.67,.34,.6], air:[.72,.28,.7], vocal:[.28,.62,.3],
+      percussive:[.82,.22,1], harmonic:[.42,.45,.35], flatness:[.58,.32,.7],
+      beat:[.78,.30,.8], dynamic:[.28,.34,.35],
+    },
+    tempo:[110,180,.6],
+  },
+  {
+    id:'hip-hop', threshold:.68, margin:.04,
+    targets:{
+      bass:[.86,.18,1], lowMid:[.65,.30,.7], mid:[.58,.38,.45],
+      presence:[.58,.40,.4], air:[.40,.45,.3], vocal:[.62,.42,.75],
+      percussive:[.70,.28,.85], harmonic:[.38,.45,.35], beat:[.62,.38,.5],
+      dynamic:[.34,.38,.35],
+    },
+    tempo:[60,115,.6],
+  },
+  {
+    id:'folk-country', threshold:.69, margin:.045,
+    targets:{
+      bass:[.34,.40,.45], lowMid:[.73,.27,.9], mid:[.76,.26,.95],
+      presence:[.56,.38,.55], air:[.36,.42,.35], vocal:[.62,.44,.75],
+      percussive:[.32,.34,.6], harmonic:[.80,.28,1], dynamic:[.52,.40,.5],
+      flatness:[.18,.30,.55],
+    },
+    tempo:[65,145,.3],
+  },
+  {
+    id:'soul-rnb', threshold:.68, margin:.04,
+    targets:{
+      bass:[.68,.30,.75], lowMid:[.70,.28,.75], mid:[.70,.30,.75],
+      presence:[.58,.38,.45], vocal:[.78,.28,1], percussive:[.46,.36,.5],
+      harmonic:[.68,.34,.7], dynamic:[.40,.42,.35], swing:[.28,.45,.25],
+    },
+    tempo:[60,125,.45],
+  },
+  {
+    id:'ambient', threshold:.70, margin:.05,
+    targets:{
+      bass:[.30,.42,.35], lowMid:[.48,.40,.45], mid:[.48,.42,.4],
+      presence:[.42,.44,.35], air:[.78,.24,.9], vocal:[.18,.58,.35],
+      percussive:[.10,.24,1], harmonic:[.72,.34,.7], dynamic:[.24,.34,.55],
+      flatness:[.26,.34,.4], beat:[.10,.28,.7],
+    },
+    tempo:[0,90,.2],
+  },
+] as const
+
+export const ACOUSTIC_INSTRUMENT_PROFILES:readonly AcousticDspProfile[] = [
+  {
+    id:'voice', threshold:.70, margin:.055,
+    targets:{
+      vocal:[.86,.24,1], mid:[.75,.30,.75], presence:[.72,.30,.75],
+      harmonic:[.70,.34,.65], percussive:[.28,.40,.35], flatness:[.18,.32,.5],
+    },
+  },
+  {
+    id:'percussion', threshold:.72, margin:.055,
+    targets:{
+      percussive:[.90,.18,1], harmonic:[.20,.34,.7], presence:[.78,.28,.65],
+      air:[.68,.32,.55], flatness:[.68,.28,.8], zcr:[.50,.42,.45],
+      vocal:[.05,.30,.45],
+    },
+  },
+  {
+    id:'bass', threshold:.71, margin:.05,
+    targets:{
+      bass:[.92,.14,1], lowMid:[.74,.28,.75], mid:[.38,.42,.35],
+      presence:[.25,.38,.3], air:[.15,.30,.35], harmonic:[.68,.34,.6],
+      vocal:[.08,.34,.35],
+    },
+  },
+  {
+    id:'plucked', threshold:.70, margin:.045,
+    targets:{
+      lowMid:[.72,.28,.75], mid:[.82,.24,.9], presence:[.66,.32,.7],
+      percussive:[.48,.34,.55], harmonic:[.82,.24,1], flatness:[.16,.28,.6],
+      dynamic:[.55,.40,.45], vocal:[.10,.38,.3],
+    },
+  },
+  {
+    id:'keys', threshold:.70, margin:.045,
+    targets:{
+      lowMid:[.62,.34,.6], mid:[.88,.20,1], presence:[.58,.36,.55],
+      percussive:[.38,.34,.5], harmonic:[.86,.22,1], dynamic:[.64,.34,.65],
+      flatness:[.13,.24,.65], vocal:[.08,.34,.3],
+    },
+  },
+  {
+    id:'strings', threshold:.71, margin:.05,
+    targets:{
+      lowMid:[.62,.34,.55], mid:[.84,.22,1], presence:[.72,.28,.75],
+      air:[.62,.34,.55], percussive:[.16,.28,.8], harmonic:[.90,.18,1],
+      flatness:[.10,.22,.75], vocal:[.08,.34,.3],
+    },
+  },
+  {
+    id:'synth', threshold:.70, margin:.045,
+    targets:{
+      bass:[.62,.36,.55], mid:[.58,.40,.4], presence:[.66,.34,.55],
+      air:[.78,.26,.8], percussive:[.52,.42,.4], harmonic:[.48,.45,.35],
+      flatness:[.58,.32,.8], dynamic:[.24,.36,.45], vocal:[.10,.42,.25],
+    },
+  },
+] as const
 
 export const CORTEX_MUSIC_POLICY = {
   styleOverrideMin:0.55,

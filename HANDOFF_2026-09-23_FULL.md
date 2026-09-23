@@ -25,6 +25,14 @@ After reopening this handoff, the next session re-verified section `3.1` against
 - typography audit now reports only 8 pre-existing hero/Stack outliers; the new header-wave tooltip violation was fixed by using `var(--type-meta)` instead of raw `10px`
 - source/runtime acceptance supports all four section `3.1` fixes; final owner visual feel check remains appropriate for animation smoothness/balance because the ARM host has no browser automation installed
 
+Owner visual follow-up then found two remaining presentation issues and they were corrected in `59851b8a94344ed660422acfb15771c71bd90acd` (`fix: tighten music tooltip and seamless ticker`):
+
+- header music tooltip now has two sizing states: RESTING/HUMMING use content-fit width, while an actual listening track uses a compact 340px-capped title viewport
+- title marquee now only runs for a real `state.track`; RESTING/HUMMING titles stay static
+- homepage public-data ticker now animates the single two-copy track by exactly `-50%`, rather than animating each copy independently
+- each ticker copy ends with the same separator dot and spacing as internal items so the loop seam is structurally identical to a normal item boundary
+- validation after this fix: TypeScript PASS, targeted ESLint 0 errors (one pre-existing `<img>` warning), layout/theme/music-expression PASS, typography unchanged at the same 8 pre-existing hero/Stack outliers, local `/` 200, local `/music-sensor` 200, public `/` 200
+
 ---
 
 # 0. READ THIS FIRST

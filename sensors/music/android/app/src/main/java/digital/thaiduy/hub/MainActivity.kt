@@ -218,7 +218,7 @@ class MainActivity : Activity() {
 
         val paired = SecureStore.token(this) != null
         val sources = TrackedApps.get(this).size
-        val notificationAccess = notificationAccessGranted()
+        val metadataAccess = notificationAccessGranted()
         val dspRunning = SensorState.running(this)
         val lastFrame = SensorState.lastFrameAt(this)
 
@@ -226,7 +226,7 @@ class MainActivity : Activity() {
             listOf(
                 "HUB" to if (paired) "PAIRED" else "OFFLINE",
                 "SOURCE" to if (sources > 0) sources.toString() + " APP" else "NONE",
-                "SCROBBLE" to if (notificationAccess) "READY" else "SETUP",
+                "METADATA" to if (metadataAccess) "READY" else "OPTIONAL",
                 "LIVE DSP" to if (dspRunning) "STREAMING" else "IDLE",
             ),
         ))
@@ -235,7 +235,7 @@ class MainActivity : Activity() {
             val age = if (lastFrame > 0) ((System.currentTimeMillis() - lastFrame) / 1000).coerceAtLeast(0) else -1
             "DSP stream active · " + if (age >= 0) "last frame " + age + "s ago" else "waiting for audio"
         } else {
-            "Background scrobble stays available. Start Live DSP when you want the web wave to follow the actual playback signal."
+            "Live DSP is independent from Android Notification access. Start capture when you want the web wave to follow the actual playback signal."
         }
         root.addView(sectionCard("MUSIC SENSOR", sensorText, if (dspRunning) LIVE else ACCENT) {
             showTab("sensor")
@@ -258,7 +258,7 @@ class MainActivity : Activity() {
         val root = page()
         root.addView(kicker("MUSIC SENSOR / RIGHT EAR"))
         root.addView(heading("Playback in.\nSignal out."))
-        root.addView(body("Metadata can run quietly in the background. Live DSP uses Android playback capture and never uploads raw PCM."))
+        root.addView(body("Live DSP is the core path: Android playback capture + selected app UID, with no raw PCM upload. Track metadata is an optional enhancement only."))
 
         val paired = SecureStore.token(this) != null
         val sourceCount = TrackedApps.get(this).size
@@ -300,36 +300,49 @@ class MainActivity : Activity() {
         })
 
         root.addView(cardContainer().apply {
-            addView(kicker("BACKGROUND SCROBBLE"))
+            addView(kicker("HUB NOTIFICATIONS"))
+            val appNotify = appNotificationsGranted()
             addView(statusLine(
-                if (notificationAccess) "PLAYBACK ACCESS READY" else "PLAYBACK ACCESS REQUIRED",
-                notificationAccess,
+                if (appNotify) "INBOX NOTIFICATIONS READY" else "INBOX NOTIFICATIONS BLOCKED",
+                appNotify,
             ))
-            addView(statusLine(
-                if (appNotificationsGranted()) "APP NOTIFICATIONS READY" else "APP NOTIFICATIONS BLOCKED",
-                appNotificationsGranted(),
-            ))
-            if (!notificationAccess) {
-                addView(label(
-                    "If Android disables the Notification access switch for this sideloaded build: open App info, tap the top-right menu and choose Allow restricted settings, then return here and open Notification access.",
-                    10,
-                    MUTED,
-                ).apply { setPadding(0, dp(10), 0, 0) })
-                addView(secondaryButton("1 · OPEN APP INFO") {
-                    openAppDetails()
-                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
-                addView(actionButton("2 · OPEN NOTIFICATION ACCESS") {
-                    openNotificationListenerSettings()
-                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(7) })
+            addView(label(
+                "This is the normal Android 13+ notification permission used by Contact Inbox and Hub status. It is separate from Notification access.",
+                10,
+                MUTED,
+            ).apply { setPadding(0, dp(9), 0, 0) })
+            if (!appNotify) {
+                addView(actionButton("REQUEST HUB NOTIFICATIONS") {
+                    requestNotificationPermissionIfNeeded()
+                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(10) })
+                addView(secondaryButton("OPEN APP NOTIFICATION SETTINGS") {
+                    openAppNotificationSettings()
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(7) })
             } else {
-                addView(secondaryButton("OPEN NOTIFICATION ACCESS") {
-                    openNotificationListenerSettings()
+                addView(secondaryButton("OPEN APP NOTIFICATION SETTINGS") {
+                    openAppNotificationSettings()
                 }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
             }
-            if (!appNotificationsGranted()) {
-                addView(actionButton("ALLOW HUB NOTIFICATIONS") {
-                    requestNotificationPermissionIfNeeded()
-                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(7) })
+        })
+
+        root.addView(cardContainer().apply {
+            addView(kicker("OPTIONAL TRACK METADATA"))
+            addView(statusLine(
+                if (notificationAccess) "NOTIFICATION LISTENER READY" else "ANDROID RESTRICTED / OPTIONAL",
+                notificationAccess,
+            ))
+            addView(label(
+                "Notification access only enriches artist/title metadata from other apps. Live DSP, selected-source capture, Control and Contact Inbox do not depend on it. Android may restrict this setting for sideloaded APKs.",
+                10,
+                MUTED,
+            ).apply { setPadding(0, dp(9), 0, 0) })
+            if (!notificationAccess) {
+                addView(secondaryButton("OPEN APP INFO / RESTRICTED SETTINGS") {
+                    openAppDetails()
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
+                addView(secondaryButton("OPEN OPTIONAL METADATA ACCESS") {
+                    openNotificationListenerSettings()
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(7) })
             }
         })
 
@@ -616,6 +629,13 @@ class MainActivity : Activity() {
         }.onFailure {
             HubDiagnostics.error(this, "permission.notificationListener", it)
         }.getOrDefault(false)
+
+    private fun openAppNotificationSettings() {
+        val intent=Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE,packageName)
+        runCatching { startActivity(intent) }
+            .onFailure { openAppDetails() }
+    }
 
     private fun openAppDetails() {
         startActivity(

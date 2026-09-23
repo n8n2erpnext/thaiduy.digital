@@ -738,3 +738,24 @@ The next session should begin with:
 5. do not change amp unless user specifically reports a visual problem after tempo validation
 
 This is the authoritative continuation point.
+
+## 2026-09-23 · DSP tuning evidence update (0.5.11 → 0.5.16)
+
+### Stable references
+- 0.5.13 · 80 BPM 2/4: clean steady-state tempo ~80.3 BPM. Reliability hysteresis improved from frame flicker. End-of-window meter mostly 2/4; keep as regression reference.
+- 0.5.14 · 120 BPM 4/4 drum: octave/half-time arbiter fixed. Autocorr stayed ~59.85 but onset ~117.2 won, final ~117.2. Meter still misclassified 2/4.
+- 0.5.15 · meter local lag ±1 did not solve 4/4. Both lag 23/24 can still produce 2/4. Root cause is not just tempo-derived lag quantization.
+- 0.5.16 diagnostic: added meterOppositeAsymmetry4. 120 BPM 4/4 drum reference: tempo median ~117.19; corr4 median ~0.377 > corr2 ~0.309; accent2 median ~0.564 >> accent4 ~0.082; opposite4 median ~0.168 (P75 ~0.287, P90 ~0.320). Broadband strong/weak alternation is causing 4/4 to look like 2/4.
+
+### Full-song references
+- Hero — Enrique Iglesias (0.5.16): DSP authority HOT throughout measurement. Full mix harmonic median ~0.783, percussive ~0.365. vocalProbability median ~0.346 (P75 ~0.441, max ~0.566): likely under-detecting voice-in-mix after violin/piano false-positive tightening. Tempo/meter low confidence; mostly unknown.
+- Billie Jean — Michael Jackson (0.5.16): DSP authority HOT throughout. Autocorr tempo extremely stable around 117.2 BPM with autocorr confidence 1.0, final ~116.88 BPM, yet tempoReliable 0/41 and meter unknown 41/41 because the timbre/pulse reliability gate suppresses a genuinely stable full-song groove. vocalProbability median ~0.344 (P90 ~0.415, max ~0.451), independently confirming under-detection of voice-in-mix.
+- Important observability bug: when tempoReliable=false, updateRhythm returns before recomputing meter diagnostics; corr/accent/opposite4 fields can remain stale. Future diagnostic refactor should compute diagnostics even when public meter stays unknown.
+
+### Capture integrity / possible distortion
+- CaptureService uses Android AudioPlaybackCapture -> PCM_16BIT, 48 kHz, stereo, selected source UIDs.
+- Raw PCM stays on device. ApiClient sends derived DspFeatures only; no raw audio is network-streamed.
+- DspEngine currently downmixes stereo with (L + R) / 2 before RMS, rhythm, FFT and band analysis. Out-of-phase stereo content can therefore cancel and alter analysis features even if source PCM is clean.
+- rms/peak/band values are dB-mapped/clamped 0..1 features. A displayed value near 1.0 is not by itself proof of clipping. bandLevel=1 can simply be feature-scale saturation.
+- Tempo/meter are calculated locally before the 100 ms feature upload cadence, so network cadence cannot cause the main tempo-estimator errors observed above.
+- Recommended capture-integrity diagnostics before further classifier tuning: raw left/right RMS, raw mono RMS, raw peak dBFS, near-full-scale clip fraction, stereo correlation, and mono-cancellation ratio. Use diagnostics first; do not alter wave/amp or classifier behavior based on suspected capture distortion without evidence.

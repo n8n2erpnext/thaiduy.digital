@@ -4550,3 +4550,21 @@ Upgrade note: devices paired before 0.4.4 lack hub:control:session. Install 0.4.
 and pair once with a fresh six-digit code. After that, opening Control does not
 ask for Google or password again; the app renews its short-lived Control session
 from the paired device token.
+
+## Android Hub V2 · 0.4.4 production merge — 2026-09-23
+
+- single-gateway Hub authentication merged to main at 9415f971
+- origin/main matches local main
+- runtime restarted after merge; fresh Next.js 16.3.5 process is serving port 3000
+- public / => 200
+- POST /api/hub/control/session without bearer => 401 locally and publicly
+- invalid bootstrap ticket => 303 to /control/login?hub=invalid
+- Hub User-Agent /control/login:
+  - Pairing is the sign-in marker present
+  - SIGN IN WITH PASSWORD marker absent
+- normal browser authentication remains separate and unchanged
+- fresh Hub pairs now include hub:control:session in addition to Music Sensor and Inbox scopes
+- existing pre-0.4.4 paired tokens must pair once again to receive the new Control scope
+- after that re-pair, Android Control automatically renews short-lived owner sessions and never prompts for Google/password inside the app
+- signed 0.4.4 APK remains artifacts/android/thaiduy-hub-0.4.4-release.apk
+- APK SHA-256 bc0e21ad4b817d18b6a3c13a5e9faab504713f81124cb60d56b3c667f7ce54cc

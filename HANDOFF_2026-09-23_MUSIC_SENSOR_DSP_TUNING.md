@@ -759,3 +759,15 @@ This is the authoritative continuation point.
 - rms/peak/band values are dB-mapped/clamped 0..1 features. A displayed value near 1.0 is not by itself proof of clipping. bandLevel=1 can simply be feature-scale saturation.
 - Tempo/meter are calculated locally before the 100 ms feature upload cadence, so network cadence cannot cause the main tempo-estimator errors observed above.
 - Recommended capture-integrity diagnostics before further classifier tuning: raw left/right RMS, raw mono RMS, raw peak dBFS, near-full-scale clip fraction, stereo correlation, and mono-cancellation ratio. Use diagnostics first; do not alter wave/amp or classifier behavior based on suspected capture distortion without evidence.
+
+### 0.6.0 server-DSP migration validation · Billie Jean
+- Android hot path is now capture -> AAC-LC 128 kbps / 48 kHz stereo -> HTTPS; DspEngine.process() is no longer called on Android.
+- Server worker decodes AAC with ffmpeg, keeps a 30 s PCM ring buffer in RAM only, runs TypeScript DSP, and publishes normal MusicDspFrame output.
+- Transport validation: 5 s AAC -> 5.035 s decoded PCM with ffmpeg probe size 2048 and analyzeduration 0; earlier nobuffer configuration was proven to drop about 1 s from a 5 s sample and was removed.
+- Live Billie Jean measurement: 86/86 sampled frames had transport=server-aac and DSP authority stayed HOT throughout.
+- Capture integrity on Billie Jean: raw L/R RMS roughly balanced; raw mono RMS median ~-12.39 dBFS; raw peak median ~-2.02 dBFS; clip fraction median 0, occasional short peaks up to ~0.22%; stereo correlation median ~0.948; mono-cancellation median ~1.38%, with occasional wide-stereo windows up to ~22%.
+- Conclusion: source/network transport is not the main cause of tempo/meter errors. Stereo downmix can lose information in isolated wide-phase windows, but the overall capture is healthy and server now retains original L/R for future analysis.
+- Baseline server tempo initially reproduced ~117.19 BPM autocorr cleanly but reliability remained too conservative.
+- Experimental server-only reliability patch increased beatConfidence/reliability but exposed unstable harmonic selection; a guarded low-BPM double rule then caused additional 187.5 BPM harmonic errors. Both experimental patches were rolled back before commit.
+- 30 s ring-buffer spectrum showed multiple strong periodicities in full-song material (including ~187.5, ~127.8, ~122.3, ~93.75, ~76 BPM depending on section). This confirms that single-best-lag autocorrelation is structurally insufficient for full-song tempo tracking.
+- Next tempo direction: multi-candidate / multi-window consensus with harmonic-family scoring and continuity, using the server ring buffer for replay. Do not add more one-off tempo thresholds.

@@ -31,12 +31,19 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build debug APK
-        run: gradle -p sensors/music/android --no-daemon :app:assembleDebug
+      - name: Build debug and unsigned release APKs
+        run: gradle -p sensors/music/android --no-daemon :app:assembleDebug :app:assembleRelease
 
-      - name: Upload APK
+      - name: Align unsigned release APK
+        shell: bash
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4             sensors/music/android/app/build/outputs/apk/release/app-release-unsigned.apk             sensors/music/android/app/build/outputs/apk/release/thaiduy-hub-0.4.1-release-aligned.apk
+
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: thaiduy-hub-v2-debug
-          path: sensors/music/android/app/build/outputs/apk/debug/app-debug.apk
+          name: thaiduy-hub-v2-apks
+          path: |
+            sensors/music/android/app/build/outputs/apk/debug/app-debug.apk
+            sensors/music/android/app/build/outputs/apk/release/thaiduy-hub-0.4.1-release-aligned.apk
           if-no-files-found: error

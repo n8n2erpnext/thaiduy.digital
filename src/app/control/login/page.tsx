@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ControlLoginButton } from '@/components/control/login-button'
 import { CredentialLogin } from '@/components/control/credential-login'
@@ -8,6 +9,8 @@ import { user } from '@/db/auth-schema'
 import { getControlIdentity } from '@/lib/control-auth'
 
 export default async function ControlLoginPage() {
+  const requestHeaders=await headers()
+  const isHub=/ThaiDuyHub\//i.test(requestHeaders.get('user-agent') ?? '')
   const identity = await getControlIdentity()
   if (identity.state === 'owner') redirect('/control')
 
@@ -36,11 +39,21 @@ export default async function ControlLoginPage() {
         </div>
 
         <div className="control-auth-methods">
-          <section className="control-auth-method is-primary">
-            <header><span>01 / PRIMARY</span><strong>Google OAuth</strong></header>
-            <p>Use the configured owner Google identity for normal access.</p>
-            <ControlLoginButton />
-          </section>
+          {!isHub && (
+            <section className="control-auth-method is-primary">
+              <header><span>01 / PRIMARY</span><strong>Google OAuth</strong></header>
+              <p>Use the configured owner Google identity for normal access.</p>
+              <ControlLoginButton />
+            </section>
+          )}
+
+          {isHub && ownerEmail && initialized && (
+            <section className="control-auth-method is-primary">
+              <header><span>01 / HUB SESSION</span><strong>Owner password</strong></header>
+              <p>Embedded Google OAuth is intentionally avoided inside Android WebView. Sign in with the owner fallback password; use BROWSER ↗ in the Hub header when you prefer Google.</p>
+              <CredentialLogin email={ownerEmail} />
+            </section>
+          )}
 
           {ownerEmail && !initialized && (
             <section className="control-auth-method">
@@ -50,7 +63,7 @@ export default async function ControlLoginPage() {
             </section>
           )}
 
-          {ownerEmail && initialized && (
+          {!isHub && ownerEmail && initialized && (
             <section className="control-auth-method">
               <header><span>02 / FALLBACK</span><strong>Password recovery path</strong></header>
               <p>Use only when the primary Google identity path is unavailable.</p>

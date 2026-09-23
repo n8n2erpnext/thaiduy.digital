@@ -10,6 +10,7 @@ data class PairResult(
     val token: String,
     val deviceId: String,
     val scopes: List<String>,
+    val ownerEmail: String?,
 )
 
 data class ContactMessage(
@@ -70,6 +71,7 @@ object ApiClient {
             token = json.getString("token"),
             deviceId = json.getString("deviceId"),
             scopes = scopes,
+            ownerEmail = json.optString("ownerEmail").takeIf { it.isNotBlank() },
         )
     }
 

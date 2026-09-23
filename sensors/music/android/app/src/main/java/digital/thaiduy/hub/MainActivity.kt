@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -29,12 +30,15 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 
 class MainActivity : Activity() {
+    private data class NavSpec(val key:String,val iconRes:Int,val title:String)
+
     companion object {
         const val EXTRA_OPEN_TAB = "open_tab"
         private const val REQUEST_AUDIO = 2001
@@ -126,6 +130,14 @@ class MainActivity : Activity() {
         bar.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
         val paired = SecureStore.token(this) != null
         bar.addView(label(if (paired) "● PAIRED" else "○ LOCAL", 10, if (paired) LIVE else MUTED, mono = true))
+        bar.addView(ImageView(this).apply {
+            setImageResource(R.drawable.ic_material_notifications)
+            imageTintList=ColorStateList.valueOf(MUTED)
+            contentDescription="Open Hub inbox"
+            setPadding(dp(9),dp(9),dp(9),dp(9))
+            background=rounded(CARD,18f)
+            setOnClickListener { showTab("inbox") }
+        },LinearLayout.LayoutParams(dp(40),dp(40)).apply { leftMargin=dp(10) })
         return bar
     }
 
@@ -138,12 +150,12 @@ class MainActivity : Activity() {
             elevation = dp(5).toFloat()
         }
         listOf(
-            Triple("home", "⌂", "Home"),
-            Triple("sensor", "∿", "Sensor"),
-            Triple("control", "□", "Control"),
-            Triple("inbox", "✉", "Inbox"),
-            Triple("settings", "⚙", "Settings"),
-        ).forEach { (key, iconText, title) ->
+            NavSpec("home", R.drawable.ic_material_home, "Home"),
+            NavSpec("sensor", R.drawable.ic_material_equalizer, "Sensor"),
+            NavSpec("control", R.drawable.ic_material_dashboard, "Control"),
+            NavSpec("inbox", R.drawable.ic_material_email, "Inbox"),
+            NavSpec("settings", R.drawable.ic_material_settings, "Settings"),
+        ).forEach { spec ->
             val item = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
@@ -151,19 +163,21 @@ class MainActivity : Activity() {
                 isFocusable = true
                 setPadding(dp(2), 0, dp(2), 0)
             }
-            val icon = label(iconText, 21, MUTED, bold = true).apply {
-                gravity = Gravity.CENTER
+            val icon = ImageView(this).apply {
+                setImageResource(spec.iconRes)
+                imageTintList = ColorStateList.valueOf(MUTED)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
                 tag = "icon"
-                setPadding(dp(10), dp(5), dp(10), dp(5))
+                setPadding(dp(10), dp(8), dp(10), dp(8))
             }
-            val caption = label(title, 9, MUTED).apply {
+            val caption = label(spec.title, 9, MUTED).apply {
                 tag = "caption"
                 gravity = Gravity.CENTER
             }
             item.addView(icon, LinearLayout.LayoutParams(dp(48), dp(42)))
             item.addView(caption)
-            item.setOnClickListener { showTab(key) }
-            navItems[key] = item
+            item.setOnClickListener { showTab(spec.key) }
+            navItems[spec.key] = item
             bar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
         return bar
@@ -187,9 +201,9 @@ class MainActivity : Activity() {
         navItems.forEach { (key, item) ->
             val selected = key == selectedTab
             item.translationY = if (selected) -dp(7).toFloat() else 0f
-            val icon = item.findViewWithTag<TextView>("icon")
+            val icon = item.findViewWithTag<ImageView>("icon")
             val caption = item.findViewWithTag<TextView>("caption")
-            icon.setTextColor(if (selected) INK else MUTED)
+            icon.imageTintList = ColorStateList.valueOf(if (selected) INK else MUTED)
             caption.setTextColor(if (selected) INK else MUTED)
             caption.setTypeface(Typeface.DEFAULT, if (selected) Typeface.BOLD else Typeface.NORMAL)
             icon.background = if (selected) rounded(SOFT, 22f) else null
@@ -288,12 +302,35 @@ class MainActivity : Activity() {
         root.addView(cardContainer().apply {
             addView(kicker("BACKGROUND SCROBBLE"))
             addView(statusLine(
-                if (notificationAccess) "READY" else "NOTIFICATION ACCESS REQUIRED",
+                if (notificationAccess) "PLAYBACK ACCESS READY" else "PLAYBACK ACCESS REQUIRED",
                 notificationAccess,
             ))
-            addView(actionButton("MANAGE NOTIFICATION ACCESS") {
-                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            }, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+            addView(statusLine(
+                if (appNotificationsGranted()) "APP NOTIFICATIONS READY" else "APP NOTIFICATIONS BLOCKED",
+                appNotificationsGranted(),
+            ))
+            if (!notificationAccess) {
+                addView(label(
+                    "If Android disables the Notification access switch for this sideloaded build: open App info, tap the top-right menu and choose Allow restricted settings, then return here and open Notification access.",
+                    10,
+                    MUTED,
+                ).apply { setPadding(0, dp(10), 0, 0) })
+                addView(secondaryButton("1 · OPEN APP INFO") {
+                    openAppDetails()
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
+                addView(actionButton("2 · OPEN NOTIFICATION ACCESS") {
+                    openNotificationListenerSettings()
+                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(7) })
+            } else {
+                addView(secondaryButton("OPEN NOTIFICATION ACCESS") {
+                    openNotificationListenerSettings()
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
+            }
+            if (!appNotificationsGranted()) {
+                addView(actionButton("ALLOW HUB NOTIFICATIONS") {
+                    requestNotificationPermissionIfNeeded()
+                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(7) })
+            }
         })
 
         root.addView(cardContainer().apply {
@@ -465,7 +502,7 @@ class MainActivity : Activity() {
             runOnUiThread {
                 pairButton?.isEnabled = true
                 result.onSuccess {
-                    SecureStore.save(this, it.token, it.deviceId)
+                    SecureStore.save(this, it.token, it.deviceId, it.ownerEmail)
                     input.text.clear()
                     InboxScheduler.schedule(this)
                     requestNotificationPermissionIfNeeded()
@@ -548,11 +585,36 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun appNotificationsGranted(): Boolean =
+        Build.VERSION.SDK_INT < 33 ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
     private fun notificationAccessGranted(): Boolean {
         val manager = getSystemService(NotificationManager::class.java)
         return manager.isNotificationListenerAccessGranted(
             ComponentName(this, ScrobbleService::class.java),
         )
+    }
+
+    private fun openAppDetails() {
+        startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName"),
+            ),
+        )
+    }
+
+    private fun openNotificationListenerSettings() {
+        val component=ComponentName(this,ScrobbleService::class.java)
+        val detail=if (Build.VERSION.SDK_INT >= 30) {
+            Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,component.flattenToString())
+        } else {
+            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        }
+        runCatching { startActivity(detail) }
+            .onFailure { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
     }
 
     private fun registerDspReceiver() {

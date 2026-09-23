@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { user } from '@/db/auth-schema'
 import { db } from '@/db/client'
 import { auditLogs, hubDevices } from '@/db/schema'
 import { ensureRedis } from '@/lib/redis'
@@ -51,6 +53,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ paired:false }, { status:401 })
   }
 
+  const authorizedOwnerId=String(authorized)
+  const [owner]=await db.select({ email:user.email }).from(user)
+    .where(eq(user.id,authorizedOwnerId)).limit(1)
+  if (!owner?.email) {
+    return NextResponse.json({ paired:false }, { status:401 })
+  }
+
   const token = randomBytes(32).toString('base64url')
   const tokenHash = hubDeviceTokenHash(token)
   const scopes = [MUSIC_SENSOR_SCOPE, HUB_INBOX_SCOPE]
@@ -81,6 +90,7 @@ export async function POST(request: Request) {
     deviceId:device.id,
     token,
     scopes,
+    ownerEmail:owner.email,
     ingestUrl:'https://thaiduy.digital/api/music/sensor/ingest',
     playbackUrl:'https://thaiduy.digital/api/hub/music/playback',
     inboxUrl:'https://thaiduy.digital/api/hub/inbox',

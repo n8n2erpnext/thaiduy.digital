@@ -15,6 +15,7 @@ object SecureStore {
     private const val PREFS = "thaiduy_hub"
     private const val TOKEN = "token"
     private const val DEVICE_ID = "device_id"
+    private const val OWNER_EMAIL = "owner_email"
 
     private fun key(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -34,13 +35,14 @@ object SecureStore {
         return generator.generateKey()
     }
 
-    fun save(context: Context, token: String, deviceId: String) {
+    fun save(context: Context, token: String, deviceId: String, ownerEmail: String? = null) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val encoded = Base64.encodeToString(cipher.iv + cipher.doFinal(token.toByteArray()), Base64.NO_WRAP)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(TOKEN, encoded)
             .putString(DEVICE_ID, deviceId)
+            .also { editor -> if (!ownerEmail.isNullOrBlank()) editor.putString(OWNER_EMAIL, ownerEmail) }
             .apply()
     }
 
@@ -58,6 +60,15 @@ object SecureStore {
 
     fun deviceId(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(DEVICE_ID, null)
+
+    fun ownerEmail(context: Context): String? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(OWNER_EMAIL, null)
+
+    fun saveOwnerEmail(context: Context, email: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(OWNER_EMAIL, email.trim())
+            .apply()
+    }
 
     fun clear(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()

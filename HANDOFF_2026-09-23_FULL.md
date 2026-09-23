@@ -87,6 +87,7 @@ Mobile primary-nav follow-up:
 - hamburger opens a dropdown panel directly under the sticky header using the same `nav` registry as desktop, so links are not duplicated/hard-coded
 - panel shows indexed links, highlights the active route, and closes on link click, outside pointer, or `Escape`
 - mobile header action gap reduced slightly to keep the fifth control fitting cleanly
+- follow-up bugfix: the initial mobile `display:flex` rule appeared earlier than the base `.mobile-nav{display:none}` declaration and was being overridden by CSS cascade; the responsive visibility rule is now placed after the base mobile-nav styles (`none` by default, `flex` under 760px)
 - TypeScript/targeted ESLint/layout/theme PASS; typography unchanged at the same 2 historical Stack icon outliers; SSR includes one mobile-nav trigger; local `/` returns 200
 
 ---

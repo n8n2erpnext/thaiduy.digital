@@ -417,7 +417,6 @@ main {
   .site-header { grid-template-columns: minmax(0,1fr) auto; }
   .site-header>nav { display: none; }
   .header-actions{gap:6px}
-  .mobile-nav{display:flex}
   .hero { padding-inline: 6px; }
   .hero h1 { font-size: clamp(3rem, 15vw, 5.2rem); }
   .surface-section { padding-inline: 6px; }
@@ -2786,6 +2785,9 @@ html[data-theme='dark'] .section-page-body .writing-post-card-body>strong{
 }
 .mobile-nav-links a[data-active='true']>span,
 .mobile-nav-links a[data-active='true']>em{color:var(--signal)}
+@media (max-width:760px){
+  .mobile-nav{display:flex}
+}
 
 .header-command-backdrop{
   position:fixed;

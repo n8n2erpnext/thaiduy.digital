@@ -38,7 +38,7 @@ type PublicMusicState = {
   instrumentConfidence?: number
   tempoBpm?: number | null
   beatConfidence?: number
-  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'
   swingness?: number
   percussiveProbability?: number
   harmonicProbability?: number
@@ -396,6 +396,11 @@ export async function GET() {
     const artist=localActive ? (hubPlayback.artist.trim() || 'Unknown Artist') : undefined
     const title=localActive ? hubPlayback.title.trim() : undefined
 
+    const reliableTempo =
+      live.tempoReliable === false || (live.beatConfidence ?? 0) < .46
+        ? undefined
+        : live.tempoBpm
+
     const cycle=await runMusicSensorLearningCycle({
       semanticMode:'disabled',
       artist,
@@ -412,7 +417,7 @@ export async function GET() {
         spectralCentroid:live.spectralCentroid,
         spectralFlatness:live.spectralFlatness,
         zeroCrossingRate:live.zeroCrossingRate,
-        tempoBpm:live.tempoBpm,
+        tempoBpm:reliableTempo,
         beatConfidence:live.beatConfidence,
         meter:live.meter,
         swingness:live.swingness,

@@ -105,6 +105,7 @@ function sampleAt(frames:BufferedMusicDspFrame[],at:number):MusicDspPublicFrame|
     spectralFlatness:numeric('spectralFlatness'),
     zeroCrossingRate:numeric('zeroCrossingRate'),
     tempoBpm:numeric('tempoBpm'),
+    tempoReliable:t<.5?left.frame.tempoReliable:right.frame.tempoReliable,
     beatConfidence:numeric('beatConfidence'),
     swingness:numeric('swingness'),
     percussiveProbability:numeric('percussiveProbability'),
@@ -233,10 +234,11 @@ export function liveDspWavePath({
   const crest=Math.max(0,...crestSamples)
 
   const reliableTempoFrames=useful.filter(frame=>
-    !!frame.tempoBpm
+    frame.tempoReliable!==false
+    &&!!frame.tempoBpm
     &&frame.tempoBpm>=45
     &&frame.tempoBpm<=210
-    &&(frame.beatConfidence??0)>=.18,
+    &&(frame.beatConfidence??0)>=.46,
   )
   const beatConfidence=reliableTempoFrames.length
     ? mean(reliableTempoFrames.map(frame=>clamp01(frame.beatConfidence??0)))

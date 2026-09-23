@@ -61,8 +61,9 @@ export type MusicDspPublicFrame = {
   spectralFlatness?: number
   zeroCrossingRate?: number
   tempoBpm?: number
+  tempoReliable?: boolean
   beatConfidence?: number
-  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'
   swingness?: number
   percussiveProbability?: number
   harmonicProbability?: number
@@ -83,7 +84,7 @@ export type MusicCortexState = {
   instrumentConfidence?: number
   tempoBpm?: number | null
   beatConfidence?: number
-  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'unknown'
+  meter?: '2/4'|'3/4'|'4/4'|'6/8'|'12/8'|'unknown'
   swingness?: number
   percussiveProbability?: number
   harmonicProbability?: number

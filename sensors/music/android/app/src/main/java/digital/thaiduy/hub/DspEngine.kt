@@ -25,6 +25,10 @@ data class DspFeatures(
     val tempoBpm: Float,
     val tempoAutocorrBpm: Float,
     val tempoOnsetBpm: Float,
+    val tempoReliable: Boolean,
+    val tempoSource: String,
+    val tempoAutocorrConfidence: Float,
+    val tempoOnsetConfidence: Float,
     val processIntervalMs: Float,
     val beatConfidence: Float,
     val meter: String,
@@ -34,6 +38,9 @@ data class DspFeatures(
     val meterAccent2: Float,
     val meterAccent3: Float,
     val meterAccent4: Float,
+    val meterConfidence: Float,
+    val subdivisionSimple: Float,
+    val subdivisionTriplet: Float,
     val swingness: Float,
     val percussiveProbability: Float,
     val harmonicProbability: Float,
@@ -64,6 +71,20 @@ class DspEngine(
     private var tempoBpm = 0f
     private var tempoAutocorrBpm = 0f
     private var tempoOnsetBpm = 0f
+    private var tempoReliable = false
+    private var tempoSource = "unknown"
+    private var tempoAutocorrConfidence = 0f
+    private var tempoOnsetConfidence = 0f
+    private val tempoAutocorrHistory = FloatArray(8)
+    private val tempoOnsetHistory = FloatArray(8)
+    private val tempoAutocorrConfidenceHistory = FloatArray(8)
+    private val tempoOnsetConfidenceHistory = FloatArray(8)
+    private var tempoHistoryCount = 0
+    private var tempoHistoryIndex = 0
+    private var pendingTempoBpm = 0f
+    private var pendingTempoCount = 0
+    private var latestPercussive = 0f
+    private var latestHarmonic = 0f
     private var beatConfidence = 0f
     private var meter = "unknown"
     private var meterCorr2 = 0f
@@ -72,6 +93,9 @@ class DspEngine(
     private var meterAccent2 = 0f
     private var meterAccent3 = 0f
     private var meterAccent4 = 0f
+    private var meterConfidence = 0f
+    private var subdivisionSimple = 0f
+    private var subdivisionTriplet = 0f
     private var swingness = 0f
 
     fun process(interleaved: ShortArray, count: Int, channels: Int = 2): DspFeatures {
@@ -185,6 +209,9 @@ class DspEngine(
                 (1f - zcrShape) * 0.14f
             ).coerceIn(0f, 1f)
 
+        latestPercussive = percussive
+        latestHarmonic = harmonic
+
         appendRhythmSubwindows(rhythmSums, rhythmCounts)
         appendHistory(spectralFlux, rms)
         processCount += 1
@@ -211,6 +238,10 @@ class DspEngine(
             tempoBpm = tempoBpm,
             tempoAutocorrBpm = tempoAutocorrBpm,
             tempoOnsetBpm = tempoOnsetBpm,
+            tempoReliable = tempoReliable,
+            tempoSource = tempoSource,
+            tempoAutocorrConfidence = tempoAutocorrConfidence,
+            tempoOnsetConfidence = tempoOnsetConfidence,
             processIntervalMs = (measuredProcessIntervalSeconds() * 1_000.0).toFloat(),
             beatConfidence = beatConfidence,
             meter = meter,
@@ -220,6 +251,9 @@ class DspEngine(
             meterAccent2 = meterAccent2,
             meterAccent3 = meterAccent3,
             meterAccent4 = meterAccent4,
+            meterConfidence = meterConfidence,
+            subdivisionSimple = subdivisionSimple,
+            subdivisionTriplet = subdivisionTriplet,
             swingness = swingness,
             percussiveProbability = percussive,
             harmonicProbability = harmonic,
@@ -437,6 +471,62 @@ class DspEngine(
         }
     }
 
+    private data class TempoCandidateStats(
+        val bpm: Float,
+        val stability: Float,
+        val evidence: Float,
+        val count: Int,
+    )
+
+    private fun appendTempoCandidates(
+        autocorrBpm: Float,
+        autocorrConfidence: Float,
+        onsetBpm: Float,
+        onsetConfidence: Float,
+    ) {
+        tempoAutocorrHistory[tempoHistoryIndex] = autocorrBpm
+        tempoAutocorrConfidenceHistory[tempoHistoryIndex] = autocorrConfidence
+        tempoOnsetHistory[tempoHistoryIndex] = onsetBpm
+        tempoOnsetConfidenceHistory[tempoHistoryIndex] = onsetConfidence
+        tempoHistoryIndex = (tempoHistoryIndex + 1) % tempoAutocorrHistory.size
+        tempoHistoryCount = minOf(tempoHistoryCount + 1, tempoAutocorrHistory.size)
+    }
+
+    private fun tempoCandidateStats(
+        values: FloatArray,
+        confidences: FloatArray,
+    ): TempoCandidateStats {
+        if (tempoHistoryCount <= 0) return TempoCandidateStats(0f, 0f, 0f, 0)
+        val bpms = mutableListOf<Float>()
+        val quality = mutableListOf<Float>()
+        val start = if (tempoHistoryCount < values.size) 0 else tempoHistoryIndex
+        for (i in 0 until tempoHistoryCount) {
+            val index = (start + i) % values.size
+            val bpm = values[index]
+            if (bpm <= 0f) continue
+            bpms += bpm
+            quality += confidences[index].coerceIn(0f, 1f)
+        }
+        if (bpms.isEmpty()) return TempoCandidateStats(0f, 0f, 0f, 0)
+
+        val center = median(bpms)
+        val mad = median(bpms.map { kotlin.math.abs(it - center) })
+        val stability = (1f - mad / 12f).coerceIn(0f, 1f)
+        val coverage = (bpms.size.toFloat() / tempoHistoryCount.coerceAtLeast(1).toFloat())
+            .coerceIn(0f, 1f)
+        val evidence = (
+            median(quality) * 0.62f +
+                stability * 0.28f +
+                coverage * 0.10f
+            ).coerceIn(0f, 1f)
+        return TempoCandidateStats(center, stability, evidence, bpms.size)
+    }
+
+    private fun relationRatio(a: Float, b: Float): Float {
+        if (a <= 0f || b <= 0f) return 1f
+        return maxOf(a, b) / minOf(a, b)
+    }
+
     private fun updateRhythm() {
         val onset = chronologicalRhythm(rhythmOnsetHistory)
         if (onset.size < 96) return
@@ -460,128 +550,264 @@ class DspEngine(
         }
         if (bestLag <= 0) return
 
-        // Autocorrelation often locks to a harmonic (especially double-time).
-        // Prefer the slower pulse when the doubled lag is nearly as coherent.
-        var chosenLag = bestLag
-        var chosenCorrelation = bestCorrelation
-        val rawBpm = (60.0 / (bestLag * secondsPerWindow)).toFloat()
-
-        val halfTempoLag = bestLag * 2
-        if (rawBpm > 145f && halfTempoLag <= maxLag) {
-            val halfCorrelation = correlation(onset, halfTempoLag)
-            if (halfCorrelation >= bestCorrelation * 0.72f) {
-                chosenLag = halfTempoLag
-                chosenCorrelation = halfCorrelation
+        // Autocorrelation is one candidate, not the authority. Keep the
+        // high-tempo harmonic guard, but never auto-promote a stable low pulse
+        // to double-time: the 60 BPM reference proved that rule was unsafe.
+        var autoLag = bestLag
+        var autoCorrelation = bestCorrelation
+        val rawAutoBpm = (60.0 / (bestLag * secondsPerWindow)).toFloat()
+        val slowerLag = bestLag * 2
+        if (rawAutoBpm > 145f && slowerLag <= maxLag) {
+            val slowerCorrelation = correlation(onset, slowerLag)
+            if (slowerCorrelation >= bestCorrelation * 0.72f) {
+                autoLag = slowerLag
+                autoCorrelation = slowerCorrelation
             }
         }
 
-        val chosenRawBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
-        val doubleTempoLag = chosenLag / 2
-        if (chosenRawBpm < 72f && doubleTempoLag >= minLag) {
-            val doubleCorrelation = correlation(onset, doubleTempoLag)
-            if (doubleCorrelation >= chosenCorrelation * 0.90f) {
-                chosenLag = doubleTempoLag
-                chosenCorrelation = doubleCorrelation
-            }
-        }
-
-        var candidateBpm = (60.0 / (chosenLag * secondsPerWindow)).toFloat()
+        val autoBpm = (60.0 / (autoLag * secondsPerWindow)).toFloat()
             .coerceIn(55f, 190f)
-        tempoAutocorrBpm = candidateBpm
-
-        val harmonicPenalty = (chosenCorrelation / bestCorrelation.coerceAtLeast(1e-4f))
+        val autoHarmonicPenalty = (autoCorrelation / bestCorrelation.coerceAtLeast(1e-4f))
             .coerceIn(0.65f, 1f)
-        var confidence = (
-            ((bestCorrelation - 0.08f) / 0.52f).coerceIn(0f, 1f) * harmonicPenalty
-        ).coerceIn(0f, 1f)
+        val autoConfidence = (
+            ((bestCorrelation - 0.08f) / 0.52f).coerceIn(0f, 1f) * autoHarmonicPenalty
+            ).coerceIn(0f, 1f)
 
-        val (peakBpm, peakConfidence) = peakIntervalTempo(onset, secondsPerWindow)
-        tempoOnsetBpm = peakBpm
-        if (peakBpm > 0f && peakConfidence >= 0.58f) {
-            val disagreement = kotlin.math.abs(peakBpm - candidateBpm)
-            val ratio = peakBpm / candidateBpm.coerceAtLeast(1f)
-            val octaveRelated = ratio in 1.88f..2.12f || ratio in 0.47f..0.53f
+        val (onsetBpm, onsetConfidence) = peakIntervalTempo(onset, secondsPerWindow)
+        tempoAutocorrBpm = autoBpm
+        tempoOnsetBpm = onsetBpm
+        tempoAutocorrConfidence = autoConfidence
+        tempoOnsetConfidence = onsetConfidence
+        appendTempoCandidates(autoBpm, autoConfidence, onsetBpm, onsetConfidence)
 
+        val autoStats = tempoCandidateStats(
+            tempoAutocorrHistory,
+            tempoAutocorrConfidenceHistory,
+        )
+        val onsetStats = tempoCandidateStats(
+            tempoOnsetHistory,
+            tempoOnsetConfidenceHistory,
+        )
+        val autoStable = autoStats.count >= 4 && autoStats.stability >= 0.55f
+        val onsetStable = onsetStats.count >= 4 && onsetStats.stability >= 0.62f
+
+        var selectedBpm = if (autoStable) autoStats.bpm else autoBpm
+        var selectedEvidence = if (autoStable) autoStats.evidence else autoConfidence
+        var selectedStability = if (autoStable) autoStats.stability else 0.35f
+        tempoSource = "autocorr"
+
+        if (!autoStable && onsetStable) {
+            selectedBpm = onsetStats.bpm
+            selectedEvidence = onsetStats.evidence
+            selectedStability = onsetStats.stability
+            tempoSource = "onset"
+        } else if (autoStable && onsetStable) {
+            val disagreement = kotlin.math.abs(autoStats.bpm - onsetStats.bpm)
+            val ratio = relationRatio(autoStats.bpm, onsetStats.bpm)
             when {
-                disagreement < 12f -> {
-                    candidateBpm = candidateBpm * 0.72f + peakBpm * 0.28f
-                    confidence = maxOf(confidence, peakConfidence * 0.90f)
+                disagreement <= 12f -> {
+                    val autoWeight = autoStats.evidence.coerceAtLeast(0.05f)
+                    val onsetWeight = onsetStats.evidence.coerceAtLeast(0.05f)
+                    selectedBpm = (
+                        autoStats.bpm * autoWeight + onsetStats.bpm * onsetWeight
+                        ) / (autoWeight + onsetWeight)
+                    selectedEvidence = maxOf(autoStats.evidence, onsetStats.evidence)
+                    selectedStability = minOf(autoStats.stability, onsetStats.stability)
+                    tempoSource = "blend"
                 }
-                octaveRelated && peakConfidence > confidence + 0.12f -> {
-                    val normalizedPeak = when {
-                        ratio > 1.5f -> peakBpm / 2f
-                        ratio < 0.75f -> peakBpm * 2f
-                        else -> peakBpm
-                    }
-                    if (kotlin.math.abs(normalizedPeak - candidateBpm) < 12f) {
-                        candidateBpm = candidateBpm * 0.65f + normalizedPeak * 0.35f
-                        confidence = maxOf(confidence, peakConfidence * 0.88f)
+                // The 120 BPM references repeatedly exposed a stable 3:2-ish
+                // ambiguity (autocorr near 72/80, onset near 117). In that case
+                // a stable onset candidate describes the musical pulse better.
+                ratio in 1.34f..1.72f &&
+                    onsetStats.stability >= 0.72f &&
+                    onsetStats.evidence >= 0.58f -> {
+                    selectedBpm = onsetStats.bpm
+                    selectedEvidence = onsetStats.evidence
+                    selectedStability = onsetStats.stability
+                    tempoSource = "onset"
+                }
+                // Near-octave disagreement is different: prefer the slower,
+                // stable autocorrelation pulse. This protects true 60 BPM from
+                // note/subdivision onsets around 120 BPM.
+                ratio in 1.84f..2.16f && autoStats.bpm < onsetStats.bpm -> {
+                    selectedBpm = autoStats.bpm
+                    selectedEvidence = autoStats.evidence
+                    selectedStability = autoStats.stability
+                    tempoSource = "autocorr"
+                }
+                onsetStats.evidence >= autoStats.evidence + 0.18f &&
+                    onsetStats.stability >= autoStats.stability + 0.08f -> {
+                    selectedBpm = onsetStats.bpm
+                    selectedEvidence = onsetStats.evidence
+                    selectedStability = onsetStats.stability
+                    tempoSource = "onset"
+                }
+            }
+        }
+
+        val candidateRatio = if (autoStats.bpm > 0f && onsetStats.bpm > 0f) {
+            relationRatio(autoStats.bpm, onsetStats.bpm)
+        } else 1f
+        val relationshipConfidence = when {
+            autoStats.bpm <= 0f || onsetStats.bpm <= 0f -> 0.72f
+            kotlin.math.abs(autoStats.bpm - onsetStats.bpm) <= 12f -> 1f
+            candidateRatio in 1.34f..1.72f -> 0.86f
+            candidateRatio in 1.84f..2.16f -> 0.78f
+            else -> 0.58f
+        }
+
+        // Harmonic-only sources can contain periodic note attacks without a
+        // trustworthy musical pulse. Use timbre only as a confidence brake,
+        // never as a BPM correction.
+        val transientRatio = latestPercussive /
+            (latestHarmonic + 0.12f).coerceAtLeast(0.12f)
+        val transientSupport = ((transientRatio - 0.20f) / 0.65f).coerceIn(0f, 1f)
+        val timbreGate = 0.38f + transientSupport * 0.62f
+        val instantConfidence = (
+            selectedEvidence * selectedStability * relationshipConfidence * timbreGate
+            ).coerceIn(0f, 1f)
+        beatConfidence = beatConfidence * 0.72f + instantConfidence * 0.28f
+
+        val reliableCandidate =
+            selectedBpm in 55f..190f &&
+                selectedEvidence >= 0.45f &&
+                selectedStability >= 0.58f &&
+                beatConfidence >= 0.46f
+
+        if (tempoBpm <= 0f && reliableCandidate) {
+            tempoBpm = selectedBpm
+            pendingTempoBpm = 0f
+            pendingTempoCount = 0
+        } else if (tempoBpm > 0f) {
+            val distance = kotlin.math.abs(selectedBpm - tempoBpm)
+            if (distance <= 16f) {
+                pendingTempoBpm = 0f
+                pendingTempoCount = 0
+                if (reliableCandidate) {
+                    tempoBpm += (selectedBpm - tempoBpm) * 0.28f
+                }
+            } else if (reliableCandidate) {
+                if (
+                    pendingTempoBpm > 0f &&
+                    kotlin.math.abs(selectedBpm - pendingTempoBpm) <= 8f
+                ) {
+                    pendingTempoCount += 1
+                    pendingTempoBpm = pendingTempoBpm * 0.65f + selectedBpm * 0.35f
+                } else {
+                    pendingTempoBpm = selectedBpm
+                    pendingTempoCount = 1
+                }
+
+                // A real source/tempo transition must persist for multiple
+                // rhythm updates before it can pull the public tempo.
+                if (pendingTempoCount >= 4) {
+                    val delta = (pendingTempoBpm - tempoBpm).coerceIn(-24f, 24f)
+                    tempoBpm += delta * 0.32f
+                    if (kotlin.math.abs(pendingTempoBpm - tempoBpm) <= 12f) {
+                        pendingTempoBpm = 0f
+                        pendingTempoCount = 0
                     }
                 }
             }
         }
 
-        // Do not let an unrelated previous false lock pull the new estimator
-        // back toward it. Only blend when both estimates are already close.
-        if (tempoBpm > 0f && kotlin.math.abs(candidateBpm - tempoBpm) < 18f) {
-            candidateBpm = candidateBpm * 0.72f + tempoBpm * 0.28f
-        }
+        val inPendingTransition =
+            pendingTempoCount in 1..3 &&
+                pendingTempoBpm > 0f &&
+                kotlin.math.abs(pendingTempoBpm - tempoBpm) > 16f
+        tempoReliable = reliableCandidate && !inPendingTransition
 
-        beatConfidence = beatConfidence * 0.78f + confidence * 0.22f
-        if (confidence >= 0.18f) {
-            tempoBpm = if (tempoBpm <= 0f) {
-                candidateBpm
-            } else {
-                val delta = (candidateBpm - tempoBpm).coerceIn(-8f, 8f)
-                tempoBpm + delta * 0.22f
-            }
-        }
-
-        if (beatConfidence < 0.48f) {
+        if (!tempoReliable || beatConfidence < 0.48f) {
             meter = "unknown"
+            meterConfidence = 0f
+            subdivisionSimple *= 0.82f
+            subdivisionTriplet *= 0.82f
             swingness *= 0.82f
             return
         }
 
         val energy = chronologicalRhythm(rhythmEnergyHistory)
-        val corr2 = correlation(energy, chosenLag * 2)
-        val corr3 = correlation(energy, chosenLag * 3)
-        val corr4 = correlation(energy, chosenLag * 4)
+        val beatLag = (
+            60.0 / (tempoBpm.coerceIn(55f, 190f) * secondsPerWindow)
+            ).roundToInt().coerceIn(minLag, maxLag)
+
+        val corr2 = correlation(energy, beatLag * 2)
+        val corr3 = correlation(energy, beatLag * 3)
+        val corr4 = correlation(energy, beatLag * 4)
         meterCorr2 = corr2
         meterCorr3 = corr3
         meterCorr4 = corr4
-        meterAccent2 = accentPeriodicity(energy, chosenLag, 2)
-        meterAccent3 = accentPeriodicity(energy, chosenLag, 3)
-        meterAccent4 = accentPeriodicity(energy, chosenLag, 4)
+        meterAccent2 = accentPeriodicity(energy, beatLag, 2)
+        meterAccent3 = accentPeriodicity(energy, beatLag, 3)
+        meterAccent4 = accentPeriodicity(energy, beatLag, 4)
 
-        // corr4 can dominate a real 2-beat pattern simply because four beats are
-        // a harmonic multiple of two. Only override that harmonic when the
-        // beat-accent pattern itself gives clear 2-beat evidence. This keeps the
-        // existing 3/4 and 4/4 rules intact when accent evidence is ambiguous.
+        // Simple meter divides a beat in two; compound meter divides it in
+        // three. The previous implementation compared /2 with 2/3 of a beat,
+        // which cannot represent a triplet subdivision.
+        val simpleLag = maxOf(1, (beatLag / 2f).roundToInt())
+        val tripletLag = maxOf(1, (beatLag / 3f).roundToInt())
+        val simpleOnset = maxOf(0f, correlation(onset, simpleLag))
+        val simpleEnergy = maxOf(0f, correlation(energy, simpleLag))
+        val tripletOnset = maxOf(0f, correlation(onset, tripletLag))
+        val tripletEnergy = maxOf(0f, correlation(energy, tripletLag))
+        val simpleScore = (simpleOnset * 0.72f + simpleEnergy * 0.28f).coerceIn(0f, 1f)
+        val tripletScore = (tripletOnset * 0.72f + tripletEnergy * 0.28f).coerceIn(0f, 1f)
+        subdivisionSimple = subdivisionSimple * 0.70f + simpleScore * 0.30f
+        subdivisionTriplet = subdivisionTriplet * 0.70f + tripletScore * 0.30f
+
+        val positive2 = maxOf(0f, corr2)
+        val positive3 = maxOf(0f, corr3)
+        val positive4 = maxOf(0f, corr4)
+        val macro2 = (positive2 * 0.55f + meterAccent2 * 0.45f).coerceIn(0f, 1f)
+        val macro3 = (positive3 * 0.55f + meterAccent3 * 0.45f).coerceIn(0f, 1f)
+        val macro4 = (positive4 * 0.55f + meterAccent4 * 0.45f).coerceIn(0f, 1f)
+
         val clearTwoBeatAccent =
             corr2 >= 0.36f &&
                 meterAccent2 >= 0.22f &&
                 meterAccent2 >= meterAccent3 + 0.10f &&
                 meterAccent2 >= meterAccent4 + 0.12f
 
-        meter = when {
-            clearTwoBeatAccent -> "2/4"
-            corr2 >= 0.24f && corr2 >= corr3 + 0.07f && corr2 >= corr4 * 0.90f -> "2/4"
-            corr3 >= 0.24f && corr3 >= corr4 + 0.10f -> "3/4"
-            corr4 >= 0.24f && corr4 >= corr3 + 0.08f -> "4/4"
+        val rankedMacro = listOf(
+            2 to macro2,
+            3 to macro3,
+            4 to macro4,
+        ).sortedByDescending { it.second }
+        val bestMacro = rankedMacro[0]
+        val secondMacro = rankedMacro[1]
+        val macroGap = bestMacro.second - secondMacro.second
+        val macroMeter = when {
+            clearTwoBeatAccent -> 2
+            bestMacro.second >= 0.24f && macroGap >= 0.04f -> bestMacro.first
+            meterAccent4 >= 0.46f && macro4 >= 0.24f -> 4
+            meterAccent3 >= 0.34f && macro3 >= 0.24f -> 3
+            else -> 0
+        }
+
+        val tripletDominance = subdivisionTriplet - subdivisionSimple
+        val compound =
+            subdivisionTriplet >= 0.18f &&
+                tripletDominance >= 0.06f
+
+        meter = when (macroMeter) {
+            2 -> if (compound) "6/8" else "2/4"
+            3 -> "3/4"
+            4 -> if (compound) "12/8" else "4/4"
             else -> "unknown"
         }
-
-        val straightSubdivision = correlation(onset, maxOf(1, bestLag / 2))
-        val tripletSubdivision = correlation(onset, maxOf(1, (bestLag * 2f / 3f).roundToInt()))
-        val swingCandidate = if (tripletSubdivision > straightSubdivision + 0.08f) {
-            ((tripletSubdivision - straightSubdivision) * 2.2f).coerceIn(0f, 1f)
-        } else 0f
-        swingness = swingness * 0.78f + swingCandidate * 0.22f
-
-        if (meter == "3/4" && swingness >= 0.62f && beatConfidence >= 0.62f) {
-            meter = "6/8"
+        meterConfidence = if (macroMeter == 0) {
+            0f
+        } else {
+            (
+                bestMacro.second * 0.72f +
+                    macroGap.coerceIn(0f, 0.35f) * 0.80f
+                ).coerceIn(0f, 1f) * beatConfidence
         }
+
+        val swingCandidate = (
+            (subdivisionTriplet - subdivisionSimple - 0.02f) * 2.4f
+            ).coerceIn(0f, 1f)
+        swingness = swingness * 0.76f + swingCandidate * 0.24f
     }
 
     private fun dynamicRange(): Float {

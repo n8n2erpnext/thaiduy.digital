@@ -11,7 +11,7 @@ import {
   type MusicExpression,
   type MusicTheme,
 } from '@/lib/music-expression'
-import { liveDspLayerColors,liveDspWavePath } from '@/lib/music-live-dsp-wave'
+import { liveDspLayerColors,liveDspStageLayerColor,liveDspWavePath } from '@/lib/music-live-dsp-wave'
 import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
 import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
@@ -236,22 +236,24 @@ export function MusicWaveIndicator({locale}:Props) {
                     xStart:4,
                     width:104,
                     centerY:12,
-                    amplitude:6.2,
-                    points:42,
+                    amplitude:6.6,
+                    points:64,
                   })
                 : null
               const stagePresence=live
                 ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
                 : 0
               const opacity=live
-                ? Math.min(1,.24+live.stats.activity*.32+live.stats.gain*.16+stagePresence*.22+live.stats.crest*.08)
+                ? Math.min(1,.22+live.stats.activity*.28+live.stats.gain*.14+stagePresence*.28+live.stats.crest*.08)
                 : dominant
                   ? displayMotion.dominantOpacity
                   : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
               const width=live
-                ? .90+live.stats.stageLift*.20+live.stats.crest*.36+live.stats.sharpness*.14
+                ? .88+live.stats.stageLift*.22+live.stats.crest*.34+live.stats.sharpness*.12
                 : (dominant?1.42:1.02)*displayMotion.stroke
-              const color=live?liveColors[layer]:expression.colors[layer]
+              const color=live
+                ? liveDspStageLayerColor(theme,layer,live.stats.stageWeights,live.stats.stageFocus,live.stats.stageLift)
+                : expression.colors[layer]
               const glow=!live&&dominant
                 ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
                 : 'none'
@@ -274,9 +276,9 @@ export function MusicWaveIndicator({locale}:Props) {
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .07+live.stats.gain*.05+live.stats.crest*.05+live.stats.stereoWidth*.03+stagePresence*.04
-                          : .11+live.stats.gain*.08+live.stats.crest*.09+live.stats.stereoWidth*.05+stagePresence*.07,
-                        strokeWidth:width+(theme==='normal'?2.0:2.8)+live.stats.stereoWidth*.50+stagePresence*.35,
+                          ? .06+live.stats.gain*.04+live.stats.glow*.06+live.stats.crest*.04+live.stats.stereoWidth*.03+stagePresence*.05
+                          : .10+live.stats.gain*.07+live.stats.glow*.09+live.stats.crest*.08+live.stats.stereoWidth*.05+stagePresence*.08,
+                        strokeWidth:width+(theme==='normal'?2.1:3.0)+live.stats.stereoWidth*.52+stagePresence*.42,
                       }}
                     />
                   )}

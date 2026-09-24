@@ -15,14 +15,15 @@ export function renderAcousticVisualWave({layer,signal,controls,now,xStart,width
   const clock=seconds*Math.PI*2*.34+(controls.motionRate-.72)*.82+controls.attack*.16
   const cycles=baseCycles[layer]*controls.density*(.94+controls.motionRate*.06)
   const signedStereo=controls.balance*.62
-  const visualAmp=amplitude*(.08+controls.gain*1.22)*(1+controls.attack*.08)*(.92+controls.layerSpread*.08)
+  const bloom=1+controls.glow*.12+controls.crest*.10+controls.stereoSpread*.08
+  const visualAmp=amplitude*(.07+controls.gain*1.28)*(1+controls.attack*.08)*(.90+controls.layerSpread*.10)*bloom
   const driftWeight=.18+controls.roundness*.68*(1-controls.attack*.50)
   const swellWeight=.10+controls.dynamic*.58*(1-controls.attack*.42)
   const driveWeight=.08+controls.sharpness*.54+controls.attack*.22
   const grooveWeight=.08+controls.pulse*.62+controls.activity*.08
   const pluckWeight=.06+controls.attack*.58*(.72+controls.roundness*.18)
   const totalWeight=driftWeight+swellWeight+driveWeight+grooveWeight+pluckWeight
-  let path='M '+xStart+' '+centerY
+  const pathPoints:Array<[number,number]>=[]
   for(let i=0;i<=points;i++){
     const r=i/points,x=xStart+r*width,envelope=Math.pow(Math.sin(r*Math.PI),1.58)
     const theta=r*Math.PI*2*cycles+clock+layerPhase*controls.phaseSpread+signedStereo*.12
@@ -42,7 +43,18 @@ export function renderAcousticVisualWave({layer,signal,controls,now,xStart,width
     if(controls.crest>0) carrier+=Math.sin(theta*3.28+clock*.21)*controls.crest*(.055+signal.flux*.07)
     carrier=Math.tanh(carrier*(1+controls.sharpness*.22))/(Math.tanh(1+controls.sharpness*.22)||1)
     const y=centerY+carrier*visualAmp*envelope
-    path+=' L '+x.toFixed(2)+' '+y.toFixed(2)
+    pathPoints.push([x,y])
   }
+
+  let path='M '+xStart+' '+centerY
+  for(let i=1;i<pathPoints.length-1;i++){
+    const point=pathPoints[i]
+    const next=pathPoints[i+1]
+    const midX=(point[0]+next[0])*.5
+    const midY=(point[1]+next[1])*.5
+    path+=' Q '+point[0].toFixed(2)+' '+point[1].toFixed(2)+' '+midX.toFixed(2)+' '+midY.toFixed(2)
+  }
+  const last=pathPoints[pathPoints.length-1]??[xStart+width,centerY]
+  path+=' Q '+last[0].toFixed(2)+' '+last[1].toFixed(2)+' '+last[0].toFixed(2)+' '+last[1].toFixed(2)
   return path
 }

@@ -864,3 +864,14 @@ This is the authoritative continuation point.
 - Contract guards cover bass-forward, treble-forward and balanced stage behavior while preserving tempo-independence, stereo sensitivity and classifier-independence.
 - Live observation captured a mixed foreground example around bass .328 / mid .316 / vocal-range .181 / treble .048 / balanced .127, demonstrating simultaneous band emphasis rather than winner-take-all.
 - LastFM visual branch remains untouched.
+
+### Stage lighting + meter damping + visual bloom
+- Live DSP frequency meters now use a presentation meter rather than raw layer weight: soft-knee compression above ~68%, ~120 ms attack, ~520 ms release, ~160 ms peak hold and ~780 ms peak decay. LastFM meter behavior remains direct.
+- Live measurement showed strong jitter reduction in upper bands: presence delta P95 ~.233 -> .045 and air ~.277 -> .053; large bass/low-mid spikes are also materially limited.
+- Added a 2 px peak marker to the public band meter.
+- Live DSP stage color is now a weighted blend of bass/mid/vocal-range/treble/balanced stage colors. Each physical layer keeps its own color identity and only blends toward the shared stage tint according to stage focus/lift. Co-leads therefore create a mixed stage tone instead of winner-take-all recoloring.
+- Live DSP wave paths now use quadratic smoothing and higher sample density (header 64 points, large organ 86 points).
+- Visual amplitude adds controlled bloom from glow, crest and stereo spread; glow width/opacity also follows continuous stage presence.
+- Hard dominantLayer styling remains disabled for Live DSP; it is retained for LastFM only.
+- Live observation during this pass: mid .306 / bass .305 / vocal-range .197 / treble .053 / balanced .139 with focus .098, a real co-lead case where no single band is allowed to black out the background.
+- LastFM visual geometry/expression files remain untouched.

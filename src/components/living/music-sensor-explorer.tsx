@@ -1,6 +1,7 @@
 'use client'
 
 import { HummingPlayer, HummingScore } from '@/components/living/humming-player'
+import { useEffect,useRef,useState } from 'react'
 import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
@@ -14,6 +15,16 @@ type Props = {
 }
 
 const layers = ['bass','lowMid','mid','vocal','presence','air'] as const
+type MeterLayer=typeof layers[number]
+type MeterValues=Record<MeterLayer,number>
+
+const emptyMeter=():MeterValues=>({bass:0,lowMid:0,mid:0,vocal:0,presence:0,air:0})
+
+function compressLiveMeter(value:number) {
+  const v=Math.max(0,Math.min(1,value))
+  if(v<=.68) return v
+  return Math.min(.98,.68+(1-Math.exp(-(v-.68)*5))*.30)
+}
 
 function valueOrDash(value:string|null|undefined) {
   return value?.trim() || '—'
@@ -21,6 +32,12 @@ function valueOrDash(value:string|null|undefined) {
 
 export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes, knowledgeVersion }:Props) {
   const state=useMusicState()
+  const [meterValues,setMeterValues]=useState<MeterValues>(emptyMeter)
+  const [meterPeaks,setMeterPeaks]=useState<MeterValues>(emptyMeter)
+  const meterTargetRef=useRef<MeterValues>(emptyMeter())
+  const meterValueRef=useRef<MeterValues>(emptyMeter())
+  const meterPeakRef=useRef<MeterValues>(emptyMeter())
+  const meterHoldRef=useRef<Record<MeterLayer,number>>({bass:0,lowMid:0,mid:0,vocal:0,presence:0,air:0})
   const t=messages[locale].music
   const e=t.explorer
   const vi=locale==='vi'
@@ -35,6 +52,62 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
   const signalLabel=vi
     ? (state.signal==='offline'?'OFFLINE':state.signal==='dsp'?'DSP LIVE':'NGỮ NGHĨA')
     : state.signal.toUpperCase()
+
+  useEffect(()=>{
+    if(state.signal!=='dsp') {
+      const direct=Object.fromEntries(layers.map(layer=>[layer,state.layers[layer].weight])) as MeterValues
+      meterTargetRef.current=direct
+      meterValueRef.current=direct
+      meterPeakRef.current=direct
+      setMeterValues(direct)
+      setMeterPeaks(direct)
+      return
+    }
+    meterTargetRef.current=Object.fromEntries(
+      layers.map(layer=>[layer,compressLiveMeter(state.layers[layer].weight)]),
+    ) as MeterValues
+  },[state.layers,state.signal])
+
+  useEffect(()=>{
+    if(state.signal!=='dsp') return
+    let frame=0
+    let previous=performance.now()
+    const tick=(now:number)=>{
+      const dt=Math.min(.05,Math.max(.001,(now-previous)/1000))
+      previous=now
+      let changed=false
+      const next={...meterValueRef.current}
+      const peaks={...meterPeakRef.current}
+
+      for(const layer of layers) {
+        const target=meterTargetRef.current[layer]
+        const current=next[layer]
+        const tau=target>current?.12:.52
+        const alpha=1-Math.exp(-dt/tau)
+        next[layer]=current+(target-current)*alpha
+
+        if(target>=peaks[layer]) {
+          peaks[layer]=target
+          meterHoldRef.current[layer]=now+160
+        } else if(now>meterHoldRef.current[layer]) {
+          const peakAlpha=1-Math.exp(-dt/.78)
+          peaks[layer]=Math.max(next[layer],peaks[layer]+(next[layer]-peaks[layer])*peakAlpha)
+        }
+        if(Math.abs(next[layer]-meterValueRef.current[layer])>.0005||Math.abs(peaks[layer]-meterPeakRef.current[layer])>.0005) changed=true
+      }
+
+      meterValueRef.current=next
+      meterPeakRef.current=peaks
+      if(changed) {
+        setMeterValues(next)
+        setMeterPeaks(peaks)
+      }
+      frame=requestAnimationFrame(tick)
+    }
+    frame=requestAnimationFrame(tick)
+    return()=>cancelAnimationFrame(frame)
+  },[state.signal])
+
   const displayValue=(value:string|null|undefined) => {
     const base=valueOrDash(value)
     if (!vi) return base
@@ -118,13 +191,20 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
             </div>
           </div>
           <div className="music-layer-meter">
-            {layers.map(layer=>(
-              <div key={layer}>
-                <span>{t.layers[layer]}</span>
-                <i><b style={{width:String(Math.round(state.layers[layer].weight*100))+'%'}} /></i>
-                <em>{Math.round(state.layers[layer].weight*100)}</em>
-              </div>
-            ))}
+            {layers.map(layer=>{
+              const level=state.signal==='dsp'?meterValues[layer]:state.layers[layer].weight
+              const peak=state.signal==='dsp'?meterPeaks[layer]:level
+              return (
+                <div key={layer}>
+                  <span>{t.layers[layer]}</span>
+                  <i>
+                    <b style={{width:String(Math.round(level*100))+'%'}} />
+                    {state.signal==='dsp'&&<small style={{left:'calc('+String(Math.round(peak*100))+'% - 1px)'}} />}
+                  </i>
+                  <em>{Math.round(level*100)}</em>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

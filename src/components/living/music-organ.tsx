@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 import {
   liveDspLayerColors,
+  liveDspStageLayerColor,
   liveDspWavePath,
 } from '@/lib/music-live-dsp-wave'
 import { resolveMusicExpression,type MusicTheme } from '@/lib/music-expression'
@@ -113,9 +114,10 @@ export function MusicOrgan({locale}:Props) {
               let path='M 0 '+y
               let activity=item.weight
               let crest=0
+              let live:ReturnType<typeof liveDspWavePath>|null=null
 
               if(liveDsp) {
-                const live=liveDspWavePath({
+                live=liveDspWavePath({
                   layer:item.layer,
                   frames:state.dspFrames??[],
                   now:time,
@@ -123,7 +125,7 @@ export function MusicOrgan({locale}:Props) {
                   width:620,
                   centerY:y,
                   amplitude:9.2,
-                  points:62,
+                  points:86,
                 })
                 path=live.path
                 activity=live.stats.activity
@@ -152,12 +154,17 @@ export function MusicOrgan({locale}:Props) {
                 }
               }
 
-              const color=liveDsp?liveColors[item.layer]:expression.colors[item.layer]
-              const opacity=liveDsp
-                ? Math.min(1,.30+activity*.58+(dominant ? .12 : 0)+crest*.10)
+              const stagePresence=live
+                ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
+                : 0
+              const color=live
+                ? liveDspStageLayerColor(theme,item.layer,live.stats.stageWeights,live.stats.stageFocus,live.stats.stageLift)
+                : expression.colors[item.layer]
+              const opacity=live
+                ? Math.min(1,.22+activity*.30+live.stats.gain*.14+stagePresence*.28+crest*.08)
                 : dominant?expression.motion.dominantOpacity:expression.motion.secondaryOpacity
-              const strokeWidth=liveDsp
-                ? (dominant?1.55:1.02)+crest*.72
+              const strokeWidth=live
+                ? .92+live.stats.stageLift*.25+crest*.38+live.stats.sharpness*.12
                 : (dominant?1.7:1.05)*expression.motion.stroke
               const glow=!liveDsp&&dominant
                 ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
@@ -165,20 +172,22 @@ export function MusicOrgan({locale}:Props) {
 
               return (
                 <g key={item.layer}>
-                  {liveDsp&&(
+                  {live&&(
                     <path
                       d={path}
                       className="music-layer-live-glow"
                       style={{
                         stroke:color,
-                        opacity:theme==='normal' ? .07+crest*.06 : .12+crest*.10,
-                        strokeWidth:strokeWidth+(theme==='normal'?3.0:4.2),
+                        opacity:theme==='normal'
+                          ? .06+live.stats.glow*.07+crest*.05+stagePresence*.05
+                          : .10+live.stats.glow*.11+crest*.08+stagePresence*.08,
+                        strokeWidth:strokeWidth+(theme==='normal'?3.1:4.4)+live.stats.stereoWidth*.65+stagePresence*.45,
                       }}
                     />
                   )}
                   <path
                     d={path}
-                    className={'music-layer music-layer-'+item.layer+(dominant?' is-dominant':'')+(crest>.35?' is-crest':'')}
+                    className={'music-layer music-layer-'+item.layer+(!live&&dominant?' is-dominant':'')+(crest>.35?' is-crest':'')}
                     style={{
                       stroke:color,
                       opacity,

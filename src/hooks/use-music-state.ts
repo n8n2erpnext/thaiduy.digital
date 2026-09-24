@@ -10,7 +10,7 @@ import {
 } from '@/lib/music-state'
 
 const DSP_VISUAL_DELAY_MS=900
-const DSP_BUFFER_KEEP_MS=2_800
+const DSP_BUFFER_KEEP_MS=5_000
 const DSP_FALLBACK_GRACE_MS=10_000
 
 let baseSnapshot:MusicCortexState=restingMusicState
@@ -20,6 +20,8 @@ let staleTimer:ReturnType<typeof setTimeout>|null=null
 let stream:EventSource|null=null
 let inflight:Promise<void>|null=null
 let dspFrames:BufferedMusicDspFrame[]=[]
+let dspVisualAt=0
+let dspVisualSeq=0
 let lastAudibleAt=0
 const listeners=new Set<()=>void>()
 
@@ -39,9 +41,24 @@ function emit(next:MusicCortexState) {
 }
 
 function pushDspFrame(frame:MusicDspPublicFrame) {
-  const receivedAt=Date.now()
+  const now=Date.now()
+  const step=Math.max(40,Math.min(160,frame.windowMs||85))
+  const seqGap=dspVisualSeq>0?Math.max(1,frame.seq-dspVisualSeq):1
+  const predicted=dspVisualAt>0?dspVisualAt+step*seqGap:now
+  const drift=now-predicted
+
+  // AAC transport arrives in bursts (typically ~3 decoded 85 ms frames every
+  // ~250 ms). Preserve the PCM/media cadence instead of stamping all frames
+  // with the burst arrival time. Re-anchor only after a true transport gap.
+  const receivedAt=
+    dspVisualAt<=0||dspVisualSeq<=0||frame.seq<=dspVisualSeq||drift>750||drift<-500
+      ? now
+      : predicted
+
+  dspVisualAt=receivedAt
+  dspVisualSeq=frame.seq
   dspFrames=[...dspFrames,{ receivedAt,frame }]
-    .filter(item=>receivedAt-item.receivedAt<=DSP_BUFFER_KEEP_MS)
+    .filter(item=>now-item.receivedAt<=DSP_BUFFER_KEEP_MS)
 }
 
 function scheduleFallbackPoll(delay=500) {

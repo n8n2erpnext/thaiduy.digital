@@ -90,7 +90,17 @@ export function acousticVisualSample(frame:MusicDspPublicFrame,layer:MusicLayerN
 export function acousticVisualWindow({frames,endAt,layer,historyMs=1550}:{frames:BufferedMusicDspFrame[];endAt:number;layer:MusicLayerName;historyMs?:number}):AcousticVisualWindow|null {
   const currentFrame=sampleMusicDspFrameAt(frames,endAt)
   if(!currentFrame) return null
-  const history=frames.filter(item=>item.receivedAt>=endAt-historyMs&&item.receivedAt<=endAt).map(item=>acousticVisualSample(item.frame,layer))
   const current=acousticVisualSample(currentFrame,layer)
-  return {layer,current,history:history.length?history:[current]}
+  const step=Math.max(55,Math.min(110,currentFrame.windowMs||85))
+  const history:AcousticVisualSample[]=[]
+
+  // Resample the delayed PCM timeline on a regular media grid. This makes the
+  // visual conditioner behave like an analogue envelope circuit instead of
+  // inheriting AAC/network burst timing.
+  for(let at=endAt-historyMs;at<endAt;at+=step) {
+    const frame=sampleMusicDspFrameAt(frames,at)
+    if(frame) history.push(acousticVisualSample(frame,layer))
+  }
+  history.push(current)
+  return {layer,current,history}
 }

@@ -844,3 +844,12 @@ This is the authoritative continuation point.
 - Presentation glow/stroke/opacity are driven by measured gain, crest, stereo width and sharpness.
 - Contract guards: BPM metadata changes alone must not alter geometry; stereo width must alter geometry; vocalProbability changes alone must not alter geometry; loud/quiet and relative crest behavior remain enforced.
 - Synthetic stereo regression confirmed direct Mid/Side/width through the full renderer with all six layers finite.
+
+### Live DSP visual de-burst / buffer smoothing
+- Live transport itself is not under-producing frames. Redis pub/sub measured ~93 frames / 8 s (~11.6 fps), seq delta always 1.
+- AAC transport arrives in bursts: typically ~3 decoded ~85 ms PCM frames within 1-2 ms, followed by ~250 ms silence until the next AAC chunk. Browser previously stamped each frame with wall-clock receipt time, causing visual standstill -> jump behavior.
+- DSP client buffer keep increased from 2.8 s to 5.0 s while visual delay remains 900 ms. This increases headroom without increasing displayed latency.
+- pushDspFrame now reconstructs a PCM/media visual clock from frame seq + windowMs (~85 ms), re-anchoring only after a true transport gap.
+- Acoustic visual history is now resampled on a regular media grid before entering the visual conditioner/AMP, preventing AAC/network burst timing from becoming visual motion.
+- Live A/B on the same stream: mean geometry delta P99 0.806 -> 0.313 px/16 ms; worst mean delta 0.934 -> 0.418; worst single point delta 3.61 -> 1.93 px. Median delta rose slightly because motion is now continuous rather than frozen between bursts.
+- LastFM visual branch remains untouched.

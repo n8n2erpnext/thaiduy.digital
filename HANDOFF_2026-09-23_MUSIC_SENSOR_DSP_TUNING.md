@@ -875,3 +875,10 @@ This is the authoritative continuation point.
 - Hard dominantLayer styling remains disabled for Live DSP; it is retained for LastFM only.
 - Live observation during this pass: mid .306 / bass .305 / vocal-range .197 / treble .053 / balanced .139 with focus .098, a real co-lead case where no single band is allowed to black out the background.
 - LastFM visual geometry/expression files remain untouched.
+
+### Per-wave tuning started · Bass V1
+- Per-wave tuning now begins with the physical bass lane; all untuned lanes remain neutral character multipliers.
+- Bass character: slower/broader cycle, stronger drift/swell/groove body, reduced drive/pluck/high-order edge, slightly reduced Side contribution.
+- First attempt was intentionally rejected after live measurement because bass excursion reached ~9.88 px versus low-mid ~4.78 / mid ~4.38, violating the stage rule that spotlight must not erase background.
+- Retuned Bass V1 live measurement: bass excursion ~3.84 px, low-mid ~4.72, mid ~3.85 in the sampled passage. Bass remains smoother/rounder (roughness ~.025 vs low-mid ~.052 / mid ~.076) without amplitude domination.
+- Next tuning order: low-mid -> mid -> vocal-range -> presence -> air.

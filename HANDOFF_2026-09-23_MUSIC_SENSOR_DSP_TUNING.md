@@ -927,3 +927,12 @@ This is the authoritative continuation point.
 - Public DSP state and server learning-cycle tempo now prefer reliable pulseBpm. Header/organ tempo travel therefore follows the same measured BPM automatically. Legacy tempoBpm/autocorr/onset remain published for diagnostics and meter work.
 - Post-deploy live checks: one section locked 144.126-144.252 BPM at ~1.0 confidence; after a later worker reset/current musical section, pulse locked 130.376-130.702 BPM with 31/31 sampled frames reliable at ~.888 confidence. /api/music/state reported the same authoritative pulse BPM while the old core remained ~87 and did not drive presentation.
 - LastFM/semantic inputs and global wave amplitude mapping were not changed.
+
+### Music Visual color sync + conveyor motion V2
+- Live DSP horizontal motion now has one conveyor phase authority. Acoustic controls may reshape/amplify the carrier but no longer inject competing forward/backward phase terms that visually rock the wave in place.
+- Shared live DSP visual resolver now drives header wave, large Music Organ wave/legend and frequency meter bars from the same acoustic palette.
+- Palette expanded to blue -> teal -> green -> amber/gold -> red/rose -> violet. Amber/gold is the vocal-range lane; red/rose is presence; air remains violet. Duet blending uses vivid HSL hue interpolation instead of RGB averaging.
+- Day mode palette is separately boosted for saturation/contrast and live DSP strokes/glow are stronger on light backgrounds without copying night mode.
+- Frequency bars use the same resolved per-layer color as the wave plus matching peak markers and a light-theme glow.
+- DSP metadata fallback wording is now product-facing rather than Android-internal.
+- TypeScript, git diff check and live DSP amplified-sine contract pass. LastFM visual source files remain untouched.

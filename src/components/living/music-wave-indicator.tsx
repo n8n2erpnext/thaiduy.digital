@@ -14,8 +14,7 @@ import {
 import {
   advanceLiveDspTravelClock,
   createLiveDspTravelClock,
-  liveDspLayerColors,
-  liveDspStageLayerColor,
+  resolveLiveDspVisualTheme,
   liveDspWavePath,
 } from '@/lib/music-live-dsp-wave'
 import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
@@ -102,7 +101,10 @@ export function MusicWaveIndicator({locale}:Props) {
   const active=state.mode==='listening'||state.mode==='humming'
   const liveDsp=state.signal==='dsp'
   const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
-  const liveColors=liveDspLayerColors[theme]
+  const liveVisualTheme=useMemo(
+    ()=>resolveLiveDspVisualTheme(theme,state.layers),
+    [theme,state.layers],
+  )
   const [displayMotion,setDisplayMotion]=useState(expression.motion)
   const [tooltipOpen,setTooltipOpen]=useState(false)
   const [tooltipCycle,setTooltipCycle]=useState(0)
@@ -263,7 +265,7 @@ export function MusicWaveIndicator({locale}:Props) {
                 ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
                 : 0
               const opacity=live
-                ? Math.min(1,.22+live.stats.activity*.28+live.stats.gain*.14+stagePresence*.28+live.stats.crest*.08)
+                ? Math.min(1,(theme==='normal'?.31:.22)+live.stats.activity*.28+live.stats.gain*.14+stagePresence*.28+live.stats.crest*.08)
                 : dominant
                   ? displayMotion.dominantOpacity
                   : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
@@ -271,7 +273,7 @@ export function MusicWaveIndicator({locale}:Props) {
                 ? .88+live.stats.stageLift*.22+live.stats.crest*.34+live.stats.sharpness*.12
                 : (dominant?1.42:1.02)*displayMotion.stroke
               const color=live
-                ? liveDspStageLayerColor(theme,layer,live.stats.stageWeights,live.stats.stageFocus,live.stats.stageLift)
+                ? liveVisualTheme.barFillColors[layer]
                 : expression.colors[layer]
               const glow=!live&&dominant
                 ? 'drop-shadow(0 0 '+String(2+displayMotion.glow*7)+'px '+expression.glowColor+')'
@@ -295,9 +297,10 @@ export function MusicWaveIndicator({locale}:Props) {
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .06+live.stats.gain*.04+live.stats.glow*.06+live.stats.crest*.04+live.stats.stereoWidth*.03+stagePresence*.05
+                          ? .13+live.stats.gain*.06+live.stats.glow*.10+live.stats.crest*.06+live.stats.stereoWidth*.04+stagePresence*.08
                           : .10+live.stats.gain*.07+live.stats.glow*.09+live.stats.crest*.08+live.stats.stereoWidth*.05+stagePresence*.08,
-                        strokeWidth:width+(theme==='normal'?2.1:3.0)+live.stats.stereoWidth*.52+stagePresence*.42,
+                        strokeWidth:width+(theme==='normal'?2.7:3.0)+live.stats.stereoWidth*.52+stagePresence*.42,
+                        filter:theme==='normal'?'drop-shadow(0 0 2.6px '+color+') saturate(1.18)':'none',
                       }}
                     />
                   )}
@@ -308,7 +311,9 @@ export function MusicWaveIndicator({locale}:Props) {
                       stroke:color,
                       opacity,
                       strokeWidth:width,
-                      filter:live?'none':glow,
+                      filter:live
+                        ? (theme==='normal'?'drop-shadow(0 0 1.35px '+color+') saturate(1.12)':'none')
+                        : glow,
                     }}
                   />
                 </g>

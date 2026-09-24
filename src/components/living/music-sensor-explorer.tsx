@@ -1,8 +1,10 @@
 'use client'
 
 import { HummingPlayer, HummingScore } from '@/components/living/humming-player'
-import { useEffect,useRef,useState } from 'react'
+import { useEffect,useMemo,useRef,useState } from 'react'
 import { useMusicState } from '@/hooks/use-music-state'
+import { resolveLiveDspVisualTheme } from '@/lib/music-live-dsp-wave'
+import type { MusicTheme } from '@/lib/music-expression'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 
@@ -26,12 +28,18 @@ function compressLiveMeter(value:number) {
   return Math.min(.98,.68+(1-Math.exp(-(v-.68)*5))*.30)
 }
 
+function readTheme():MusicTheme {
+  if(typeof document==='undefined') return 'dark'
+  return document.documentElement.dataset.theme==='normal'?'normal':'dark'
+}
+
 function valueOrDash(value:string|null|undefined) {
   return value?.trim() || '—'
 }
 
 export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes, knowledgeVersion }:Props) {
   const state=useMusicState()
+  const [theme,setTheme]=useState<MusicTheme>('dark')
   const [meterValues,setMeterValues]=useState<MeterValues>(emptyMeter)
   const [meterPeaks,setMeterPeaks]=useState<MeterValues>(emptyMeter)
   const meterTargetRef=useRef<MeterValues>(emptyMeter())
@@ -41,10 +49,14 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
   const t=messages[locale].music
   const e=t.explorer
   const vi=locale==='vi'
+  const liveVisualTheme=useMemo(
+    ()=>resolveLiveDspVisualTheme(theme,state.layers),
+    [theme,state.layers],
+  )
   const track=state.track
     ? state.track.title+' — '+state.track.artist
     : state.signal==='dsp'
-      ? (vi?'Live DSP · chưa có metadata từ Android':'Live DSP · Android metadata unavailable')
+      ? (vi?'Live DSP · chưa có metadata từ Android':'Live DSP · track metadata pending')
       : (vi?'Không có bài đang phát':'No active playback')
   const modeLabel=vi
     ? (state.mode==='listening'?'ĐANG NGHE':state.mode==='humming'?'ĐANG NGÂN NGA':'ĐANG NGHỈ')
@@ -52,6 +64,14 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
   const signalLabel=vi
     ? (state.signal==='offline'?'OFFLINE':state.signal==='dsp'?'DSP LIVE':'NGỮ NGHĨA')
     : state.signal.toUpperCase()
+
+  useEffect(()=>{
+    const sync=()=>setTheme(readTheme())
+    sync()
+    const observer=new MutationObserver(sync)
+    observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})
+    return()=>observer.disconnect()
+  },[])
 
   useEffect(()=>{
     if(state.signal!=='dsp') {
@@ -194,12 +214,21 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
             {layers.map(layer=>{
               const level=state.signal==='dsp'?meterValues[layer]:state.layers[layer].weight
               const peak=state.signal==='dsp'?meterPeaks[layer]:level
+              const color=state.signal==='dsp'?liveVisualTheme.barFillColors[layer]:undefined
               return (
                 <div key={layer}>
                   <span>{t.layers[layer]}</span>
-                  <i>
-                    <b style={{width:String(Math.round(level*100))+'%'}} />
-                    {state.signal==='dsp'&&<small style={{left:'calc('+String(Math.round(peak*100))+'% - 1px)'}} />}
+                  <i style={state.signal==='dsp'?{background:liveVisualTheme.barTrackColor}:undefined}>
+                    <b style={{
+                      width:String(Math.round(level*100))+'%',
+                      background:color,
+                      boxShadow:state.signal==='dsp'&&theme==='normal'?'0 0 7px '+color+'55':undefined,
+                    }} />
+                    {state.signal==='dsp'&&<small style={{
+                      left:'calc('+String(Math.round(peak*100))+'% - 1px)',
+                      background:color,
+                      boxShadow:'0 0 6px '+color+'66',
+                    }} />}
                   </i>
                   <em>{Math.round(level*100)}</em>
                 </div>

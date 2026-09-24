@@ -25,38 +25,42 @@ function softSquare(value:number,sharpness:number){const drive=1.05+sharpness*2.
 export function renderAcousticVisualWave({layer,signal,controls,now,travelPhase,xStart,width,centerY,amplitude,points}:{layer:MusicLayerName;signal:AcousticVisualSample;controls:VisualAmpControls;now:number;travelPhase?:number;xStart:number;width:number;centerY:number;amplitude:number;points:number}) {
   const seconds=(now%120000)/1000,layerPhase=phase[layer],layerSeed=seed[layer]
   const character=layerCharacter[layer]
-  // Positive phase in sin(kx + phase) travels right -> left. While callers
-  // migrate, fall back to the former constant-rate clock.
+  // One conveyor clock owns every horizontal phase. Acoustic controls may
+  // reshape/amplify the carrier, but they must never push it backwards.
   const transportPhase=typeof travelPhase==='number'?travelPhase:seconds*Math.PI*2*.34
-  const clock=transportPhase+(controls.motionRate-.72)*.36+controls.attack*.10
-  const cycles=baseCycles[layer]*character.cycle*controls.density*(.94+controls.motionRate*.06)
+  const clock=transportPhase
+  const cycles=baseCycles[layer]*character.cycle
+  const textureDensity=Math.max(0,Math.min(1,(controls.density-.68)/1.10))
+  const motionTexture=.92+controls.motionRate*.10
   const signedStereo=controls.balance*.62
   const bloom=1+controls.glow*.12+controls.crest*.10+controls.stereoSpread*.08
   const visualAmp=amplitude*character.amp*(.07+controls.gain*1.28)*(1+controls.attack*.08)*(.90+controls.layerSpread*.10)*bloom
   const driftWeight=(.18+controls.roundness*.68*(1-controls.attack*.50))*character.drift
   const swellWeight=(.10+controls.dynamic*.58*(1-controls.attack*.42))*character.swell
-  const driveWeight=(.08+controls.sharpness*.54+controls.attack*.22)*character.drive
-  const grooveWeight=(.08+controls.pulse*.62+controls.activity*.08)*character.groove
-  const pluckWeight=(.06+controls.attack*.58*(.72+controls.roundness*.18))*character.pluck
+  const driveWeight=(.08+controls.sharpness*.54+controls.attack*.22)*(1+textureDensity*.10)*character.drive
+  const grooveWeight=(.08+controls.pulse*.62+controls.activity*.08)*motionTexture*character.groove
+  const pluckWeight=(.06+controls.attack*.58*(.72+controls.roundness*.18))*(1+textureDensity*.08)*character.pluck
   const totalWeight=driftWeight+swellWeight+driveWeight+grooveWeight+pluckWeight
   const pathPoints:Array<[number,number]>=[]
   for(let i=0;i<=points;i++){
     const r=i/points,x=xStart+r*width,envelope=Math.pow(Math.sin(r*Math.PI),1.58)
-    const theta=r*Math.PI*2*cycles+clock+layerPhase*controls.phaseSpread+signedStereo*.12
-    const asymWarp=theta+controls.asymmetry*.42*Math.sin(theta*.47+layerSeed)+signedStereo*.16*Math.sin(theta*.31+layerPhase)
-    const pulsePhase=r*Math.PI*(4.3+controls.density*2.1)-clock*.58+layerSeed
-    const pulseEnvelope=.68+.32*Math.pow(.5+.5*Math.sin(pulsePhase),1.35)
-    const drift=.64*Math.sin(theta*.72)+.24*Math.sin(theta*.31+clock*.22+layerSeed*.35)+.12*Math.cos(theta*1.18-clock*.16)
+    const theta=r*Math.PI*2*cycles+clock+layerPhase
+    const phaseTexture=.34+.08*controls.phaseSpread
+    const asymWarp=theta+controls.asymmetry*phaseTexture*Math.sin(theta*.47+layerSeed)+signedStereo*.14*Math.sin(theta*.31+layerPhase)
+    const pulsePhase=theta*.82+layerSeed
+    const pulseEnvelope=.68+.32*Math.pow(.5+.5*Math.sin(pulsePhase),1.26+textureDensity*.18)
+    const drift=.64*Math.sin(theta*.72)+.24*Math.sin(theta*.31+layerSeed*.35)+.12*Math.cos(theta*1.18-layerSeed*.14)
     const swellShape=.50+.50*Math.pow(Math.sin(r*Math.PI),1.22)
     const swell=(.74*Math.sin(theta*.73)+.26*Math.sin(theta*1.46+layerSeed*.20))*swellShape
-    const drive=.70*softSquare(Math.sin(asymWarp*1.26),controls.sharpness*character.edge)+.21*Math.sin(theta*3.05+layerSeed*.28)+.09*Math.sin(theta*4.8-clock*.36)
+    const drive=.70*softSquare(Math.sin(asymWarp*1.26),controls.sharpness*character.edge)+.21*Math.sin(theta*3.05+layerSeed*.28)+.09*Math.sin(theta*4.8+layerSeed*.11)
     const pocket=.70+.30*Math.pow(.5+.5*Math.cos(pulsePhase+.8),1.52)
     const groove=(.62*Math.sin(asymWarp)+.27*Math.sin(theta*2.20+1.35)+.11*Math.cos(theta*4.24+layerSeed*.32))*pocket*(.90+.10*pulseEnvelope*controls.pulse)
-    const segment=(r*3.45+clock*.055+layerSeed*.08)%1,decay=.48+.52*Math.exp(-segment*(2.9+controls.attack*.8))
+    const phaseTurns=theta/(Math.PI*2)
+    const segment=((phaseTurns*.55+layerSeed*.08)%1+1)%1,decay=.48+.52*Math.exp(-segment*(2.9+controls.attack*.8))
     const pluck=(.70*Math.sin(theta*1.16)+.22*Math.sin(theta*2.32+layerSeed*.30)+.08*Math.sin(theta*4.55))*decay
     let carrier=(drift*driftWeight+swell*swellWeight+drive*driveWeight+groove*grooveWeight+pluck*pluckWeight)/totalWeight
     carrier+=Math.sin(theta*.84+signedStereo*.9+layerSeed)*controls.stereoSpread*(.08+.10*signal.side)*character.side
-    if(controls.crest>0) carrier+=Math.sin(theta*3.28+clock*.21)*controls.crest*(.055+signal.flux*.07)
+    if(controls.crest>0) carrier+=Math.sin(theta*3.28+layerSeed*.21)*controls.crest*(.055+signal.flux*.07)
     const edgeSharpness=controls.sharpness*character.edge
     carrier=Math.tanh(carrier*(1+edgeSharpness*.22))/(Math.tanh(1+edgeSharpness*.22)||1)
     const y=centerY+carrier*visualAmp*envelope

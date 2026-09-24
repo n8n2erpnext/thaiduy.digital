@@ -8,8 +8,7 @@ import { messages } from '@/i18n/messages'
 import {
   advanceLiveDspTravelClock,
   createLiveDspTravelClock,
-  liveDspLayerColors,
-  liveDspStageLayerColor,
+  resolveLiveDspVisualTheme,
   liveDspWavePath,
 } from '@/lib/music-live-dsp-wave'
 import { resolveMusicExpression,type MusicTheme } from '@/lib/music-expression'
@@ -33,6 +32,10 @@ export function MusicOrgan({locale}:Props) {
   const active=state.mode!=='resting'
   const liveDsp=state.signal==='dsp'
   const expression=useMemo(()=>resolveMusicExpression(state,theme),[state,theme])
+  const liveVisualTheme=useMemo(
+    ()=>resolveLiveDspVisualTheme(theme,state.layers),
+    [theme,state.layers],
+  )
   const bars=useMemo(
     ()=>layers.map((layer,index)=>({
       layer,
@@ -106,8 +109,6 @@ export function MusicOrgan({locale}:Props) {
         {label:'tempo',value:state.tempoBpm&&state.tempoBpm>0?String(Math.round(state.tempoBpm))+' BPM':'—'},
       ]
 
-  const liveColors=liveDspLayerColors[theme]
-
   return (
     <section className="music-organ" aria-label={t.aria}>
       <div className="music-organ-top">
@@ -173,10 +174,10 @@ export function MusicOrgan({locale}:Props) {
                 ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
                 : 0
               const color=live
-                ? liveDspStageLayerColor(theme,item.layer,live.stats.stageWeights,live.stats.stageFocus,live.stats.stageLift)
+                ? liveVisualTheme.barFillColors[item.layer]
                 : expression.colors[item.layer]
               const opacity=live
-                ? Math.min(1,.22+activity*.30+live.stats.gain*.14+stagePresence*.28+crest*.08)
+                ? Math.min(1,(theme==='normal'?.30:.22)+activity*.30+live.stats.gain*.14+stagePresence*.28+crest*.08)
                 : dominant?expression.motion.dominantOpacity:expression.motion.secondaryOpacity
               const strokeWidth=live
                 ? .92+live.stats.stageLift*.25+crest*.38+live.stats.sharpness*.12
@@ -194,9 +195,10 @@ export function MusicOrgan({locale}:Props) {
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .06+live.stats.glow*.07+crest*.05+stagePresence*.05
+                          ? .14+live.stats.glow*.10+crest*.07+stagePresence*.08
                           : .10+live.stats.glow*.11+crest*.08+stagePresence*.08,
-                        strokeWidth:strokeWidth+(theme==='normal'?3.1:4.4)+live.stats.stereoWidth*.65+stagePresence*.45,
+                        strokeWidth:strokeWidth+(theme==='normal'?3.8:4.4)+live.stats.stereoWidth*.65+stagePresence*.45,
+                        filter:theme==='normal'?'drop-shadow(0 0 3px '+color+') saturate(1.16)':'none',
                       }}
                     />
                   )}
@@ -207,7 +209,9 @@ export function MusicOrgan({locale}:Props) {
                       stroke:color,
                       opacity,
                       strokeWidth,
-                      filter:liveDsp?'none':glow,
+                      filter:liveDsp
+                        ? (theme==='normal'?'drop-shadow(0 0 1.6px '+color+') saturate(1.12)':'none')
+                        : glow,
                     }}
                   />
                 </g>
@@ -219,7 +223,7 @@ export function MusicOrgan({locale}:Props) {
         <div className="music-legend">
           {layers.map(layer=>(
             <span key={layer}>
-              <i style={{background:liveDsp?liveColors[layer]:expression.colors[layer]}} />
+              <i style={{background:liveDsp?liveVisualTheme.barFillColors[layer]:expression.colors[layer]}} />
               {t.layers[layer]}
             </span>
           ))}

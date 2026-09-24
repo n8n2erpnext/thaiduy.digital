@@ -98,13 +98,13 @@ function applyDsp(frame:MusicDspPublicFrame) {
     const weight=Math.max(0,Math.min(1,frame[name]))
     layers[name]={weight,gain:Math.max(0,Math.min(1,.35+weight*.8))}
   }
-  if(typeof frame.vocalProbability==='number') {
-    const weight=Math.max(0,Math.min(1,frame.vocalProbability))
-    layers.vocal={weight,gain:Math.max(0,Math.min(1,.35+weight*.8))}
-  }
+  // Live DSP visual lanes stay physical. The legacy vocal lane represents
+  // the mid/presence region and is not driven by vocalProbability.
+  const vocalBand=Math.max(0,Math.min(1,frame.mid*.60+frame.presence*.40))
+  layers.vocal={weight:vocalBand,gain:Math.max(0,Math.min(1,.35+vocalBand*.8))}
 
   const candidates:Array<[MusicLayerName,number]>=signalLayers.map(name=>[name,layers[name].weight])
-  if(typeof frame.vocalProbability==='number') candidates.push(['vocal',layers.vocal.weight])
+  candidates.push(['vocal',layers.vocal.weight])
   const dominantLayer=candidates.sort((a,b)=>b[1]-a[1])[0]?.[0]??dspBase.dominantLayer
 
   if(baseSnapshot.signal!=='dsp') void poll()

@@ -176,7 +176,7 @@ export function MusicWaveIndicator({locale}:Props) {
     ? (vi?'TÍN HIỆU':'SIGNAL')+' · LIVE DSP AMP · '+(state.dspVisualDelayMs??900)+' MS BUFFER'
     : (vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
   const motionDetail=liveDsp
-    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · SINE CARRIER · DSP ENVELOPE · ADAPTIVE CREST'
+    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · PCM L/R · VISUAL AMP · ACOUSTIC GRAMMAR'
     : (vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
       +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
       +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
@@ -241,12 +241,12 @@ export function MusicWaveIndicator({locale}:Props) {
                   })
                 : null
               const opacity=live
-                ? Math.min(1,.28+live.stats.activity*.58+(dominant ? .10 : 0)+live.stats.crest*.12)
+                ? Math.min(1,.30+live.stats.activity*.42+live.stats.gain*.18+(dominant?.08:0)+live.stats.crest*.10)
                 : dominant
                   ? displayMotion.dominantOpacity
                   : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
               const width=live
-                ? (dominant?1.36:1.0)+live.stats.crest*.62
+                ? (dominant?1.34:.98)+live.stats.crest*.44+live.stats.sharpness*.18
                 : (dominant?1.42:1.02)*displayMotion.stroke
               const color=live?liveColors[layer]:expression.colors[layer]
               const glow=!live&&dominant
@@ -271,9 +271,9 @@ export function MusicWaveIndicator({locale}:Props) {
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .08+live.stats.crest*.06
-                          : .13+live.stats.crest*.10,
-                        strokeWidth:width+(theme==='normal'?2.0:2.8),
+                          ? .08+live.stats.gain*.06+live.stats.crest*.06+live.stats.stereoWidth*.03
+                          : .13+live.stats.gain*.09+live.stats.crest*.10+live.stats.stereoWidth*.05,
+                        strokeWidth:width+(theme==='normal'?2.1:3.0)+live.stats.stereoWidth*.55,
                       }}
                     />
                   )}

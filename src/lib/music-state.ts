@@ -74,6 +74,18 @@ export type MusicDspPublicFrame = {
   harmonicProbability?: number
   dynamicRange?: number
   vocalProbability?: number
+  rawLeftRmsDbfs?: number
+  rawRightRmsDbfs?: number
+  rawMonoRmsDbfs?: number
+  rawMidRmsDbfs?: number
+  rawSideRmsDbfs?: number
+  rawPeakDbfs?: number
+  rawClipFraction?: number
+  stereoCorrelation?: number
+  monoCancellationRatio?: number
+  stereoWidth?: number
+  leftRightBalance?: number
+  rawCrestFactor?: number
 }
 
 export type MusicCortexState = {

@@ -17,7 +17,9 @@ export type ServerDspFeatures = {
   subdivisionSimple:number; subdivisionTriplet:number; swingness:number
   percussiveProbability:number; harmonicProbability:number; dynamicRange:number
   rawLeftRmsDbfs:number; rawRightRmsDbfs:number; rawMonoRmsDbfs:number
-  rawPeakDbfs:number; rawClipFraction:number; stereoCorrelation:number; monoCancellationRatio:number
+  rawMidRmsDbfs:number; rawSideRmsDbfs:number; rawPeakDbfs:number; rawClipFraction:number
+  stereoCorrelation:number; monoCancellationRatio:number; stereoWidth:number; leftRightBalance:number
+  rawCrestFactor:number
   tempoCandidates:TempoFamilyCandidate[]
 }
 
@@ -94,13 +96,14 @@ export class ServerDspEngine {
     const im=new Float64Array(this.fftSize)
     const rhythmSums=new Float64Array(4)
     const rhythmCounts=new Int32Array(4)
-    let monoSq=0,leftSq=0,rightSq=0,cross=0,peak=0,clips=0,zcr=0,prev=0
+    let monoSq=0,sideSq=0,leftSq=0,rightSq=0,cross=0,peak=0,clips=0,zcr=0,prev=0
 
     for(let i=0;i<frames;i++){
       const l=interleaved[i*channels]/32768
       const r=channels>1?interleaved[i*channels+1]/32768:l
       const mixed=(l+r)*0.5
-      leftSq+=l*l; rightSq+=r*r; cross+=l*r; monoSq+=mixed*mixed
+      const side=(l-r)*0.5
+      leftSq+=l*l; rightSq+=r*r; cross+=l*r; monoSq+=mixed*mixed; sideSq+=side*side
       peak=Math.max(peak,Math.abs(l),Math.abs(r))
       if(Math.abs(l)>=0.999 || Math.abs(r)>=0.999) clips++
       if(i>0 && (mixed>=0)!==(prev>=0)) zcr++
@@ -160,9 +163,13 @@ export class ServerDspEngine {
 
     const leftRms=Math.sqrt(leftSq/Math.max(1,frames))
     const rightRms=Math.sqrt(rightSq/Math.max(1,frames))
+    const sideRms=Math.sqrt(sideSq/Math.max(1,frames))
     const stereoBase=Math.sqrt((leftSq+rightSq)/(2*Math.max(1,frames)))
     const stereoCorrelation=clamp(cross/Math.sqrt(Math.max(1e-12,leftSq*rightSq)),-1,1)
     const monoCancellationRatio=clamp(1-rawMonoRms/Math.max(1e-9,stereoBase))
+    const stereoWidth=clamp(sideRms/Math.max(1e-9,rawMonoRms+sideRms))
+    const leftRightBalance=clamp((rightRms-leftRms)/Math.max(1e-9,leftRms+rightRms),-1,1)
+    const rawCrestFactor=peak/Math.max(1e-9,stereoBase)
 
     return {
       rms,peak:peakLevel,bass,lowMid,mid,presence,air,spectralFlux,
@@ -179,8 +186,9 @@ export class ServerDspEngine {
       subdivisionTriplet:this.subdivisionTriplet,swingness:this.swingness,
       percussiveProbability:percussive,harmonicProbability:harmonic,dynamicRange:this.dynamicRange(),
       rawLeftRmsDbfs:db20(leftRms),rawRightRmsDbfs:db20(rightRms),rawMonoRmsDbfs:db20(rawMonoRms),
+      rawMidRmsDbfs:db20(rawMonoRms),rawSideRmsDbfs:db20(sideRms),
       rawPeakDbfs:db20(peak),rawClipFraction:clips/Math.max(1,frames*channels),
-      stereoCorrelation,monoCancellationRatio,
+      stereoCorrelation,monoCancellationRatio,stereoWidth,leftRightBalance,rawCrestFactor,
       tempoCandidates:this.tempoCandidates
     }
   }

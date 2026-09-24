@@ -114,6 +114,21 @@ const slow=timeline(Array.from({length:18},()=>({
   beatConfidence:.92,
 })))
 
+const mono=timeline(Array.from({length:18},()=>({
+  rms:.52,peak:.70,bass:.62,spectralFlux:.24,
+  rawMidRmsDbfs:-10,rawSideRmsDbfs:-48,stereoWidth:.02,leftRightBalance:0,
+})))
+const wide=timeline(Array.from({length:18},()=>({
+  rms:.52,peak:.70,bass:.62,spectralFlux:.24,
+  rawMidRmsDbfs:-10,rawSideRmsDbfs:-11,stereoWidth:.62,leftRightBalance:.16,
+})))
+const vocalLow=timeline(Array.from({length:18},()=>({
+  rms:.48,peak:.66,mid:.68,presence:.72,spectralFlux:.20,vocalProbability:.05,
+})))
+const vocalHigh=timeline(Array.from({length:18},()=>({
+  rms:.48,peak:.66,mid:.68,presence:.72,spectralFlux:.20,vocalProbability:.95,
+})))
+
 const now=10_000+17*100+900
 const args={now,width:104,centerY:12,amplitude:6.2,points:42} as const
 
@@ -125,6 +140,10 @@ const midWave=liveDspWavePath({layer:'mid',frames:loud,...args})
 const vocalWave=liveDspWavePath({layer:'vocal',frames:vocal,...args})
 const fastWave=liveDspWavePath({layer:'bass',frames:fast,...args})
 const slowWave=liveDspWavePath({layer:'bass',frames:slow,...args})
+const monoWave=liveDspWavePath({layer:'bass',frames:mono,...args})
+const wideWave=liveDspWavePath({layer:'bass',frames:wide,...args})
+const vocalLowWave=liveDspWavePath({layer:'vocal',frames:vocalLow,...args})
+const vocalHighWave=liveDspWavePath({layer:'vocal',frames:vocalHigh,...args})
 
 assert(!quietWave.path.includes('NaN'),'quiet path contains NaN')
 assert(!loudWave.path.includes('NaN'),'loud path contains NaN')
@@ -134,7 +153,10 @@ assert(climaxWave.stats.crest>.45,'relative final climax must enter crest mode')
 assert(masteredWave.stats.crest<.08,'constant mastered signal must not remain in crest mode')
 assert(loudWave.path!==midWave.path,'bass and mid must use distinct sine carriers')
 assert(vocalWave.path!==midWave.path,'vocal and mid must use distinct sine carriers')
-assert(fastWave.path!==slowWave.path,'measured tempo must change carrier motion')
+assert(fastWave.path===slowWave.path,'tempo metadata must not change live DSP geometry')
+assert(wideWave.path!==monoWave.path,'stereo width must sculpt live DSP geometry')
+assert(wideWave.stats.stereoWidth>monoWave.stats.stereoWidth+.4,'stereo signal bus must preserve width')
+assert(vocalLowWave.path===vocalHighWave.path,'vocal classifier must not drive live DSP geometry')
 assert(loudWave.path.startsWith('M 0 12'),'Live DSP carrier must start on the shared baseline')
 assert(loudWave.path.endsWith(' 12.00'),'Live DSP carrier must return to the shared baseline')
 assert(loudWave.path!==quietWave.path,'real DSP gain change must change geometry')
@@ -145,6 +167,6 @@ console.log(JSON.stringify({
   loudGain:loudWave.stats.gain,
   climaxCrest:climaxWave.stats.crest,
   masteredCrest:masteredWave.stats.crest,
-  slowTempo:slowWave.stats.tempo,
-  fastTempo:fastWave.stats.tempo,
+  slowMotion:slowWave.stats.motion,
+  fastMotion:fastWave.stats.motion,
 },null,2))

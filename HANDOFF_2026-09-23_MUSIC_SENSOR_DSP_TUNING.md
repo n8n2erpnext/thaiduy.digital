@@ -832,3 +832,15 @@ This is the authoritative continuation point.
 - Non-top DIRECT matches were clean on holdout. Fusion now allows oracle direct agreement with DSP candidate rank 2/3 only when candidate score is at least 35% of the top score.
 - Live Hero after ~26 s buffer: DSP top 103.54 (score .368), candidate #3 148.03 (score .243), oracle 151.232 (confidence .903). Fusion produced direct agreement, pulseBpm 151.232, pulseReliable true, while tempoBpm stayed ~102.32 and tempoReliable false.
 - This intentionally fixes pulse/wave motion without pretending the exact custom tempo estimator has resolved Hero.
+
+### Live DSP Visual V2 · acoustic signal chain
+- LastFM/semantic visual branch is frozen and untouched. music-wave-geometry.ts and music-expression.ts remain unchanged.
+- Live DSP visualization no longer uses tempoBpm, pulseBpm, meter, beatConfidence, vocalProbability, genre or LastFM semantics to drive geometry.
+- Server DSP now exposes direct stereo visual measurements: Mid RMS, Side RMS, stereo width, L/R balance and raw crest factor in addition to existing L/R RMS, correlation and cancellation.
+- New visual pipeline: PCM-derived MusicDspFrame -> music-visual-signal.ts -> music-visual-conditioner.ts (visual preamp/envelope/crest) -> music-dsp-visual-grammar.ts -> music-live-dsp-wave.ts.
+- The legacy live 'vocal' lane is now physically driven by mid/presence band energy, not vocalProbability.
+- Acoustic grammar continuously blends drift/swell/drive/groove/pluck basis shapes from measured attack, flux, dynamics, spectrum and stereo. This is not semantic classification.
+- Clock no longer multiplies absolute time by changing BPM/motion rate; it uses a continuous base clock plus local acoustic modulation to avoid phase jumps.
+- Presentation glow/stroke/opacity are driven by measured gain, crest, stereo width and sharpness.
+- Contract guards: BPM metadata changes alone must not alter geometry; stereo width must alter geometry; vocalProbability changes alone must not alter geometry; loud/quiet and relative crest behavior remain enforced.
+- Synthetic stereo regression confirmed direct Mid/Side/width through the full renderer with all six layers finite.

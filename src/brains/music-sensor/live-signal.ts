@@ -53,10 +53,15 @@ export type MusicDspFrame = {
   rawLeftRmsDbfs?: number
   rawRightRmsDbfs?: number
   rawMonoRmsDbfs?: number
+  rawMidRmsDbfs?: number
+  rawSideRmsDbfs?: number
   rawPeakDbfs?: number
   rawClipFraction?: number
   stereoCorrelation?: number
   monoCancellationRatio?: number
+  stereoWidth?: number
+  leftRightBalance?: number
+  rawCrestFactor?: number
   tempoCandidates?: Array<{ bpm:number; score:number; support:number }>
   pulseBpm?: number
   pulseConfidence?: number

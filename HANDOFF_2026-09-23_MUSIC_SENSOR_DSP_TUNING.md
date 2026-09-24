@@ -915,3 +915,15 @@ This is the authoritative continuation point.
 - Air V1: amp .74, cycle 1.02, drift .80, swell .74, drive .86, groove .76, pluck .90, side 1.10, edge 1.10.
 - Live before Air tuning: excursion ~4.25 px / roughness .1037 despite stage lift below unity (~.933).
 - Live after Air V1: excursion ~2.95 px / roughness .0616 with stage lift ~.949; it remains spatially wide and bright but no longer dominates when treble is not foreground.
+
+### Direct-server BPM recalibration - sample-clock authority
+- Runtime assumption changed: audible music is now played/captured directly on the server, so BPM no longer needs conservative representative selection intended to survive transport/network timing uncertainty.
+- BPM measurement remains based on contiguous decoded PCM/sample time, never Redis/SSE/browser arrival timestamps.
+- Live evidence before recalibration exposed the old fusion problem: oracle ~165.76 BPM (confidence .857, 55 beats, interval MAD ~10 ms) was octave-matched to the legacy DSP family and published as ~82 BPM.
+- Current PCM-ring window study on the same source: 8 s 164.503 BPM / .930 confidence / 5 ms MAD; 10 s 164.884 / .930 / 5 ms; 12 s 165.066 / .930 / 5 ms; 16 s 164.793 / .930 / 5 ms. Longer 20-30 s windows were not more stable and mixed more musical context.
+- Oracle cadence is now: minimum 8 s audio, 12 s analysis window, refresh every 2 s, stale after 6 s.
+- A 3-observation median stabilizes measured BPM. Only observations with confidence >= .55 and >= 4 beats enter history. A >12% move releases prior continuity only when confidence >= .80 and >= 8 beats.
+- High-confidence regular pulse becomes BPM authority when confidence >= .80, >= 8 beats and interval MAD <= max(18 ms, min(50 ms, 8% of beat interval)). The legacy custom tempo family remains diagnostic/fallback for weak or irregular oracle evidence.
+- Public DSP state and server learning-cycle tempo now prefer reliable pulseBpm. Header/organ tempo travel therefore follows the same measured BPM automatically. Legacy tempoBpm/autocorr/onset remain published for diagnostics and meter work.
+- Post-deploy live checks: one section locked 144.126-144.252 BPM at ~1.0 confidence; after a later worker reset/current musical section, pulse locked 130.376-130.702 BPM with 31/31 sampled frames reliable at ~.888 confidence. /api/music/state reported the same authoritative pulse BPM while the old core remained ~87 and did not drive presentation.
+- LastFM/semantic inputs and global wave amplitude mapping were not changed.

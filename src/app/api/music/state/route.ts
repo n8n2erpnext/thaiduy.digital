@@ -397,9 +397,11 @@ export async function GET() {
     const title=localActive ? hubPlayback.title.trim() : undefined
 
     const reliableTempo =
-      live.tempoReliable === false || (live.beatConfidence ?? 0) < .46
-        ? undefined
-        : live.tempoBpm
+      live.pulseReliable && live.pulseBpm && live.pulseBpm > 0
+        ? live.pulseBpm
+        : live.tempoReliable === false || (live.beatConfidence ?? 0) < .46
+          ? undefined
+          : live.tempoBpm
 
     const cycle=await runMusicSensorLearningCycle({
       semanticMode:'disabled',

@@ -130,11 +130,13 @@ function applyDsp(frame:MusicDspPublicFrame) {
     ...dspBase,
     signal:'dsp',
     energy:frame.rms,
-    tempoBpm:frame.tempoReliable===false
-      ? null
-      : frame.tempoBpm&&frame.tempoBpm>0
-        ? frame.tempoBpm
-        : dspBase.tempoBpm,
+    tempoBpm:frame.pulseReliable&&frame.pulseBpm&&frame.pulseBpm>0
+      ? frame.pulseBpm
+      : frame.tempoReliable===false
+        ? null
+        : frame.tempoBpm&&frame.tempoBpm>0
+          ? frame.tempoBpm
+          : null,
     beatConfidence:frame.beatConfidence??dspBase.beatConfidence,
     meter:frame.meter??dspBase.meter,
     swingness:frame.swingness??dspBase.swingness,

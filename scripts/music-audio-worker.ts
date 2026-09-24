@@ -10,10 +10,10 @@ const CHANNELS=2
 const FRAME_SAMPLES=4096
 const BYTES_PER_FRAME=FRAME_SAMPLES*CHANNELS*2
 const MAX_RING_BYTES=SAMPLE_RATE*CHANNELS*2*30
-const ORACLE_MIN_BUFFER_SECONDS=12
-const ORACLE_WINDOW_SECONDS=20
-const ORACLE_INTERVAL_MS=5_000
-const ORACLE_STALE_MS=12_000
+const ORACLE_MIN_BUFFER_SECONDS=8
+const ORACLE_WINDOW_SECONDS=12
+const ORACLE_INTERVAL_MS=2_000
+const ORACLE_STALE_MS=6_000
 
 type TempoOracleState={
   bpm:number
@@ -36,6 +36,7 @@ class DeviceSession {
   private oracleBusy=false
   private lastOracleRequestAt=0
   private latestOracle:TempoOracleState|null=null
+  private oracleBpmHistory:number[]=[]
   private recentPeakDbfs=-180
   private ring:Buffer[]=[]
   private ringBytes=0
@@ -137,11 +138,34 @@ class DeviceSession {
         const bpm=Number(parsed.bpm)
         const confidence=Number(parsed.confidence)
         if(!Number.isFinite(bpm)||bpm<40||bpm>210||!Number.isFinite(confidence))continue
+        const normalizedConfidence=Math.max(0,Math.min(1,confidence))
+        const beatCount=Number(parsed.beatCount)||0
+        const intervalMad=Number(parsed.intervalMad)||0
+        let stableBpm=bpm
+        if(normalizedConfidence>=.55&&beatCount>=4){
+          const currentMedian=this.oracleBpmHistory.length
+            ? [...this.oracleBpmHistory].sort((a,b)=>a-b)[Math.floor(this.oracleBpmHistory.length/2)]
+            : 0
+          if(
+            currentMedian>0 &&
+            normalizedConfidence>=.80 &&
+            beatCount>=8 &&
+            Math.abs(bpm-currentMedian)/currentMedian>.12
+          ){
+            // A large, high-confidence family move is more likely a new track/section
+            // than normal estimator wander. Release old continuity immediately.
+            this.oracleBpmHistory=[]
+          }
+          this.oracleBpmHistory.push(bpm)
+          if(this.oracleBpmHistory.length>3)this.oracleBpmHistory.shift()
+          const stable=[...this.oracleBpmHistory].sort((a,b)=>a-b)
+          stableBpm=stable[Math.floor(stable.length/2)]??bpm
+        }
         this.latestOracle={
-          bpm,
-          confidence:Math.max(0,Math.min(1,confidence)),
-          beatCount:Number(parsed.beatCount)||0,
-          intervalMad:Number(parsed.intervalMad)||0,
+          bpm:stableBpm,
+          confidence:normalizedConfidence,
+          beatCount,
+          intervalMad,
           analysisMs:Number(parsed.analysisMs)||0,
           receivedAt:Date.now(),
         }
@@ -203,22 +227,36 @@ class DeviceSession {
       }
     }
 
-    const confidence=agreement==='direct'
+    const beatInterval=60/Math.max(1,oracle.bpm)
+    const stableMadLimit=Math.max(.018,Math.min(.05,beatInterval*.08))
+    const oracleStable=
+      oracle.confidence>=.80 &&
+      oracle.beatCount>=8 &&
+      oracle.intervalMad<=stableMadLimit
+
+    const confidence=oracleStable
       ? oracle.confidence
-      : agreement==='octave'
-        ? oracle.confidence*.92
-        : agreement==='none'
-          ? oracle.confidence*.75
-          : oracle.confidence*.35
-    const pulseReliable=
-      (agreement==='direct'||agreement==='octave')
+      : agreement==='direct'
+        ? oracle.confidence
+        : agreement==='octave'
+          ? oracle.confidence*.92
+          : agreement==='none'
+            ? oracle.confidence*.75
+            : oracle.confidence*.35
+    const pulseReliable=oracleStable
+      ? true
+      : (agreement==='direct'||agreement==='octave')
         ? confidence>=.55
         : agreement==='none'
           ? confidence>=.78
           : false
 
-    const pulseBpm=
-      agreement==='direct'
+    // Direct server playback gives us contiguous PCM on the sample clock.
+    // When beat intervals are both confident and regular, the oracle is the
+    // BPM authority. The legacy family resolver remains as diagnostic/fallback.
+    const pulseBpm=oracleStable
+      ? oracle.bpm
+      : agreement==='direct'
         ? oracle.bpm
         : agreement==='octave'&&typeof top==='number'&&top>0
           ? top

@@ -128,6 +128,15 @@ const vocalLow=timeline(Array.from({length:18},()=>({
 const vocalHigh=timeline(Array.from({length:18},()=>({
   rms:.48,peak:.66,mid:.68,presence:.72,spectralFlux:.20,vocalProbability:.95,
 })))
+const bassStage=timeline(Array.from({length:18},()=>({
+  rms:.62,peak:.78,bass:.92,lowMid:.58,mid:.22,presence:.14,air:.08,spectralFlux:.18,
+})))
+const trebleStage=timeline(Array.from({length:18},()=>({
+  rms:.54,peak:.72,bass:.12,lowMid:.18,mid:.28,presence:.82,air:.94,spectralFlux:.26,
+})))
+const balancedStage=timeline(Array.from({length:18},()=>({
+  rms:.56,peak:.72,bass:.50,lowMid:.50,mid:.50,presence:.50,air:.50,spectralFlux:.20,
+})))
 
 const now=10_000+17*100+900
 const args={now,width:104,centerY:12,amplitude:6.2,points:42} as const
@@ -144,6 +153,12 @@ const monoWave=liveDspWavePath({layer:'bass',frames:mono,...args})
 const wideWave=liveDspWavePath({layer:'bass',frames:wide,...args})
 const vocalLowWave=liveDspWavePath({layer:'vocal',frames:vocalLow,...args})
 const vocalHighWave=liveDspWavePath({layer:'vocal',frames:vocalHigh,...args})
+const bassStageBass=liveDspWavePath({layer:'bass',frames:bassStage,...args})
+const bassStageAir=liveDspWavePath({layer:'air',frames:bassStage,...args})
+const trebleStageBass=liveDspWavePath({layer:'bass',frames:trebleStage,...args})
+const trebleStageAir=liveDspWavePath({layer:'air',frames:trebleStage,...args})
+const balancedBass=liveDspWavePath({layer:'bass',frames:balancedStage,...args})
+const balancedAir=liveDspWavePath({layer:'air',frames:balancedStage,...args})
 
 assert(!quietWave.path.includes('NaN'),'quiet path contains NaN')
 assert(!loudWave.path.includes('NaN'),'loud path contains NaN')
@@ -157,6 +172,12 @@ assert(fastWave.path===slowWave.path,'tempo metadata must not change live DSP ge
 assert(wideWave.path!==monoWave.path,'stereo width must sculpt live DSP geometry')
 assert(wideWave.stats.stereoWidth>monoWave.stats.stereoWidth+.4,'stereo signal bus must preserve width')
 assert(vocalLowWave.path===vocalHighWave.path,'vocal classifier must not drive live DSP geometry')
+assert(bassStageBass.stats.stage==='bass','bass-heavy spectrum must resolve bass-forward stage')
+assert(bassStageBass.stats.stageLift>bassStageAir.stats.stageLift+.20,'bass-forward stage must lift bass above air')
+assert(trebleStageAir.stats.stage==='treble','treble-heavy spectrum must resolve treble-forward stage')
+assert(trebleStageAir.stats.stageLift>trebleStageBass.stats.stageLift+.20,'treble-forward stage must lift air above bass')
+assert(balancedBass.stats.stage==='balanced','flat spectrum must resolve balanced stage')
+assert(Math.abs(balancedBass.stats.stageLift-balancedAir.stats.stageLift)<.08,'balanced stage must keep band lifts near neutral')
 assert(loudWave.path.startsWith('M 0 12'),'Live DSP carrier must start on the shared baseline')
 assert(loudWave.path.endsWith(' 12.00'),'Live DSP carrier must return to the shared baseline')
 assert(loudWave.path!==quietWave.path,'real DSP gain change must change geometry')

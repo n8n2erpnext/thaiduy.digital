@@ -176,7 +176,7 @@ export function MusicWaveIndicator({locale}:Props) {
     ? (vi?'TÍN HIỆU':'SIGNAL')+' · LIVE DSP AMP · '+(state.dspVisualDelayMs??900)+' MS BUFFER'
     : (vi?'MÀU SẮC':'PALETTE')+' · '+expression.label.toUpperCase()
   const motionDetail=liveDsp
-    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · PCM L/R · VISUAL AMP · ACOUSTIC GRAMMAR'
+    ? (vi?'CHUYỂN ĐỘNG':'MOTION')+' · PCM L/R · VISUAL AMP · ACOUSTIC STAGE MIX'
     : (vi?'CHUYỂN ĐỘNG':'MOTION')+' · '+musicWaveArchetypeLabel(expression.archetype).toUpperCase()
       +' · '+(vi?'NĂNG LƯỢNG':'ENERGY')+' '+Math.round(expression.arousal*100)
       +' · '+(vi?'CẢM XÚC':'VALENCE')+' '+Math.round(expression.valence*100)
@@ -240,13 +240,16 @@ export function MusicWaveIndicator({locale}:Props) {
                     points:42,
                   })
                 : null
+              const stagePresence=live
+                ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
+                : 0
               const opacity=live
-                ? Math.min(1,.30+live.stats.activity*.42+live.stats.gain*.18+(dominant?.08:0)+live.stats.crest*.10)
+                ? Math.min(1,.24+live.stats.activity*.32+live.stats.gain*.16+stagePresence*.22+live.stats.crest*.08)
                 : dominant
                   ? displayMotion.dominantOpacity
                   : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
               const width=live
-                ? (dominant?1.34:.98)+live.stats.crest*.44+live.stats.sharpness*.18
+                ? .90+live.stats.stageLift*.20+live.stats.crest*.36+live.stats.sharpness*.14
                 : (dominant?1.42:1.02)*displayMotion.stroke
               const color=live?liveColors[layer]:expression.colors[layer]
               const glow=!live&&dominant
@@ -271,15 +274,15 @@ export function MusicWaveIndicator({locale}:Props) {
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .08+live.stats.gain*.06+live.stats.crest*.06+live.stats.stereoWidth*.03
-                          : .13+live.stats.gain*.09+live.stats.crest*.10+live.stats.stereoWidth*.05,
-                        strokeWidth:width+(theme==='normal'?2.1:3.0)+live.stats.stereoWidth*.55,
+                          ? .07+live.stats.gain*.05+live.stats.crest*.05+live.stats.stereoWidth*.03+stagePresence*.04
+                          : .11+live.stats.gain*.08+live.stats.crest*.09+live.stats.stereoWidth*.05+stagePresence*.07,
+                        strokeWidth:width+(theme==='normal'?2.0:2.8)+live.stats.stereoWidth*.50+stagePresence*.35,
                       }}
                     />
                   )}
                   <path
                     d={path}
-                    className={'header-wave-layer header-wave-layer-'+layer+(dominant?' is-dominant':'')+(live&&live.stats.crest>.35?' is-crest':'')}
+                    className={'header-wave-layer header-wave-layer-'+layer+(!live&&dominant?' is-dominant':'')+(live&&live.stats.crest>.35?' is-crest':'')}
                     style={{
                       stroke:color,
                       opacity,

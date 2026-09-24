@@ -853,3 +853,14 @@ This is the authoritative continuation point.
 - Acoustic visual history is now resampled on a regular media grid before entering the visual conditioner/AMP, preventing AAC/network burst timing from becoming visual motion.
 - Live A/B on the same stream: mean geometry delta P99 0.806 -> 0.313 px/16 ms; worst mean delta 0.934 -> 0.418; worst single point delta 3.61 -> 1.93 px. Median delta rose slightly because motion is now continuous rather than frozen between bursts.
 - LastFM visual branch remains untouched.
+
+### Acoustic Stage Mixer · frequency-led foreground library
+- Added Stream-DSP-only acoustic stage library with continuous weights: bass, mid, vocal-range, treble, balanced.
+- This is not a genre/preset classifier. Stage weights are derived continuously from measured band energy over the delayed/resampled PCM history.
+- The visual oscillation remains the real DSP-driven geometry. Stage profiles only control foreground/background emphasis: gain, density, roundness/sharpness, phase/layer spread and glow.
+- The live visual no longer uses hard dominantLayer winner styling. Foreground emphasis is continuous through stageLift, so multiple ranges can share the stage during a chorus/climax.
+- The DSP vocal stage is a physical mid/presence range, not vocalProbability or LastFM semantics.
+- Balanced stage keeps all layer lifts near neutral and has zero spotlight focus; near-silence therefore cannot create a false visual spotlight.
+- Contract guards cover bass-forward, treble-forward and balanced stage behavior while preserving tempo-independence, stereo sensitivity and classifier-independence.
+- Live observation captured a mixed foreground example around bass .328 / mid .316 / vocal-range .181 / treble .048 / balanced .127, demonstrating simultaneous band emphasis rather than winner-take-all.
+- LastFM visual branch remains untouched.

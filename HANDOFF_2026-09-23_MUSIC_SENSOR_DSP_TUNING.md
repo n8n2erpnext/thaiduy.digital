@@ -824,3 +824,11 @@ This is the authoritative continuation point.
 - Policy changed: direct agreement -> oracle BPM; octave agreement -> keep DSP top-family BPM and set tempoOctaveAmbiguous=true; conflict -> do not expose oracle pulse; no-family high-confidence fallback remains oracle-only.
 - On the same reliable holdout subset this changes exact pulse representatives from 5 to 8, harmonic from 7 to 4, with fail count unchanged at 2; family agreement itself is unchanged.
 - Continuous 120 BPM AAC worker regression after the change: core tempo ~121.45, oracle 120, pulseBpm 120, pulseConfidence 1, pulseReliable true, direct agreement, oracle analysis ~222 ms.
+
+### Hero live direct-rescue validation
+- Hero remained a difficult case for the custom tempo core: the top DSP family often locked to a pseudo-periodicity around 102-103 BPM while a ~148 BPM family remained in candidate rank 2/3.
+- music-tempo oracle consistently observed ~151-152 BPM with high regularity/confidence.
+- Holdout audit showed that allowing non-top OCTAVE matches increased both exact and fail counts, so octave rescue remains top-candidate-only.
+- Non-top DIRECT matches were clean on holdout. Fusion now allows oracle direct agreement with DSP candidate rank 2/3 only when candidate score is at least 35% of the top score.
+- Live Hero after ~26 s buffer: DSP top 103.54 (score .368), candidate #3 148.03 (score .243), oracle 151.232 (confidence .903). Fusion produced direct agreement, pulseBpm 151.232, pulseReliable true, while tempoBpm stayed ~102.32 and tempoReliable false.
+- This intentionally fixes pulse/wave motion without pretending the exact custom tempo estimator has resolved Hero.

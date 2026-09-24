@@ -182,13 +182,25 @@ class DeviceSession {
       }
     }
 
-    const top=features.tempoCandidates?.[0]?.bpm
+    const candidates=features.tempoCandidates??[]
+    const topCandidate=candidates[0]
+    const top=topCandidate?.bpm
     const near=(a:number,b:number)=>Math.abs(a-b)<=Math.max(3,b*.04)
     let agreement:TempoFamilyAgreement='none'
     if(typeof top==='number'&&top>0){
-      if(near(top,oracle.bpm))agreement='direct'
-      else if(near(top,oracle.bpm*.5)||near(top,oracle.bpm*2))agreement='octave'
-      else agreement='conflict'
+      if(near(top,oracle.bpm)){
+        agreement='direct'
+      }else if(near(top,oracle.bpm*.5)||near(top,oracle.bpm*2)){
+        agreement='octave'
+      }else{
+        const directRescue=candidates
+          .slice(1,3)
+          .find(candidate=>
+            candidate.score>=(topCandidate?.score??0)*.35 &&
+            near(candidate.bpm,oracle.bpm),
+          )
+        agreement=directRescue?'direct':'conflict'
+      }
     }
 
     const confidence=agreement==='direct'

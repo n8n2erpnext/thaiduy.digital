@@ -898,3 +898,9 @@ This is the authoritative continuation point.
 - Mid V1 now sits between low-mid warmth and presence articulation: amp 1.04, neutral cycle, slightly reduced drift/drive/pluck/edge, modest groove.
 - Live comparison after the refinement: low-mid excursion ~3.23 / roughness .0289, mid ~3.49 / .0423, presence ~3.98 / .0470 in the sampled passage. Ordering is intentional: low-mid smoother, mid more articulate, presence sharpest.
 - Full TypeScript + live DSP visual contract pass; LastFM visual branch remains untouched.
+
+### Per-wave tuning � Vocal-range V1
+- Vocal-range remains physical mid+presence energy; vocalProbability is not used for geometry.
+- Baseline physical energy was ~.605 with visual excursion ~2.99 px, while mid/presence were ~4.42/~3.74 px.
+- Vocal V1 character: amp 1.22, cycle .98, drift 1.08, swell 1.18, drive .76, groove 1.04, pluck .68, side 1.04, edge .78.
+- Live post-tune: vocal excursion ~3.68 px / roughness .0387, intentionally smoother than mid (~.0563) and presence (~.0839) while remaining visibly foreground-capable.

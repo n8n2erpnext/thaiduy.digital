@@ -15,7 +15,7 @@ const layerCharacter:Record<MusicLayerName,{
   // Low-mid is the warm body/bridge: fuller than mid, more articulate than bass.
   lowMid:{amp:1.38,cycle:.95,drift:1.08,swell:1.14,drive:.78,groove:1.18,pluck:.68,side:.88,edge:.82},
   mid:{amp:1.04,cycle:1.00,drift:.96,swell:1.02,drive:.92,groove:1.06,pluck:.84,side:.96,edge:.92},
-  vocal:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
+  vocal:{amp:1.22,cycle:.98,drift:1.08,swell:1.18,drive:.76,groove:1.04,pluck:.68,side:1.04,edge:.78},
   presence:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
   air:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
 }

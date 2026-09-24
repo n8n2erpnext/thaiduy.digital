@@ -140,7 +140,7 @@ export function MusicOrgan({locale}:Props) {
                   delayMs:state.dspVisualDelayMs??900,
                   width:620,
                   centerY:y,
-                  amplitude:9.2,
+                  amplitude:10.8,
                   points:86,
                 })
                 path=live.path
@@ -176,11 +176,15 @@ export function MusicOrgan({locale}:Props) {
               const color=live
                 ? liveVisualTheme.barFillColors[item.layer]
                 : expression.colors[item.layer]
+              const liveDominant=live&&liveVisualTheme.dominantBand===item.layer
+              const liveSecondary=live&&liveVisualTheme.secondaryBand===item.layer
+              const climax=live?Math.max(0,Math.min(1,(state.layers[item.layer].weight-.87)/.13)):0
+              const liveRankBoost=liveDominant?.25:liveSecondary?.13:0
               const opacity=live
-                ? Math.min(1,(theme==='normal'?.30:.22)+activity*.30+live.stats.gain*.14+stagePresence*.28+crest*.08)
+                ? Math.min(1,(theme==='normal'?.52:.41)+activity*.18+live.stats.gain*.10+stagePresence*.13+crest*.05+liveRankBoost+climax*.08)
                 : dominant?expression.motion.dominantOpacity:expression.motion.secondaryOpacity
               const strokeWidth=live
-                ? .92+live.stats.stageLift*.25+crest*.38+live.stats.sharpness*.12
+                ? 1.04+live.stats.stageLift*.11+crest*.20+live.stats.sharpness*.08+(liveDominant?.34:liveSecondary?.16:0)+climax*.22
                 : (dominant?1.7:1.05)*expression.motion.stroke
               const glow=!liveDsp&&dominant
                 ? 'drop-shadow(0 0 '+String(3+expression.motion.glow*8)+'px '+expression.glowColor+')'
@@ -188,17 +192,29 @@ export function MusicOrgan({locale}:Props) {
 
               return (
                 <g key={item.layer}>
-                  {live&&(
+                  {live&&(liveDominant||liveSecondary)&&(
                     <path
                       d={path}
                       className="music-layer-live-glow"
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .14+live.stats.glow*.10+crest*.07+stagePresence*.08
-                          : .10+live.stats.glow*.11+crest*.08+stagePresence*.08,
-                        strokeWidth:strokeWidth+(theme==='normal'?3.8:4.4)+live.stats.stereoWidth*.65+stagePresence*.45,
-                        filter:theme==='normal'?'drop-shadow(0 0 3px '+color+') saturate(1.16)':'none',
+                          ? .06+live.stats.glow*.05+crest*.03+stagePresence*.04
+                          : .05+live.stats.glow*.045+crest*.035+stagePresence*.035,
+                        strokeWidth:strokeWidth+(liveDominant?2.2:1.55)+live.stats.stereoWidth*.22,
+                        filter:theme==='normal'&&liveDominant?'drop-shadow(0 0 2.2px '+color+')':'none',
+                      }}
+                    />
+                  )}
+                  {live&&climax>0&&(
+                    <path
+                      d={path}
+                      className="music-layer-live-glow"
+                      style={{
+                        stroke:color,
+                        opacity:.04+climax*.13,
+                        strokeWidth:strokeWidth+2.1+climax*2.7,
+                        filter:'drop-shadow(0 0 '+String(1.8+climax*4.2)+'px '+color+')',
                       }}
                     />
                   )}
@@ -210,7 +226,9 @@ export function MusicOrgan({locale}:Props) {
                       opacity,
                       strokeWidth,
                       filter:liveDsp
-                        ? (theme==='normal'?'drop-shadow(0 0 1.6px '+color+') saturate(1.12)':'none')
+                        ? climax>0
+                          ? 'drop-shadow(0 0 '+String(.9+climax*2.5)+'px '+color+') saturate('+String(1.08+climax*.22)+')'
+                          : theme==='normal'&&liveDominant?'drop-shadow(0 0 1px '+color+') saturate(1.14)':'none'
                         : glow,
                     }}
                   />

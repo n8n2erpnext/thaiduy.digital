@@ -257,20 +257,24 @@ export function MusicWaveIndicator({locale}:Props) {
                     xStart:4,
                     width:104,
                     centerY:12,
-                    amplitude:6.6,
+                    amplitude:8.35,
                     points:64,
                   })
                 : null
               const stagePresence=live
                 ? Math.max(0,Math.min(1,(live.stats.stageLift-.76)/.62))
                 : 0
+              const liveDominant=live&&liveVisualTheme.dominantBand===layer
+              const liveSecondary=live&&liveVisualTheme.secondaryBand===layer
+              const climax=live?Math.max(0,Math.min(1,(state.layers[layer].weight-.87)/.13)):0
+              const liveRankBoost=liveDominant?.27:liveSecondary?.14:0
               const opacity=live
-                ? Math.min(1,(theme==='normal'?.31:.22)+live.stats.activity*.28+live.stats.gain*.14+stagePresence*.28+live.stats.crest*.08)
+                ? Math.min(1,(theme==='normal'?.54:.43)+live.stats.activity*.18+live.stats.gain*.10+stagePresence*.12+live.stats.crest*.05+liveRankBoost+climax*.08)
                 : dominant
                   ? displayMotion.dominantOpacity
                   : displayMotion.secondaryOpacity*(.9+state.layers[layer].weight*.1)
               const width=live
-                ? .88+live.stats.stageLift*.22+live.stats.crest*.34+live.stats.sharpness*.12
+                ? 1.02+live.stats.stageLift*.10+live.stats.crest*.18+live.stats.sharpness*.08+(liveDominant?.32:liveSecondary?.15:0)+climax*.20
                 : (dominant?1.42:1.02)*displayMotion.stroke
               const color=live
                 ? liveVisualTheme.barFillColors[layer]
@@ -290,17 +294,29 @@ export function MusicWaveIndicator({locale}:Props) {
               )
               return (
                 <g key={layer}>
-                  {live&&(
+                  {live&&(liveDominant||liveSecondary)&&(
                     <path
                       d={path}
                       className="header-wave-live-glow"
                       style={{
                         stroke:color,
                         opacity:theme==='normal'
-                          ? .13+live.stats.gain*.06+live.stats.glow*.10+live.stats.crest*.06+live.stats.stereoWidth*.04+stagePresence*.08
-                          : .10+live.stats.gain*.07+live.stats.glow*.09+live.stats.crest*.08+live.stats.stereoWidth*.05+stagePresence*.08,
-                        strokeWidth:width+(theme==='normal'?2.7:3.0)+live.stats.stereoWidth*.52+stagePresence*.42,
-                        filter:theme==='normal'?'drop-shadow(0 0 2.6px '+color+') saturate(1.18)':'none',
+                          ? .055+live.stats.glow*.045+live.stats.crest*.025+stagePresence*.035
+                          : .045+live.stats.glow*.04+live.stats.crest*.03+stagePresence*.03,
+                        strokeWidth:width+(liveDominant?1.65:1.15)+live.stats.stereoWidth*.18,
+                        filter:theme==='normal'&&liveDominant?'drop-shadow(0 0 1.8px '+color+')':'none',
+                      }}
+                    />
+                  )}
+                  {live&&climax>0&&(
+                    <path
+                      d={path}
+                      className="header-wave-live-glow"
+                      style={{
+                        stroke:color,
+                        opacity:.035+climax*.11,
+                        strokeWidth:width+1.5+climax*1.8,
+                        filter:'drop-shadow(0 0 '+String(1.2+climax*2.8)+'px '+color+')',
                       }}
                     />
                   )}
@@ -312,7 +328,9 @@ export function MusicWaveIndicator({locale}:Props) {
                       opacity,
                       strokeWidth:width,
                       filter:live
-                        ? (theme==='normal'?'drop-shadow(0 0 1.35px '+color+') saturate(1.12)':'none')
+                        ? climax>0
+                          ? 'drop-shadow(0 0 '+String(.7+climax*1.8)+'px '+color+') saturate('+String(1.08+climax*.20)+')'
+                          : theme==='normal'&&liveDominant?'drop-shadow(0 0 .85px '+color+') saturate(1.16)':'none'
                         : glow,
                     }}
                   />

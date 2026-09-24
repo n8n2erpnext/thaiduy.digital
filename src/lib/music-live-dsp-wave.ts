@@ -140,9 +140,11 @@ export function resolveLiveDspVisualTheme(
     const strength=clamp01(layers[layer]?.weight??0)
     const relative=dominantWeight>0?strength/dominantWeight:0
     const lead=layer===dominantBand ? 1 : layer===secondaryBand ? .72 : 0
+    // Preserve each physical band's own hue. The stage accent should light the
+    // ensemble, not wash six acoustic lanes into one pastel ribbon.
     const amount=balanced
-      ? .12
-      : Math.min(.50,.08+relative*.18+lead*.18)
+      ? .07
+      : Math.min(.34,.05+relative*.11+lead*.12)
     return [layer,mixVividHex(palette[layer],accentColor,amount)]
   })) as Record<MusicLayerName,string>
 

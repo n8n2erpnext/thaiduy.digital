@@ -215,6 +215,7 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
               const level=state.signal==='dsp'?meterValues[layer]:state.layers[layer].weight
               const peak=state.signal==='dsp'?meterPeaks[layer]:level
               const color=state.signal==='dsp'?liveVisualTheme.barFillColors[layer]:undefined
+              const climax=state.signal==='dsp'?Math.max(0,Math.min(1,(level-.87)/.13)):0
               return (
                 <div key={layer}>
                   <span>{t.layers[layer]}</span>
@@ -222,12 +223,17 @@ export function MusicSensorExplorer({ locale, concepts, relations, semanticNodes
                     <b style={{
                       width:String(Math.round(level*100))+'%',
                       background:color,
-                      boxShadow:state.signal==='dsp'&&theme==='normal'?'0 0 7px '+color+'55':undefined,
+                      boxShadow:climax>0
+                        ? '0 0 '+String(7+climax*11)+'px '+color+'aa'
+                        : state.signal==='dsp'&&theme==='normal'?'0 0 7px '+color+'55':undefined,
+                      filter:climax>0?'saturate('+String(1.08+climax*.25)+') brightness('+String(1+climax*.10)+')':undefined,
                     }} />
                     {state.signal==='dsp'&&<small style={{
                       left:'calc('+String(Math.round(peak*100))+'% - 1px)',
                       background:color,
-                      boxShadow:'0 0 6px '+color+'66',
+                      boxShadow:climax>0
+                        ? '0 0 '+String(7+climax*9)+'px '+color+'cc'
+                        : '0 0 6px '+color+'66',
                     }} />}
                   </i>
                   <em>{Math.round(level*100)}</em>

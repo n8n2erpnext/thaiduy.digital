@@ -13,8 +13,8 @@ const layerCharacter:Record<MusicLayerName,{
   // less high-order edge. Other lanes remain neutral until tuned separately.
   bass:{amp:1.10,cycle:.90,drift:1.10,swell:1.16,drive:.68,groove:1.12,pluck:.60,side:.80,edge:.74},
   // Low-mid is the warm body/bridge: fuller than mid, more articulate than bass.
-  lowMid:{amp:1.18,cycle:.95,drift:1.08,swell:1.14,drive:.78,groove:1.18,pluck:.68,side:.88,edge:.82},
-  mid:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
+  lowMid:{amp:1.38,cycle:.95,drift:1.08,swell:1.14,drive:.78,groove:1.18,pluck:.68,side:.88,edge:.82},
+  mid:{amp:1.04,cycle:1.00,drift:.96,swell:1.02,drive:.92,groove:1.06,pluck:.84,side:.96,edge:.92},
   vocal:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
   presence:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
   air:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},

@@ -891,3 +891,10 @@ This is the authoritative continuation point.
 - Low-mid V1 is now the warm body/bridge between bass and mid: slightly slower cycle, more drift/swell/groove, reduced drive/pluck/edge and slightly reduced Side contribution.
 - Live source evidence before Low-mid adjustment: bass .8063, low-mid .7964, mid .7009, confirming low-mid energy was physically strong even though its previous visual excursion was too small.
 - LastFM visual branch remains untouched.
+
+### Per-wave tuning � Low-mid refined + Mid V1
+- Low-mid source evidence showed physical energy could be stronger than mid while its visual excursion remained smaller. Low-mid body amplitude was therefore raised to 1.38 while preserving its softer cycle/edge profile.
+- Current Low-mid character: amp 1.38, cycle .95, drift 1.08, swell 1.14, drive .78, groove 1.18, pluck .68, side .88, edge .82.
+- Mid V1 now sits between low-mid warmth and presence articulation: amp 1.04, neutral cycle, slightly reduced drift/drive/pluck/edge, modest groove.
+- Live comparison after the refinement: low-mid excursion ~3.23 / roughness .0289, mid ~3.49 / .0423, presence ~3.98 / .0470 in the sampled passage. Ordering is intentional: low-mid smoother, mid more articulate, presence sharpest.
+- Full TypeScript + live DSP visual contract pass; LastFM visual branch remains untouched.

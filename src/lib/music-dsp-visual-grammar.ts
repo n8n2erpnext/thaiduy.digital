@@ -17,7 +17,7 @@ const layerCharacter:Record<MusicLayerName,{
   mid:{amp:1.04,cycle:1.00,drift:.96,swell:1.02,drive:.92,groove:1.06,pluck:.84,side:.96,edge:.92},
   vocal:{amp:1.22,cycle:.98,drift:1.08,swell:1.18,drive:.76,groove:1.04,pluck:.68,side:1.04,edge:.78},
   presence:{amp:.96,cycle:1.03,drift:.88,swell:.90,drive:1.04,groove:1.02,pluck:.86,side:1.02,edge:1.05},
-  air:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
+  air:{amp:.74,cycle:1.02,drift:.80,swell:.74,drive:.86,groove:.76,pluck:.90,side:1.10,edge:1.10},
 }
 
 function softSquare(value:number,sharpness:number){const drive=1.05+sharpness*2.15;return Math.tanh(value*drive)/(Math.tanh(drive)||1)}

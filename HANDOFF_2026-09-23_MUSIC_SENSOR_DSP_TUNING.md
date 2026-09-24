@@ -909,3 +909,9 @@ This is the authoritative continuation point.
 - Presence remains the crisp articulation lane above vocal-range, but no longer uses a neutral all-ones character.
 - Presence V1: amp .96, cycle 1.03, drift .88, swell .90, drive 1.04, groove 1.02, pluck .86, side 1.02, edge 1.05.
 - Live post-tune: presence excursion ~3.43 px / roughness .0797; vocal-range ~3.35 / .0420. Presence stays intentionally sharper than vocal without becoming a spike-only layer.
+
+### Per-wave tuning � Air V1
+- Air is now a light/high-frequency shimmer layer rather than a full-size foreground wave by default.
+- Air V1: amp .74, cycle 1.02, drift .80, swell .74, drive .86, groove .76, pluck .90, side 1.10, edge 1.10.
+- Live before Air tuning: excursion ~4.25 px / roughness .1037 despite stage lift below unity (~.933).
+- Live after Air V1: excursion ~2.95 px / roughness .0616 with stage lift ~.949; it remains spatially wide and bright but no longer dominates when treble is not foreground.

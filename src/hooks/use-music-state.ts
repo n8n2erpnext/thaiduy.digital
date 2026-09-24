@@ -7,6 +7,7 @@ import {
   type MusicCortexState,
   type MusicDspPublicFrame,
   type MusicLayerName,
+  type MusicPlaybackPublicSignal,
 } from '@/lib/music-state'
 
 const DSP_VISUAL_DELAY_MS=900
@@ -23,6 +24,8 @@ let dspFrames:BufferedMusicDspFrame[]=[]
 let dspVisualAt=0
 let dspVisualSeq=0
 let lastAudibleAt=0
+let livePlaybackKnown=false
+let livePlaybackTrack:MusicCortexState['track']=null
 const listeners=new Set<()=>void>()
 
 const signalLayers=['bass','lowMid','mid','presence','air'] as const
@@ -86,14 +89,15 @@ function applyDsp(frame:MusicDspPublicFrame) {
     staleTimer=null
   }
 
+  const currentTrack=livePlaybackKnown ? livePlaybackTrack : baseSnapshot.track
   const dspBase:MusicCortexState=baseSnapshot.signal==='dsp'
-    ? baseSnapshot
+    ? { ...baseSnapshot, track:currentTrack }
     : {
         ...baseSnapshot,
         mode:'listening',
         connected:true,
         signal:'dsp',
-        track:null,
+        track:currentTrack,
         genre:null,
         style:null,
         arrangement:null,
@@ -149,12 +153,37 @@ function applyDsp(frame:MusicDspPublicFrame) {
   })
 }
 
+function applyPlayback(playback:MusicPlaybackPublicSignal) {
+  const active=playback.state==='playing'||playback.state==='buffering'
+  livePlaybackKnown=true
+  livePlaybackTrack=active
+    ? {
+        artist:playback.artist.trim()||'Unknown Artist',
+        title:playback.title.trim(),
+        url:'',
+        album:playback.album,
+        packageName:playback.packageName,
+      }
+    : null
+
+  if(snapshot.signal==='dsp') {
+    emit({ ...snapshot, track:livePlaybackTrack })
+    return
+  }
+  void poll()
+}
+
 function startStream() {
   if(stream) return
   stream=new EventSource('/api/music/stream')
   stream.addEventListener('signal',(event)=>{
     try {
       applyDsp(JSON.parse((event as MessageEvent<string>).data) as MusicDspPublicFrame)
+    } catch {}
+  })
+  stream.addEventListener('playback',(event)=>{
+    try {
+      applyPlayback(JSON.parse((event as MessageEvent<string>).data) as MusicPlaybackPublicSignal)
     } catch {}
   })
   stream.onerror=()=>{
@@ -169,6 +198,10 @@ async function poll() {
       const response=await fetch('/api/music/state',{cache:'no-store'})
       if(response.ok) {
         baseSnapshot=await response.json() as MusicCortexState
+        if(baseSnapshot.signal==='dsp') {
+          livePlaybackKnown=true
+          livePlaybackTrack=baseSnapshot.track
+        }
         const noRecentAudio=Date.now()-lastAudibleAt>DSP_FALLBACK_GRACE_MS
         if(
           baseSnapshot.signal==='dsp'

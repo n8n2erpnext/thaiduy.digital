@@ -18,6 +18,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.service.notification.NotificationListenerService
 import android.text.InputFilter
 import android.text.InputType
 import android.view.Gravity
@@ -59,6 +60,7 @@ class MainActivity : Activity() {
     private val navItems = linkedMapOf<String, LinearLayout>()
     private var selectedTab = "home"
     private var pendingStart = false
+    private var pendingMetadataStart = false
     private var webView: WebView? = null
     private var pairCode: EditText? = null
     private var pairButton: Button? = null
@@ -92,6 +94,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        val metadataReady = notificationAccessGranted()
+        if (metadataReady) rebindMetadataListener()
+        if (pendingMetadataStart && metadataReady) {
+            pendingMetadataStart = false
+            beginLiveDsp()
+            return
+        }
         if (selectedTab != "control") showTab(selectedTab)
     }
 
@@ -226,7 +235,7 @@ class MainActivity : Activity() {
             listOf(
                 "HUB" to if (paired) "PAIRED" else "OFFLINE",
                 "SOURCE" to if (sources > 0) sources.toString() + " APP" else "NONE",
-                "METADATA" to if (metadataAccess) "READY" else "OPTIONAL",
+                "METADATA" to if (metadataAccess) "READY" else "SETUP",
                 "LIVE DSP" to if (dspRunning) "STREAMING" else "IDLE",
             ),
         ))
@@ -258,13 +267,16 @@ class MainActivity : Activity() {
         val root = page()
         root.addView(kicker("MUSIC SENSOR / RIGHT EAR"))
         root.addView(heading("Playback in.\nSignal out."))
-        root.addView(body("Live DSP is the core path: Android playback capture + selected app UID, with no raw PCM upload. Track metadata is an optional enhancement only."))
+        root.addView(body("Live DSP is the core path: Android playback capture + selected app UID, with no raw PCM upload. Notification access supplies the current title/artist as a separate metadata channel."))
 
         val paired = SecureStore.token(this) != null
         val sourceCount = TrackedApps.get(this).size
         val notificationAccess = notificationAccessGranted()
         val running = SensorState.running(this)
         val error = SensorState.lastError(this)
+        val metadataAt = SensorState.lastMetadataAt(this)
+        val metadataTitle = SensorState.lastTitle(this)
+        val metadataArtist = SensorState.lastArtist(this)
 
         root.addView(cardContainer().apply {
             addView(kicker("PAIR HUB DEVICE"))
@@ -326,23 +338,44 @@ class MainActivity : Activity() {
         })
 
         root.addView(cardContainer().apply {
-            addView(kicker("OPTIONAL TRACK METADATA"))
+            addView(kicker("TRACK METADATA"))
             addView(statusLine(
-                if (notificationAccess) "NOTIFICATION LISTENER READY" else "ANDROID RESTRICTED / OPTIONAL",
+                if (notificationAccess) "TITLE / ARTIST LISTENER READY" else "ENABLE NOTIFICATION ACCESS",
                 notificationAccess,
             ))
+            if (notificationAccess && !metadataTitle.isNullOrBlank()) {
+                val ageSeconds = if (metadataAt > 0L) {
+                    ((System.currentTimeMillis() - metadataAt) / 1000L).coerceAtLeast(0L)
+                } else -1L
+                val nowPlaying = metadataTitle +
+                    (metadataArtist?.takeIf { it.isNotBlank() }?.let { " � " + it } ?: "")
+                addView(label(nowPlaying, 13, INK, bold = true).apply {
+                    setPadding(0, dp(9), 0, 0)
+                })
+                if (ageSeconds >= 0L) {
+                    addView(label("Last metadata sync " + ageSeconds + "s ago", 9, MUTED, mono = true).apply {
+                        setPadding(0, dp(4), 0, 0)
+                    })
+                }
+            }
             addView(label(
-                "Notification access only enriches artist/title metadata from other apps. Live DSP, selected-source capture, Control and Contact Inbox do not depend on it. Android may restrict this setting for sideloaded APKs.",
+                "Notification access carries title/artist separately from the audio stream. DSP analysis remains acoustic-only; this permission is used only to identify the track currently playing.",
                 10,
                 MUTED,
             ).apply { setPadding(0, dp(9), 0, 0) })
             if (!notificationAccess) {
-                addView(secondaryButton("OPEN APP INFO / RESTRICTED SETTINGS") {
+                addView(secondaryButton("OPEN APP INFO / ALLOW RESTRICTED SETTINGS") {
                     openAppDetails()
                 }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
-                addView(secondaryButton("OPEN OPTIONAL METADATA ACCESS") {
+                addView(actionButton("ENABLE TRACK METADATA") {
+                    pendingMetadataStart = false
                     openNotificationListenerSettings()
-                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(7) })
+                }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(7) })
+            } else {
+                addView(secondaryButton("REFRESH METADATA LISTENER") {
+                    rebindMetadataListener()
+                    showTab("sensor")
+                }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
             }
         })
 
@@ -600,6 +633,13 @@ class MainActivity : Activity() {
             startActivity(Intent(this, AppSelectionActivity::class.java))
             return
         }
+        if (!notificationAccessGranted()) {
+            pendingMetadataStart = true
+            openNotificationListenerSettings()
+            return
+        }
+        pendingMetadataStart = false
+        rebindMetadataListener()
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             pendingStart = true
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_AUDIO)
@@ -705,6 +745,16 @@ class MainActivity : Activity() {
         }
         runCatching { startActivity(detail) }
             .onFailure { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+    }
+
+    private fun rebindMetadataListener() {
+        runCatching {
+            NotificationListenerService.requestRebind(
+                ComponentName(this, ScrobbleService::class.java),
+            )
+        }.onFailure {
+            HubDiagnostics.error(this, "metadata.rebind", it)
+        }
     }
 
     private fun registerDspReceiver() {

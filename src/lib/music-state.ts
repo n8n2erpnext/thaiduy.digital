@@ -3,6 +3,17 @@ export type MusicSignal = 'offline' | 'semantic' | 'dsp'
 export type MusicLayerName = 'bass' | 'lowMid' | 'mid' | 'vocal' | 'presence' | 'air'
 export type MusicLayer = { gain: number; weight: number }
 
+export type MusicPlaybackPublicSignal = {
+  packageName: string
+  artist: string
+  title: string
+  album?: string
+  state: 'playing' | 'paused' | 'stopped' | 'buffering'
+  positionMs?: number
+  durationMs?: number
+  at: string
+}
+
 export type HummingNote = {
   midi: number
   name: string
@@ -92,7 +103,13 @@ export type MusicCortexState = {
   mode: MusicMode
   connected: boolean
   signal: MusicSignal
-  track: null | { artist: string; title: string; url: string }
+  track: null | {
+    artist: string
+    title: string
+    url: string
+    album?: string
+    packageName?: string
+  }
   genre: string | null
   style: string | null
   arrangement: string | null

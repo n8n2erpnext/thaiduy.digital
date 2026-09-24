@@ -2,6 +2,7 @@ package digital.thaiduy.hub
 
 import android.app.Notification
 import android.content.ComponentName
+import android.content.Intent
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -50,8 +51,8 @@ class ScrobbleService : NotificationListenerService() {
 
         heartbeatExecutor.scheduleAtFixedRate(
             { mainHandler.post { publishBestSession(force = true) } },
-            45,
-            45,
+            2,
+            8,
             TimeUnit.SECONDS,
         )
     }
@@ -229,7 +230,7 @@ class ScrobbleService : NotificationListenerService() {
     private fun send(snapshot: Snapshot) {
         val token = SecureStore.token(this) ?: return
         networkExecutor.execute {
-            ApiClient.sendPlayback(
+            val ok = ApiClient.sendPlayback(
                 token = token,
                 packageName = snapshot.packageName,
                 artist = snapshot.artist,
@@ -239,6 +240,19 @@ class ScrobbleService : NotificationListenerService() {
                 positionMs = snapshot.positionMs,
                 durationMs = snapshot.durationMs,
             )
+            if (ok) {
+                SensorState.metadata(
+                    this,
+                    snapshot.title,
+                    snapshot.artist,
+                    snapshot.packageName,
+                )
+                sendBroadcast(Intent(CaptureService.ACTION_STATE).setPackage(packageName))
+            } else {
+                mainHandler.post {
+                    if (lastSentKey == snapshot.dedupeKey) lastSentKey = null
+                }
+            }
         }
     }
 

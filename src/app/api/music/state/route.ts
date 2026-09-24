@@ -29,7 +29,13 @@ type PublicMusicState = {
   mode: 'resting' | 'listening' | 'humming'
   connected: boolean
   signal: 'offline' | 'semantic' | 'dsp'
-  track: null | { artist: string; title: string; url: string }
+  track: null | {
+    artist: string
+    title: string
+    url: string
+    album?: string
+    packageName?: string
+  }
   genre: string | null
   style: string | null
   arrangement: string | null
@@ -323,7 +329,7 @@ async function cacheSemanticState(artist:string,title:string,state:SemanticState
 }
 
 function semanticListeningState(
-  track:{artist:string;title:string;url:string},
+  track:{artist:string;title:string;url:string;album?:string;packageName?:string},
   snapshot:SemanticStateSnapshot,
   updatedAt:string,
 ):PublicMusicState {
@@ -450,7 +456,13 @@ export async function GET() {
       connected:true,
       signal:'dsp',
       track:localActive
-        ? { artist:artist!, title:title!, url:'' }
+        ? {
+            artist:artist!,
+            title:title!,
+            url:'',
+            album:hubPlayback.album,
+            packageName:hubPlayback.packageName,
+          }
         : null,
       genre:null,
       style:null,
@@ -487,7 +499,13 @@ export async function GET() {
     const cached=await loadSemanticState(artist,title)
     if(cached){
       return noStore(semanticListeningState(
-        {artist,title,url:''},
+        {
+          artist,
+          title,
+          url:'',
+          album:hubPlayback.album,
+          packageName:hubPlayback.packageName,
+        },
         cached,
         hubPlayback.at,
       ))

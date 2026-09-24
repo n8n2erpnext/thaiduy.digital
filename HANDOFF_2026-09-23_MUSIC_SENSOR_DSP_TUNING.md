@@ -904,3 +904,8 @@ This is the authoritative continuation point.
 - Baseline physical energy was ~.605 with visual excursion ~2.99 px, while mid/presence were ~4.42/~3.74 px.
 - Vocal V1 character: amp 1.22, cycle .98, drift 1.08, swell 1.18, drive .76, groove 1.04, pluck .68, side 1.04, edge .78.
 - Live post-tune: vocal excursion ~3.68 px / roughness .0387, intentionally smoother than mid (~.0563) and presence (~.0839) while remaining visibly foreground-capable.
+
+### Per-wave tuning � Presence V1
+- Presence remains the crisp articulation lane above vocal-range, but no longer uses a neutral all-ones character.
+- Presence V1: amp .96, cycle 1.03, drift .88, swell .90, drive 1.04, groove 1.02, pluck .86, side 1.02, edge 1.05.
+- Live post-tune: presence excursion ~3.43 px / roughness .0797; vocal-range ~3.35 / .0420. Presence stays intentionally sharper than vocal without becoming a spike-only layer.

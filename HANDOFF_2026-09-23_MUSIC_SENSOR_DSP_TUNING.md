@@ -882,3 +882,12 @@ This is the authoritative continuation point.
 - First attempt was intentionally rejected after live measurement because bass excursion reached ~9.88 px versus low-mid ~4.78 / mid ~4.38, violating the stage rule that spotlight must not erase background.
 - Retuned Bass V1 live measurement: bass excursion ~3.84 px, low-mid ~4.72, mid ~3.85 in the sampled passage. Bass remains smoother/rounder (roughness ~.025 vs low-mid ~.052 / mid ~.076) without amplitude domination.
 - Next tuning order: low-mid -> mid -> vocal-range -> presence -> air.
+
+### Tempo travel and Low-mid V1
+- Added a Live-DSP-only travel clock. Tempo now controls only the continuous right-to-left translation speed of the rendered carrier; PCM remains authority for geometry, amplitude, stereo spread and acoustic stage mix.
+- Travel uses a phase integrator at 0.18 carrier cycles per beat with ~550 ms BPM smoothing. Positive phase in sin(kx + phase) moves the carrier right -> left without phase teleport when tempo changes.
+- Contract regression: 78 BPM produced phase 1.41145 while 156 BPM produced 2.82291 over the same window, with acoustic geometry unchanged before travel integration.
+- Header and large Music Organ use independent continuous travel clocks fed from state.tempoBpm.
+- Low-mid V1 is now the warm body/bridge between bass and mid: slightly slower cycle, more drift/swell/groove, reduced drive/pluck/edge and slightly reduced Side contribution.
+- Live source evidence before Low-mid adjustment: bass .8063, low-mid .7964, mid .7009, confirming low-mid energy was physically strong even though its previous visual excursion was too small.
+- LastFM visual branch remains untouched.

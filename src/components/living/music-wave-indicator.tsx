@@ -11,7 +11,13 @@ import {
   type MusicExpression,
   type MusicTheme,
 } from '@/lib/music-expression'
-import { liveDspLayerColors,liveDspStageLayerColor,liveDspWavePath } from '@/lib/music-live-dsp-wave'
+import {
+  advanceLiveDspTravelClock,
+  createLiveDspTravelClock,
+  liveDspLayerColors,
+  liveDspStageLayerColor,
+  liveDspWavePath,
+} from '@/lib/music-live-dsp-wave'
 import type { HummingComposition,MusicLayerName } from '@/lib/music-state'
 import { musicWaveArchetypeLabel,musicWaveSample } from '@/lib/music-wave-geometry'
 
@@ -102,6 +108,8 @@ export function MusicWaveIndicator({locale}:Props) {
   const [tooltipCycle,setTooltipCycle]=useState(0)
   const [titleDistance,setTitleDistance]=useState(0)
   const targetMotionRef=useRef(expression.motion)
+  const dspTravelRef=useRef(createLiveDspTravelClock())
+  const dspTempoRef=useRef<number|null>(state.tempoBpm??null)
   const titleViewportRef=useRef<HTMLDivElement>(null)
 
   useEffect(()=>{
@@ -117,16 +125,26 @@ export function MusicWaveIndicator({locale}:Props) {
   },[expression.motion])
 
   useEffect(()=>{
+    dspTempoRef.current=state.tempoBpm??null
+  },[state.tempoBpm])
+
+  useEffect(()=>{
+    if(!liveDsp) dspTravelRef.current.lastAt=0
+  },[liveDsp])
+
+  useEffect(()=>{
     if (!active) return
     let frame=0
     const tick=()=>{
+      const now=Date.now()
+      if(liveDsp) advanceLiveDspTravelClock(dspTravelRef.current,now,dspTempoRef.current)
       setDisplayMotion(current=>blendMusicMotion(current,targetMotionRef.current,.045))
-      setTime(Date.now())
+      setTime(now)
       frame=requestAnimationFrame(tick)
     }
     frame=requestAnimationFrame(tick)
     return ()=>cancelAnimationFrame(frame)
-  },[active])
+  },[active,liveDsp])
 
   useEffect(()=>{
     if(!tooltipOpen) return
@@ -232,6 +250,7 @@ export function MusicWaveIndicator({locale}:Props) {
                     layer,
                     frames:state.dspFrames??[],
                     now:time,
+                    travelPhase:dspTravelRef.current.phase,
                     delayMs:state.dspVisualDelayMs??900,
                     xStart:4,
                     width:104,

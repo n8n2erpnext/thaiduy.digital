@@ -22,6 +22,41 @@ export type LiveDspWaveStats={
 
 type LiveDspTheme=keyof typeof liveDspLayerColors
 
+export type LiveDspTravelClock={phase:number;bpm:number;lastAt:number}
+const LIVE_DSP_TRAVEL_CYCLES_PER_BEAT=.18
+
+export function createLiveDspTravelClock(initialBpm=96):LiveDspTravelClock {
+  return {phase:0,bpm:initialBpm,lastAt:0}
+}
+
+export function advanceLiveDspTravelClock(
+  clock:LiveDspTravelClock,
+  now:number,
+  tempoBpm:number|null|undefined,
+) {
+  const target=Math.max(55,Math.min(190,
+    typeof tempoBpm==='number'&&Number.isFinite(tempoBpm)&&tempoBpm>0
+      ? tempoBpm
+      : clock.bpm||96,
+  ))
+  if(clock.lastAt<=0||now<=clock.lastAt) {
+    clock.lastAt=now
+    clock.bpm=target
+    return clock.phase
+  }
+
+  const dt=Math.min(.08,Math.max(.001,(now-clock.lastAt)/1000))
+  const alpha=1-Math.exp(-dt/.55)
+  clock.bpm+=(target-clock.bpm)*alpha
+
+  // Positive phase in sin(kx + phase) travels right -> left.
+  clock.phase+=Math.PI*2*(clock.bpm/60)*LIVE_DSP_TRAVEL_CYCLES_PER_BEAT*dt
+  const wrap=Math.PI*2*2048
+  if(clock.phase>=wrap) clock.phase%=wrap
+  clock.lastAt=now
+  return clock.phase
+}
+
 const clamp01=(value:number)=>Math.max(0,Math.min(1,value))
 const rgb=(hex:string)=>({
   r:parseInt(hex.slice(1,3),16),
@@ -61,7 +96,7 @@ export function liveDspStageLayerColor(
   return mixHex(palette[layer],tint,amount)
 }
 
-export function liveDspWavePath({layer,frames,now,delayMs=900,xStart=0,width,centerY,amplitude,points=62}:{layer:MusicLayerName;frames:BufferedMusicDspFrame[];now:number;delayMs?:number;xStart?:number;width:number;centerY:number;amplitude:number;points?:number}):{path:string;stats:LiveDspWaveStats} {
+export function liveDspWavePath({layer,frames,now,travelPhase=0,delayMs=900,xStart=0,width,centerY,amplitude,points=62}:{layer:MusicLayerName;frames:BufferedMusicDspFrame[];now:number;travelPhase?:number;delayMs?:number;xStart?:number;width:number;centerY:number;amplitude:number;points?:number}):{path:string;stats:LiveDspWaveStats} {
   const flat=():{path:string;stats:LiveDspWaveStats}=>({
     path:'M '+xStart+' '+centerY+' L '+(xStart+width)+' '+centerY,
     stats:{
@@ -78,7 +113,7 @@ export function liveDspWavePath({layer,frames,now,delayMs=900,xStart=0,width,cen
   const stage=resolveAcousticStage(window)
   const staged=applyAcousticStage(layer,baseControls,stage)
   const controls=staged.controls
-  const path=renderAcousticVisualWave({layer,signal:window.current,controls,now:endAt,xStart,width,centerY,amplitude,points})
+  const path=renderAcousticVisualWave({layer,signal:window.current,controls,now:endAt,travelPhase,xStart,width,centerY,amplitude,points})
   return {
     path,
     stats:{

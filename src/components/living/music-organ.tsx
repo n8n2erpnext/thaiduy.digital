@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect,useMemo,useState } from 'react'
+import { useEffect,useMemo,useRef,useState } from 'react'
 import { useMusicState } from '@/hooks/use-music-state'
 import type { Locale } from '@/i18n/config'
 import { messages } from '@/i18n/messages'
 import {
+  advanceLiveDspTravelClock,
+  createLiveDspTravelClock,
   liveDspLayerColors,
   liveDspStageLayerColor,
   liveDspWavePath,
@@ -25,6 +27,8 @@ export function MusicOrgan({locale}:Props) {
   const state=useMusicState()
   const [time,setTime]=useState(0)
   const [theme,setTheme]=useState<MusicTheme>('dark')
+  const dspTravelRef=useRef(createLiveDspTravelClock())
+  const dspTempoRef=useRef<number|null>(state.tempoBpm??null)
   const t=messages[locale].music
   const active=state.mode!=='resting'
   const liveDsp=state.signal==='dsp'
@@ -47,15 +51,25 @@ export function MusicOrgan({locale}:Props) {
   },[])
 
   useEffect(()=>{
+    dspTempoRef.current=state.tempoBpm??null
+  },[state.tempoBpm])
+
+  useEffect(()=>{
+    if(!liveDsp) dspTravelRef.current.lastAt=0
+  },[liveDsp])
+
+  useEffect(()=>{
     if(!active) return
     let frame=0
     const tick=()=>{
-      setTime(Date.now())
+      const now=Date.now()
+      if(liveDsp) advanceLiveDspTravelClock(dspTravelRef.current,now,dspTempoRef.current)
+      setTime(now)
       frame=requestAnimationFrame(tick)
     }
     frame=requestAnimationFrame(tick)
     return()=>cancelAnimationFrame(frame)
-  },[active])
+  },[active,liveDsp])
 
   const status=!state.connected?(locale==='vi'?'CHƯA KẾT NỐI':'NOT CONNECTED')
     : state.mode==='listening'
@@ -121,6 +135,7 @@ export function MusicOrgan({locale}:Props) {
                   layer:item.layer,
                   frames:state.dspFrames??[],
                   now:time,
+                  travelPhase:dspTravelRef.current.phase,
                   delayMs:state.dspVisualDelayMs??900,
                   width:620,
                   centerY:y,

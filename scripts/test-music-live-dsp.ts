@@ -1,4 +1,8 @@
-import { liveDspWavePath } from '../src/lib/music-live-dsp-wave'
+import {
+  advanceLiveDspTravelClock,
+  createLiveDspTravelClock,
+  liveDspWavePath,
+} from '../src/lib/music-live-dsp-wave'
 import type { BufferedMusicDspFrame,MusicDspPublicFrame } from '../src/lib/music-state'
 
 function assert(value:unknown,message:string) {
@@ -159,6 +163,15 @@ const trebleStageBass=liveDspWavePath({layer:'bass',frames:trebleStage,...args})
 const trebleStageAir=liveDspWavePath({layer:'air',frames:trebleStage,...args})
 const balancedBass=liveDspWavePath({layer:'bass',frames:balancedStage,...args})
 const balancedAir=liveDspWavePath({layer:'air',frames:balancedStage,...args})
+const movedWave=liveDspWavePath({layer:'bass',frames:slow,...args,travelPhase:1})
+
+const slowClock=createLiveDspTravelClock()
+const fastClock=createLiveDspTravelClock()
+for(let i=0;i<=60;i++){
+  const at=1_000+i*16
+  advanceLiveDspTravelClock(slowClock,at,78)
+  advanceLiveDspTravelClock(fastClock,at,156)
+}
 
 assert(!quietWave.path.includes('NaN'),'quiet path contains NaN')
 assert(!loudWave.path.includes('NaN'),'loud path contains NaN')
@@ -168,7 +181,9 @@ assert(climaxWave.stats.crest>.45,'relative final climax must enter crest mode')
 assert(masteredWave.stats.crest<.08,'constant mastered signal must not remain in crest mode')
 assert(loudWave.path!==midWave.path,'bass and mid must use distinct sine carriers')
 assert(vocalWave.path!==midWave.path,'vocal and mid must use distinct sine carriers')
-assert(fastWave.path===slowWave.path,'tempo metadata must not change live DSP geometry')
+assert(fastWave.path===slowWave.path,'tempo metadata must not change geometry before travel integration')
+assert(movedWave.path!==slowWave.path,'travel phase must translate the live DSP wave')
+assert(fastClock.phase>slowClock.phase*1.8,'higher tempo must move the right-to-left travel phase faster')
 assert(wideWave.path!==monoWave.path,'stereo width must sculpt live DSP geometry')
 assert(wideWave.stats.stereoWidth>monoWave.stats.stereoWidth+.4,'stereo signal bus must preserve width')
 assert(vocalLowWave.path===vocalHighWave.path,'vocal classifier must not drive live DSP geometry')
@@ -190,4 +205,6 @@ console.log(JSON.stringify({
   masteredCrest:masteredWave.stats.crest,
   slowMotion:slowWave.stats.motion,
   fastMotion:fastWave.stats.motion,
+  slowTravelPhase:slowClock.phase,
+  fastTravelPhase:fastClock.phase,
 },null,2))

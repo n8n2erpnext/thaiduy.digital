@@ -12,7 +12,8 @@ const layerCharacter:Record<MusicLayerName,{
   // Bass is the broad physical foundation: larger body, slower contour and
   // less high-order edge. Other lanes remain neutral until tuned separately.
   bass:{amp:1.10,cycle:.90,drift:1.10,swell:1.16,drive:.68,groove:1.12,pluck:.60,side:.80,edge:.74},
-  lowMid:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
+  // Low-mid is the warm body/bridge: fuller than mid, more articulate than bass.
+  lowMid:{amp:1.18,cycle:.95,drift:1.08,swell:1.14,drive:.78,groove:1.18,pluck:.68,side:.88,edge:.82},
   mid:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
   vocal:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
   presence:{amp:1,cycle:1,drift:1,swell:1,drive:1,groove:1,pluck:1,side:1,edge:1},
@@ -21,12 +22,13 @@ const layerCharacter:Record<MusicLayerName,{
 
 function softSquare(value:number,sharpness:number){const drive=1.05+sharpness*2.15;return Math.tanh(value*drive)/(Math.tanh(drive)||1)}
 
-export function renderAcousticVisualWave({layer,signal,controls,now,xStart,width,centerY,amplitude,points}:{layer:MusicLayerName;signal:AcousticVisualSample;controls:VisualAmpControls;now:number;xStart:number;width:number;centerY:number;amplitude:number;points:number}) {
+export function renderAcousticVisualWave({layer,signal,controls,now,travelPhase,xStart,width,centerY,amplitude,points}:{layer:MusicLayerName;signal:AcousticVisualSample;controls:VisualAmpControls;now:number;travelPhase?:number;xStart:number;width:number;centerY:number;amplitude:number;points:number}) {
   const seconds=(now%120000)/1000,layerPhase=phase[layer],layerSeed=seed[layer]
   const character=layerCharacter[layer]
-  // Keep a continuous base clock. Acoustic motion modulates phase/density
-  // locally instead of multiplying absolute time, which would cause phase jumps.
-  const clock=seconds*Math.PI*2*.34+(controls.motionRate-.72)*.82+controls.attack*.16
+  // Positive phase in sin(kx + phase) travels right -> left. While callers
+  // migrate, fall back to the former constant-rate clock.
+  const transportPhase=typeof travelPhase==='number'?travelPhase:seconds*Math.PI*2*.34
+  const clock=transportPhase+(controls.motionRate-.72)*.36+controls.attack*.10
   const cycles=baseCycles[layer]*character.cycle*controls.density*(.94+controls.motionRate*.06)
   const signedStereo=controls.balance*.62
   const bloom=1+controls.glow*.12+controls.crest*.10+controls.stereoSpread*.08
